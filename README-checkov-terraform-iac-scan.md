@@ -7,7 +7,7 @@ Terraform scan using [CheckOV](https://github.com/marketplace/actions/checkov-gi
 |name|description|type|required| default|
 |---|--|--|--|--|
 |`directories`| comma separated list of .tf files located directories to run scan. Default = "."] |string| no| `.`|
-| `log_level` | set log level. Supported values: `DEBUG`, `WARNING` | string | no | `DEBUG`  |
+| `log_level` | set log level. Supported values: `DEBUG`, `WARNING` | string | no | `WARNING`  |
 | `skip_check` | comma separated list of check IDs to skip scan | string | no |   |
 | `skip_cve_package` | comma separated list of CVE package IDs to skip scan | string | no  |   |
 | `quiet` | Whether to display only failed checks | boolean | no | `true`  |

@@ -34,7 +34,7 @@ on:
       log_level:
         description: "optional: set log level."
         type: string
-        default: "DEBUG"
+        default: "WARNING"
 
 jobs:
   scan:
