@@ -8,5 +8,5 @@ on:
 
 jobs:
   release-please:
-    uses: studiographene/github-action-workflows/.github/workflows/release-please.yml@master
+    uses: ./.github/workflows/release-please.yml
     secrets: inherit
