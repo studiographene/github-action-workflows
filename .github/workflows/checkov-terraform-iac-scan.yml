@@ -4,28 +4,36 @@ on:
   workflow_dispatch:
   workflow_call:
     inputs:
-      directory:
+      directories:
+        description: "comma separated list of .tf files located directories to run scan. Default = `.`"
         type: string
         default: "."
-      skip_check: # optional: skip a specific check_id. can be comma separated list
+      skip_check: 
+        description: "optional: skip a specific check_id. can be comma separated list"
         type: string
         default: ""
-      skip_cve_package: # optional: skip a specific CVE package in SCA scans, can be comma separated list
+      skip_cve_package:
+        description: "optional: skip a specific CVE package in SCA scans, can be comma separated list"
         type: string
         default: ""
-      quiet: # optional: display only failed checks
+      quiet:
+        description: "optional: display only failed checks"
         type: boolean
         default: false
-      output_format: # optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif.
+      output_format:
+        description: "optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif."
         type: string
         default: "cli,sarif"
-      download_external_modules: # optional: download external terraform modules from public git repositories and terraform registry
+      download_external_modules:
+        description: "optional: download external terraform modules from public git repositories and terraform registry"
         type: boolean
         default: true
-      var_file: # optional: variable files to load in addition to the default files. Currently only supported for source Terraform and Helm chart scans.
+      var_file:
+        description: "optional: variable files to load in addition to the default files. Currently only supported for source Terraform and Helm chart scans."
         type: string
         default: ""
-      log_level: # optional: set log level.
+      log_level:
+        description: "optional: set log level."
         type: string
         default: "DEBUG"
 
@@ -36,6 +44,9 @@ jobs:
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
       actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        directory: ${{ fromJson(inputs.directories) }}
 
     steps:
       - uses: actions/checkout@v3
@@ -43,14 +54,13 @@ jobs:
       - name: Checkov GitHub Action
         uses: bridgecrewio/checkov-action@v12
         with:
-          output_format: ${{ inputs.output_format }}
-          output_file_path: console,results.sarif
-          directory: ${{ inputs.directory }}
+          directory: ${{ matrix.directory }}
           skip_check: ${{ inputs.skip_check }}
           skip_cve_package: ${{ inputs.skip_cve_package }}
           quiet: ${{ inputs.quiet }}
           download_external_modules: ${{ inputs.download_external_modules }}
           var_file: ${{ inputs.var_file }}
+          output_format: ${{ inputs.output_format }}
           log_level: ${{ inputs.log_level }}
         
       - name: Upload SARIF file
