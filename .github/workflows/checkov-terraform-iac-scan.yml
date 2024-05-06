@@ -61,9 +61,10 @@ jobs:
           var_file: ${{ inputs.var_file }}
           output_format: ${{ inputs.output_format }}
           log_level: ${{ inputs.log_level }}
-        
-      - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v2
-        if: success() || failure()
-        with:
-          sarif_file: results.sarif
+          
+# Below `Upload SARIF file` can be only used if GitHub Enterprise feature Advanced Security is enabled       
+#      - name: Upload SARIF file
+#        uses: github/codeql-action/upload-sarif@v3
+#        if: success() || failure()
+#        with:
+#          sarif_file: results.sarif
