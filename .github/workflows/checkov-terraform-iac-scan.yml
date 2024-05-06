@@ -18,7 +18,7 @@ on:
       quiet:
         description: "optional: display only failed checks"
         type: boolean
-        default: false
+        default: true
       output_format:
         description: "optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif."
         type: string
