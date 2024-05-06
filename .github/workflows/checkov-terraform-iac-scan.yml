@@ -1,13 +1,12 @@
 name: checkov
 
 on:
-  workflow_dispatch:
   workflow_call:
     inputs:
       directories:
-        description: "comma separated list of .tf files located directories to run scan. Default = `.`"
+        description: "comma separated list of .tf files located directories to run scan. Default = [`.`]"
         type: string
-        default: "."
+        default: "['.']"
       skip_check: 
         description: "optional: skip a specific check_id. can be comma separated list"
         type: string
