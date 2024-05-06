@@ -1,0 +1,12 @@
+name: release-please
+on:
+  push:
+    branches:
+      - master
+      - main
+      - hotfix/**
+
+jobs:
+  release-please:
+    uses: studiographene/github-action-workflows/.github/workflows/release-please.yml@master
+    secrets: inherit
