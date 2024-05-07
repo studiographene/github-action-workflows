@@ -65,35 +65,35 @@ jobs:
             const fs = require('fs');
             const sarifFile = fs.readFileSync('results.sarif', 'utf8');
             const sarifData = JSON.parse(sarifFile);
-        
+
             const tableData = [];
             const helps = {};
 
             sarifData.runs.map((sarif) => {
-              sarif.tool.driver.rules.map((rule) => {
+                sarif.tool.driver.rules.map((rule) => {
                 if (rule.helpUri) {
-                  helps[rule.id] = rule.helpUri;
+                    helps[rule.id] = rule.helpUri;
                 }
-              });
+                });
             });
             const errors = sarifData.runs.flatMap((sarif) =>
-              sarif.results.filter((result) => result.level === 'error')
+                sarif.results.filter((result) => result.level === 'error')
             );
-        
-            for (const error of errors || []) {
-              const rule_id = error.ruleId || '';
-              const message = error.message.text;
-              const file_path = error.locations.map(obj => {
-                return `- file_path: ${obj.physicalLocation.artifactLocation.uri}, between_lines: ${obj.physicalLocation.region.startLine} to ${obj.physicalLocation.region.endLine}`;
-              }).join('<br>');
 
-              const helpUri = helps[error.ruleId];
-        
-              tableData.push(
+            for (const error of errors || []) {
+                const rule_id = error.ruleId || '';
+                const message = error.message.text;
+                const file_path = error.locations.map(obj => {
+                return `- file_path: ${obj.physicalLocation.artifactLocation.uri}, between_lines: ${obj.physicalLocation.region.startLine} to ${obj.physicalLocation.region.endLine}`;
+                }).join('<br>');
+
+                const helpUri = helps[error.ruleId];
+
+                tableData.push(
                 `${rule_id} | ${file_path} | ${message} | ${helpUri}`
-              );
+                );
             }
-        
+
             // construct the data to support Markdown
             const data = tableData.join('\n');
             console.log(data); // Print the data
