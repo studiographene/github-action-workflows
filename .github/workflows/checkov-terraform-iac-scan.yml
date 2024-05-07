@@ -52,7 +52,81 @@ jobs:
           download_external_modules: ${{ inputs.download_external_modules }}
           var_file: ${{ inputs.var_file }}
           output_format: ${{ inputs.output_format }}
+          output_file_path: reports/checkov_report.sarif # folder and name of results file
           log_level: ${{ inputs.log_level }}
+          
+      - name: format output
+        id: format_checkov_results
+        if: always()
+        run: |
+            csvData=$(node - << EOF
+            const fs = require('fs');
+            const sarifFile = fs.readFileSync('reports/checkov_report.sarif', 'utf8');
+            const sarifData = JSON.parse(sarifFile);
+        
+            const tableData = [];
+            const helps = {};
+        
+            sarifData.runs.map((sarif) => {
+              sarif.tool.driver.rules.map((rule) => {
+                if (rule.helpUri) {
+                  helps[rule.id] = rule.helpUri;
+                }
+              });
+            });
+        
+            const errors = sarifData.runs.flatMap((sarif) =>
+              sarif.results.filter((result) => result.level === 'error')
+            );
+        
+            for (const error of errors || []) {
+              const rule_id = error.ruleId || '';
+              const check_name = error.check_name || '';
+              const message = error.message.text;
+              const file_path = JSON.stringify(
+                error.locations.map((loc) => ({
+                uri: loc.physicalLocation.artifactLocation.uri,
+                start: loc.physicalLocation.region.startLine,
+                end: loc.physicalLocation.region.endLine,
+              }))
+              );
+              const file_line_range = error.file_line_range
+                ? error.file_line_range.join(' - ')
+                : '';
+              const helpUri = helps[error.ruleId];
+        
+              tableData.push(
+                \`\${rule_id} | \${file_path} | \${message} | \${helpUri}\`
+              );
+            }
+        
+            // construct the data to support Markdown
+            const report_data = tableData.join('\n');
+            console.log(report_data); // Print the data
+            EOF
+            )
+        
+            # Struncturing the final report
+            echo "### Checkov IaC Scan Report" >> final_checkov_report.md
+            echo "Below are the issues found:" >> final_checkov_report.md
+            echo "Rule Id | File Path | Message | Help URI" >> final_checkov_report.md
+            echo "--- | --- | --- | ---" >> final_checkov_report.md
+            echo "$report_data" >> final_checkov_report.md
+  
+      - name: Add Report As PR comment
+        uses: mshick/add-pr-comment@v2
+        if: always()
+        with:
+          message-id: Checkov-scan
+          message-path: |
+            final_checkov_report.md
+              
+      - name: Create Artifact
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: checkov_report
+          path: reports/checkov_report.sarif 
           
 # Below `Upload SARIF file` can be only used if GitHub Enterprise feature Advanced Security is enabled       
 #      - name: Upload SARIF file
