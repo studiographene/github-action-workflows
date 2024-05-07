@@ -7,14 +7,6 @@ on:
         description: "comma separated list of .tf files located directories to run scan. Default = [`.`]"
         type: string
         default: "['.']"
-      skip_check: 
-        description: "optional: skip a specific check_id. can be comma separated list"
-        type: string
-        default: ""
-      skip_cve_package:
-        description: "optional: skip a specific CVE package in SCA scans, can be comma separated list"
-        type: string
-        default: ""
       quiet:
         description: "optional: display only failed checks"
         type: boolean
@@ -54,8 +46,8 @@ jobs:
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: ${{ matrix.directory }}
-          skip_check: ${{ inputs.skip_check }}
-          skip_cve_package: ${{ inputs.skip_cve_package }}
+          skip_check: ${{ vars.IAC_SCAN_SKIP_CHECK }}
+          skip_cve_package: ${{ vars.IAC_SCAN_SKIP_CVE_PACKAGE }}
           quiet: ${{ inputs.quiet }}
           download_external_modules: ${{ inputs.download_external_modules }}
           var_file: ${{ inputs.var_file }}

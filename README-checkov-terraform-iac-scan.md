@@ -8,12 +8,18 @@ Terraform scan using [CheckOV](https://github.com/marketplace/actions/checkov-gi
 |---|--|--|--|--|
 |`directories`| comma separated list of .tf files located directories to run scan. Default = "."] |string| no| `.`|
 | `log_level` | set log level. Supported values: `DEBUG`, `WARNING` | string | no | `WARNING`  |
-| `skip_check` | comma separated list of check IDs to skip scan | string | no |   |
-| `skip_cve_package` | comma separated list of CVE package IDs to skip scan | string | no  |   |
 | `quiet` | Whether to display only failed checks | boolean | no | `true`  |
 | `output_format` | Scan result output format. Can be `cli` and/or one of: `json`, `junitxml`, `github_failed_only`, or `sarif`.|string | no | `cli,sarif`  |
 | `download_external_modules` | Whether to download external terraform modules from public git repositories and terraform registry | boolean |no | `true`  |
 | `var_file | variable files to load in addition to the default `terraform.tfvars` | string | no |   |
+
+# Action variables
+> Set them in Repository variable 
+
+|name|description|type|required| default|
+|---|--|--|--|--|
+| `IAC_SCAN_SKIP_CHECK` | comma separated list of check IDs to skip scan | string | no |   |
+| `IAC_SCAN_SKIP_CVE_PACKAGE` | comma separated list of CVE package IDs to skip scan | string | no  |   |
 
 # How to setup
 
