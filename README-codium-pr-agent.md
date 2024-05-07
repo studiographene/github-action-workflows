@@ -25,9 +25,13 @@ To execute [Codium PR agent](https://www.codium.ai/products/git-plugin/)
 <other action configurations>
 
 jobs:
+on:
+  pull_request: {}
+  issue_comment:
   <other job configurations>
 
   pr_agent:
+    if: ${{ github.event.sender.type != 'Bot' }}
     uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@v1
     secrets: inherit
 ```
@@ -38,9 +42,11 @@ jobs:
 name: pr_agent
 on:
   pull_request: {}
+  issue_comment:
 
 jobs:
   codium:
+    if: ${{ github.event.sender.type != 'Bot' }}
     uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@v1
     secrets: inherit
 ```

@@ -14,6 +14,10 @@ jobs:
   pr_agent:
     name: Codium PR Agent Scan
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
     steps:
       - name: before step
         if: ${{ inputs.pr_agent_before_step_command != '' }}
