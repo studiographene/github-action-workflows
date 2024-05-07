@@ -52,7 +52,9 @@ jobs:
           download_external_modules: ${{ inputs.download_external_modules }}
           var_file: ${{ inputs.var_file }}
           output_format: ${{ inputs.output_format }}
-          output_file_path: console,reports/checkov_report.sarif # folder and name of results file
+          # folder and name of results file
+          # This will add both a CLI output to the console and create a results.sarif file
+          output_file_path: console,results.sarif
           log_level: ${{ inputs.log_level }}
           
       - name: Format The Report
@@ -61,19 +63,11 @@ jobs:
         run: |
             csvData=$(node - << EOF
             const fs = require('fs');
-            const sarifFile = fs.readFileSync('./reports/checkov_report.sarif', 'utf8');
+            const sarifFile = fs.readFileSync('results.sarif', 'utf8');
             const sarifData = JSON.parse(sarifFile);
         
             const tableData = [];
             const helps = {};
-        
-            sarifData.runs.map((sarif) => {
-              sarif.tool.driver.rules.map((rule) => {
-                if (rule.helpUri) {
-                  helps[rule.id] = rule.helpUri;
-                }
-              });
-            });
         
             const errors = sarifData.runs.flatMap((sarif) =>
               sarif.results.filter((result) => result.level === 'error')
@@ -81,18 +75,11 @@ jobs:
         
             for (const error of errors || []) {
               const rule_id = error.ruleId || '';
-              const check_name = error.check_name || '';
               const message = error.message.text;
-              const file_path = JSON.stringify(
-                error.locations.map((loc) => ({
-                uri: loc.physicalLocation.artifactLocation.uri,
-                start: loc.physicalLocation.region.startLine,
-                end: loc.physicalLocation.region.endLine,
-              }))
-              );
-              const file_line_range = error.file_line_range
-                ? error.file_line_range.join(' - ')
-                : '';
+              const file_path = error.locations.map(obj => {
+                    return `- file_path: ${obj.physicalLocation.artifactLocation.uri}, between_lines: ${obj.physicalLocation.region.startLine} to ${obj.physicalLocation.region.endLine}`;
+                }).join("<br>");
+
               const helpUri = helps[error.ruleId];
         
               tableData.push(
@@ -106,7 +93,7 @@ jobs:
             EOF
             )
         
-            # Struncturing the final report
+            # Struncturing the final report for Markdown
             echo "### Checkov IaC Scan Report" >> final_checkov_report.md
             echo "Below are the issues found:" >> final_checkov_report.md
             echo "Rule Id | File Path | Message | Help URI" >> final_checkov_report.md
