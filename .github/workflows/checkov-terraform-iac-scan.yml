@@ -110,10 +110,10 @@ jobs:
               
       - name: Create Artifact
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: checkov_report
-          path: reports/checkov_report.sarif 
+          name: "checkov_report_${{ matrix.directory }}"
+          path: results.sarif
           
 # Below `Upload SARIF file` can be only used if GitHub Enterprise feature Advanced Security is enabled       
 #      - name: Upload SARIF file
