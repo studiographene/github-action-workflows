@@ -25,6 +25,6 @@ on:
 
 jobs:
   release-please:
-    uses: studiographene/github-action-workflows/.github/workflows/release-please.yml@v1
+    uses: studiographene/github-action-workflows/.github/workflows/release-please.yml@master # if you want pin to tag version
     secrets: inherit
 ```

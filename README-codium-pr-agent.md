@@ -32,7 +32,7 @@ on:
 
   pr_agent:
     if: ${{ github.event.sender.type != 'Bot' }}
-    uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@v1
+    uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@master # if you want pin to tag version
     secrets: inherit
 ```
 
@@ -47,6 +47,6 @@ on:
 jobs:
   codium:
     if: ${{ github.event.sender.type != 'Bot' }}
-    uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@v1
+    uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@master # if you want pin to tag version
     secrets: inherit
 ```

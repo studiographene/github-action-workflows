@@ -33,7 +33,7 @@ on:
 
 jobs:
   iac-scan:
-    uses: studiographene/github-action-workflows/.github/workflows/checkov-terraform-iac-scan.yml@v1
+    uses: studiographene/github-action-workflows/.github/workflows/checkov-terraform-iac-scan.yml@master ddd
     secrets: inherit
     # with:
       # if you want to specify any input uncomment `with` and add the inputs that you want to set.
@@ -66,7 +66,7 @@ jobs:
           echo "LAYERS=${DIR_LIST}" >> $GITHUB_OUTPUT
 
   iac_scan:
-    uses: studiographene/github-action-workflows/.github/workflows/checkov-terraform-iac-scan.yml@v1
+    uses: studiographene/github-action-workflows/.github/workflows/checkov-terraform-iac-scan.yml@master # if you want pin to tag version
     secrets: inherit
     needs: find_all_layers
     with:
