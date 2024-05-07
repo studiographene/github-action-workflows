@@ -23,16 +23,52 @@ Terraform scan using [CheckOV](https://github.com/marketplace/actions/checkov-gi
 
 # How to setup
 
-```
-name: iac-scan
+> To run scan from current directory (also scans sub directories. Refer to the next example for scan multiple directories scan)
+
+```yaml
+name: ci
 on:
   pull_request:
     branches: [ "main", "master" ]
 
 jobs:
-  release-please:
+  iac-scan:
     uses: studiographene/github-action-workflows/.github/workflows/checkov-terraform-iac-scan.yml@v1
     secrets: inherit
     # with:
       # if you want to specify any input uncomment `with` and add the inputs that you want to set.
+```
+
+> To scan multiple directories
+> This example finds all the top level directories in `./tf/layers` and scans all those directories
+
+```yaml
+name: ci
+on:
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  find_all_layers:
+    runs-on: ubuntu-latest
+    name: Available TF layers
+    outputs:
+      LAYERS: ${{ steps.find_layers.outputs.LAYERS }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Finding available layers
+        id: find_layers
+        run: |
+          DIR_LIST=$(find ./tf/layers -mindepth 1 -maxdepth 1 -type d -exec printf '{"directory": "%s"}' {} \; | jq -s . | jq -c 'map(.directory)')
+          echo Avalilable Layers are $DIR_LIST ...
+          echo "LAYERS=${DIR_LIST}" >> $GITHUB_OUTPUT
+
+  iac_scan:
+    uses: studiographene/github-action-workflows/.github/workflows/checkov-terraform-iac-scan.yml@v1
+    secrets: inherit
+    needs: find_all_layers
+    with:
+      directories: ${{needs.find_all_layers.outputs.LAYERS}}
 ```
