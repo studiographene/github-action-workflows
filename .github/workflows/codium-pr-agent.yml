@@ -1,0 +1,31 @@
+name: Codium PR Agent
+
+on:
+  workflow_call:
+    inputs:
+      pr_agent_before_step_command:
+        type: string
+        default: ""
+      pr_agent_after_step_command:
+        type: string
+        default: ""
+
+jobs:
+  pr_agent:
+    name: Codium PR Agent Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: before step
+        if: ${{ inputs.pr_agent_before_step_command != '' }}
+        run: |
+          ${{ inputs.pr_agent_before_step_command}}
+      - name: PR Agent action step
+        id: pragent
+        uses: Codium-ai/pr-agent@main
+        env:
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: after step
+        if: ${{ inputs.pr_agent_after_step_command != '' }}
+        run: |
+          ${{ inputs.pr_agent_after_step_command}}
