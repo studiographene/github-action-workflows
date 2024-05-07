@@ -23,7 +23,7 @@ Terraform scan using [CheckOV](https://github.com/marketplace/actions/checkov-gi
 
 # How to setup
 
-> To run scan from current directory (also scans sub directories. Refer to the next example for scan multiple directories scan)
+> To run scan from current directory (also scans sub directories. (Refer to the next example for scan multiple directories scan)
 
 ```yaml
 name: ci

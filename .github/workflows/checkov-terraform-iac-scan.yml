@@ -55,7 +55,7 @@ jobs:
           output_file_path: reports/checkov_report.sarif # folder and name of results file
           log_level: ${{ inputs.log_level }}
           
-      - name: format output
+      - name: Format The Report
         id: format_checkov_results
         if: always()
         run: |
