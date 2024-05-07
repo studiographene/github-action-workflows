@@ -90,7 +90,7 @@ jobs:
               const helpUri = helps[error.ruleId];
 
               tableData.push(
-              `${rule_id} | ${file_path} | ${message} | ${helpUri}`
+              \`${rule_id} | ${file_path} | ${message} | ${helpUri}\`
               );
             }
 
