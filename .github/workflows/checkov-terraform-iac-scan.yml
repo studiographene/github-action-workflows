@@ -44,6 +44,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Checkov GitHub Action
+        id: checkov
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: ${{ matrix.directory }}
@@ -84,14 +85,14 @@ jobs:
             for (const error of errors || []) {
               const rule_id = error.ruleId || '';
               const message = error.message.text;
-              const file_path = error.locations.map(obj => {
+              const location = error.locations.map(obj => {
               return \`- **file_path**: \${obj.physicalLocation.artifactLocation.uri}; **between_lines**: \${obj.physicalLocation.region.startLine} to \${obj.physicalLocation.region.endLine}\`;
               }).join('<br>');
 
               const helpUri = helps[error.ruleId];
 
               tableData.push(
-              \`\${rule_id} | \${file_path} | \${message} | \${helpUri}\`
+              \`\${rule_id} | \${location} | \${message} | \${helpUri}\`
               );
             }
 
@@ -103,10 +104,16 @@ jobs:
         
             # Struncturing the final report for Markdown
             echo "### Checkov IaC Scan Report" >> final_checkov_report.md
-            echo "Below are the issues found:" >> final_checkov_report.md
-            echo "Rule Id | File Path | Message | Help URI" >> final_checkov_report.md
-            echo "--- | --- | --- | ---" >> final_checkov_report.md
-            echo "$report_data" >> final_checkov_report.md
+            if [ steps.checkov.outcome == "success" ]
+            then
+              echo "No issues found :rainbow:" >> final_checkov_report.md
+            elif [ steps.checkov.outcome == "failure" ]
+            then
+              echo "Below are the issues found:" >> final_checkov_report.md
+              echo "Rule Id | Location | Message | Help URI" >> final_checkov_report.md
+              echo "--- | --- | --- | ---" >> final_checkov_report.md
+              echo "$report_data" >> final_checkov_report.md
+            fi
   
       - name: Add Report As PR comment
         uses: mshick/add-pr-comment@v2
