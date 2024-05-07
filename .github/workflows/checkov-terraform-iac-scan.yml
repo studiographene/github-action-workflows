@@ -86,8 +86,8 @@ jobs:
               const file_path = error.locations.map(obj => {
               return `- file_path:`;
               }).join('<br>');
-              # return `- file_path: ${obj.physicalLocation.artifactLocation.uri}, between_lines: ${obj.physicalLocation.region.startLine} to ${obj.physicalLocation.region.endLine}`;
-              # }).join('<br>');
+              // return `- file_path: ${obj.physicalLocation.artifactLocation.uri}, between_lines: ${obj.physicalLocation.region.startLine} to ${obj.physicalLocation.region.endLine}`;
+              // }).join('<br>');
 
               const helpUri = helps[error.ruleId];
 
