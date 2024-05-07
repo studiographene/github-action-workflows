@@ -19,7 +19,7 @@ jobs:
         if: ${{ inputs.pr_agent_before_step_command != '' }}
         run: |
           ${{ inputs.pr_agent_before_step_command}}
-      - name: PR Agent action step
+      - name: PR Agent Scan
         id: pragent
         uses: Codium-ai/pr-agent@main
         env:
