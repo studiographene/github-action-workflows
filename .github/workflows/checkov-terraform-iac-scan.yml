@@ -1,0 +1,131 @@
+name: checkov
+
+on:
+  workflow_call:
+    inputs:
+      directories:
+        description: "comma separated list of .tf files located directories to run scan. Default = [`.`]"
+        type: string
+        default: "['.']"
+      quiet:
+        description: "optional: display only failed checks"
+        type: boolean
+        default: true
+      output_format:
+        description: "optional: the output format, `cli` and/or one of: `json`, `junitxml`, `github_failed_only`, or `sarif`."
+        type: string
+        default: "cli,sarif"
+      download_external_modules:
+        description: "optional: download external terraform modules from public git repositories and terraform registry"
+        type: boolean
+        default: true
+      var_file:
+        description: "optional: variable files to load in addition to the default files. Currently only supported for source Terraform and Helm chart scans."
+        type: string
+        default: ""
+      log_level:
+        description: "optional: set log level."
+        type: string
+        default: "WARNING"
+
+jobs:
+  scan:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+      pull-requests: write # to write the report to PR comment
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        directory: ${{ fromJson(inputs.directories) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkov GitHub Action
+        id: checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: ${{ matrix.directory }}
+          skip_check: ${{ vars.IAC_SCAN_SKIP_CHECK }}
+          skip_cve_package: ${{ vars.IAC_SCAN_SKIP_CVE_PACKAGE }}
+          quiet: ${{ inputs.quiet }}
+          download_external_modules: ${{ inputs.download_external_modules }}
+          var_file: ${{ inputs.var_file }}
+          output_format: ${{ inputs.output_format }}
+          # folder and name of results file
+          # This will add both a CLI output to the console and create a results.sarif file
+          output_file_path: console,results.sarif
+          log_level: ${{ inputs.log_level }}
+          
+      - name: Format The Report
+        id: format_checkov_results
+        if: always()
+        run: |
+            report_data=$(node - << EOF
+            const fs = require('fs');
+            const sarifFile = fs.readFileSync('results.sarif', 'utf8');
+            const sarifData = JSON.parse(sarifFile);
+
+            const tableData = [];
+            const helps = {};
+
+            sarifData.runs.map((sarif) => {
+                sarif.tool.driver.rules.map((rule) => {
+                if (rule.helpUri) {
+                    helps[rule.id] = rule.helpUri;
+                }
+                });
+            });
+            const errors = sarifData.runs.flatMap((sarif) =>
+                sarif.results.filter((result) => result.level === 'error')
+            );
+
+            for (const error of errors || []) {
+              const rule_id = error.ruleId || '';
+              const message = error.message.text;
+              const location = error.locations.map(obj => {
+              return \`- **file_path**: \${obj.physicalLocation.artifactLocation.uri}; **between_lines**: \${obj.physicalLocation.region.startLine} to \${obj.physicalLocation.region.endLine}\`;
+              }).join('<br>');
+
+              const helpUri = helps[error.ruleId];
+
+              tableData.push(
+              \`\${rule_id} | \${location} | \${message} | \${helpUri}\`
+              );
+            }
+
+            // construct the data to support Markdown
+            const data = tableData.join('\n');
+            console.log(data); // Print the data
+            EOF
+            )
+        
+            # Struncturing the final report for Markdown
+            echo "# Checkov IaC Scan Report" >> final_checkov_report.md
+            if [ ${{ steps.checkov.outcome }} == "success" ]
+            then
+              echo "### No issues found :rainbow:" >> final_checkov_report.md
+            elif [ ${{ steps.checkov.outcome }} == "failure" ]
+            then
+              echo "### :warning: Below are the issues found:" >> final_checkov_report.md
+              echo "Rule Id | Location | Message | Help URI" >> final_checkov_report.md
+              echo "--- | --- | --- | ---" >> final_checkov_report.md
+              echo "$report_data" >> final_checkov_report.md
+            fi
+  
+      - name: Add Report As PR comment
+        uses: mshick/add-pr-comment@v2
+        if: always()
+        with:
+          message-id: Checkov-scan
+          message-path: |
+            final_checkov_report.md
+          
+# Below `Upload SARIF file` can be only used if GitHub Enterprise feature Advanced Security is enabled       
+#      - name: Upload SARIF file
+#        uses: github/codeql-action/upload-sarif@v3
+#        if: success() || failure()
+#        with:
+#          sarif_file: results.sarif
