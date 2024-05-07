@@ -84,7 +84,7 @@ jobs:
               const rule_id = error.ruleId || '';
               const message = error.message.text;
               const file_path = error.locations.map(obj => {
-              return \`- file_path: \${obj.physicalLocation.artifactLocation.uri}, between_lines: \${obj.physicalLocation.region.startLine} to ${obj.physicalLocation.region.endLine}\`;
+              return \`- file_path: \${obj.physicalLocation.artifactLocation.uri}, between_lines: \${obj.physicalLocation.region.startLine} to \${obj.physicalLocation.region.endLine}\`;
               }).join('<br>');
 
               const helpUri = helps[error.ruleId];
@@ -120,7 +120,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: "checkov_report_${{ matrix.directory }}"
-          path: results.sarif
+          path: |
+            results.sarif
+            final_checkov_report.md
           
 # Below `Upload SARIF file` can be only used if GitHub Enterprise feature Advanced Security is enabled       
 #      - name: Upload SARIF file
