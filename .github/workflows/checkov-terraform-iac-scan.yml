@@ -12,7 +12,7 @@ on:
         type: boolean
         default: true
       output_format:
-        description: "optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif."
+        description: "optional: the output format, `cli` and/or one of: `json`, `junitxml`, `github_failed_only`, or `sarif`."
         type: string
         default: "cli,sarif"
       download_external_modules:
@@ -52,7 +52,7 @@ jobs:
           download_external_modules: ${{ inputs.download_external_modules }}
           var_file: ${{ inputs.var_file }}
           output_format: ${{ inputs.output_format }}
-          output_file_path: reports/checkov_report.sarif # folder and name of results file
+          output_file_path: console,reports/checkov_report.sarif # folder and name of results file
           log_level: ${{ inputs.log_level }}
           
       - name: Format The Report
@@ -61,7 +61,7 @@ jobs:
         run: |
             csvData=$(node - << EOF
             const fs = require('fs');
-            const sarifFile = fs.readFileSync('reports/checkov_report.sarif', 'utf8');
+            const sarifFile = fs.readFileSync('./reports/checkov_report.sarif', 'utf8');
             const sarifData = JSON.parse(sarifFile);
         
             const tableData = [];
