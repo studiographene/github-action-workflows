@@ -103,13 +103,13 @@ jobs:
             )
         
             # Struncturing the final report for Markdown
-            echo "### Checkov IaC Scan Report" >> final_checkov_report.md
+            echo "# Checkov IaC Scan Report" >> final_checkov_report.md
             if [ steps.checkov.outcome == "success" ]
             then
-              echo "No issues found :rainbow:" >> final_checkov_report.md
+              echo "### No issues found :rainbow:" >> final_checkov_report.md
             elif [ steps.checkov.outcome == "failure" ]
             then
-              echo "Below are the issues found:" >> final_checkov_report.md
+              echo "### :warning: Below are the issues found:" >> final_checkov_report.md
               echo "Rule Id | Location | Message | Help URI" >> final_checkov_report.md
               echo "--- | --- | --- | ---" >> final_checkov_report.md
               echo "$report_data" >> final_checkov_report.md
