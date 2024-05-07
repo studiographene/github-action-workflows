@@ -27,7 +27,7 @@ To execute [Codium PR agent](https://www.codium.ai/products/git-plugin/)
 jobs:
   <other job configurations>
 
-  pr-agent:
+  pr_agent:
     uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@v1
     secrets: inherit
 ```
@@ -35,7 +35,7 @@ jobs:
 > To setup as a separate workflow
 
 ```yaml
-name: pr-agent
+name: pr_agent
 on:
   pull_request: {}
 
