@@ -17,7 +17,7 @@ Report is pusblised on to [Pulse](https://pulse.studiographene.com)
 1. Under `./github/workflows` directory, create a file `dependencies-analytics.yml` with below content (change inputs as required).
 
 ```yaml
-name: SG Dependency Analytics
+name: StudioGraphene Dependency Analytics
 
 on:
   push: [<enter-branch-name>]

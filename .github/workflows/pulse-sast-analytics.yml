@@ -18,7 +18,6 @@ on:
 
 jobs:
   pulse_sast_report:
-    name: SAST report feed to Pulse
     runs-on: ubuntu-latest
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
