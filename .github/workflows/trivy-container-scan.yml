@@ -41,7 +41,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ${{ inputs.action_runner_container_image }}
-    continue-on-error: true
     steps:
       - name: Before Step
         if: ${{ inputs.before_step_command != '' }}
@@ -74,6 +73,7 @@ jobs:
 
       - name: Trivy container vulnerability scan
         id: container_scan
+        continue-on-error: true
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ inputs.docker_build_image_id }}
@@ -88,7 +88,6 @@ jobs:
           skip-dirs: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
 
       - name: Report vulnerability findings in PR
-        if: always() && ${{ contains(fromJSON('["success", "failure"]'), steps.container_scan.outcome) }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
