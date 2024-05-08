@@ -14,7 +14,7 @@ on:
         default: ""
 
 jobs:
-  read_dependencies:
+  pulse_dependencies_report:
     runs-on: ubuntu-latest
 
     steps:

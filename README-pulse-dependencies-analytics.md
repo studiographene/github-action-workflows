@@ -20,10 +20,11 @@ Report is pusblised on to [Pulse](https://pulse.studiographene.com)
 name: StudioGraphene Dependency Analytics
 
 on:
-  push: [<enter-branch-name>]
+  push:
+    branches: [<enter-branch-name>]
 
 jobs:
   dependency_analytics:
-    uses: studiographene/github-action-workflows/.github/workflows/pulse-dependencies-analytics.yml.yml@master # if you want alternatively pin to tag version version
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-dependencies-analytics.yml@master # if you want alternatively pin to tag version version
     secrets: inherit
 ```
