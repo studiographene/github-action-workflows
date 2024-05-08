@@ -37,7 +37,7 @@ permissions:
   contents: write
 
 jobs:
-  scan:
+  container_scan:
     runs-on: ubuntu-latest
     container:
       image: ${{ inputs.action_runner_container_image }}

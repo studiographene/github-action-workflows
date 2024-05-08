@@ -29,7 +29,7 @@ on:
         default: "WARNING"
 
 jobs:
-  scan:
+  iac_scan:
     permissions:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
@@ -58,63 +58,63 @@ jobs:
           # This will add both a CLI output to the console and create a results.sarif file
           output_file_path: console,results.sarif
           log_level: ${{ inputs.log_level }}
-          
+
       - name: Format The Report
         id: format_checkov_results
         if: always()
         run: |
-            report_data=$(node - << EOF
-            const fs = require('fs');
-            const sarifFile = fs.readFileSync('results.sarif', 'utf8');
-            const sarifData = JSON.parse(sarifFile);
+          report_data=$(node - << EOF
+          const fs = require('fs');
+          const sarifFile = fs.readFileSync('results.sarif', 'utf8');
+          const sarifData = JSON.parse(sarifFile);
 
-            const tableData = [];
-            const helps = {};
+          const tableData = [];
+          const helps = {};
 
-            sarifData.runs.map((sarif) => {
-                sarif.tool.driver.rules.map((rule) => {
-                if (rule.helpUri) {
-                    helps[rule.id] = rule.helpUri;
-                }
-                });
-            });
-            const errors = sarifData.runs.flatMap((sarif) =>
-                sarif.results.filter((result) => result.level === 'error')
+          sarifData.runs.map((sarif) => {
+              sarif.tool.driver.rules.map((rule) => {
+              if (rule.helpUri) {
+                  helps[rule.id] = rule.helpUri;
+              }
+              });
+          });
+          const errors = sarifData.runs.flatMap((sarif) =>
+              sarif.results.filter((result) => result.level === 'error')
+          );
+
+          for (const error of errors || []) {
+            const rule_id = error.ruleId || '';
+            const message = error.message.text;
+            const location = error.locations.map(obj => {
+            return \`- **file_path**: \${obj.physicalLocation.artifactLocation.uri}; **between_lines**: \${obj.physicalLocation.region.startLine} to \${obj.physicalLocation.region.endLine}\`;
+            }).join('<br>');
+
+            const helpUri = helps[error.ruleId];
+
+            tableData.push(
+            \`\${rule_id} | \${location} | \${message} | \${helpUri}\`
             );
+          }
 
-            for (const error of errors || []) {
-              const rule_id = error.ruleId || '';
-              const message = error.message.text;
-              const location = error.locations.map(obj => {
-              return \`- **file_path**: \${obj.physicalLocation.artifactLocation.uri}; **between_lines**: \${obj.physicalLocation.region.startLine} to \${obj.physicalLocation.region.endLine}\`;
-              }).join('<br>');
+          // construct the data to support Markdown
+          const data = tableData.join('\n');
+          console.log(data); // Print the data
+          EOF
+          )
 
-              const helpUri = helps[error.ruleId];
+          # Struncturing the final report for Markdown
+          echo "# Checkov IaC Scan Report" >> final_checkov_report.md
+          if [ ${{ steps.checkov.outcome }} == "success" ]
+          then
+            echo "### No issues found :rainbow:" >> final_checkov_report.md
+          elif [ ${{ steps.checkov.outcome }} == "failure" ]
+          then
+            echo "### :warning: Below are the issues found:" >> final_checkov_report.md
+            echo "Rule Id | Location | Message | Help URI" >> final_checkov_report.md
+            echo "--- | --- | --- | ---" >> final_checkov_report.md
+            echo "$report_data" >> final_checkov_report.md
+          fi
 
-              tableData.push(
-              \`\${rule_id} | \${location} | \${message} | \${helpUri}\`
-              );
-            }
-
-            // construct the data to support Markdown
-            const data = tableData.join('\n');
-            console.log(data); // Print the data
-            EOF
-            )
-        
-            # Struncturing the final report for Markdown
-            echo "# Checkov IaC Scan Report" >> final_checkov_report.md
-            if [ ${{ steps.checkov.outcome }} == "success" ]
-            then
-              echo "### No issues found :rainbow:" >> final_checkov_report.md
-            elif [ ${{ steps.checkov.outcome }} == "failure" ]
-            then
-              echo "### :warning: Below are the issues found:" >> final_checkov_report.md
-              echo "Rule Id | Location | Message | Help URI" >> final_checkov_report.md
-              echo "--- | --- | --- | ---" >> final_checkov_report.md
-              echo "$report_data" >> final_checkov_report.md
-            fi
-  
       - name: Add Report As PR comment
         uses: mshick/add-pr-comment@v2
         if: always()
@@ -122,8 +122,8 @@ jobs:
           message-id: Checkov-scan
           message-path: |
             final_checkov_report.md
-          
-# Below `Upload SARIF file` can be only used if GitHub Enterprise feature Advanced Security is enabled       
+
+# Below `Upload SARIF file` can be only used if GitHub Enterprise feature Advanced Security is enabled
 #      - name: Upload SARIF file
 #        uses: github/codeql-action/upload-sarif@v3
 #        if: success() || failure()
