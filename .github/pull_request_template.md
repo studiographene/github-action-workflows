@@ -30,5 +30,5 @@ Incase the current PR is dependent onto some other PR, please add the link to it
 
 -   [ ] I have reviewed my code while raising this PR
 -   [ ] I have added comments to my code, particularly in hard-to-understand areas
--   [ ] I have created a new README file named as README-<name-of-the-workflow-file>.md in case of new workflow addition,  or made corresponding changes to the documentation with respect to the changes.
+-   [ ] I have created a new README file named as `README-<name-of-the-workflow-file>.md` in case of new workflow addition,  or made corresponding changes to the documentation with respect to the changes.
 -   [ ] My changes generate no new warnings and errors

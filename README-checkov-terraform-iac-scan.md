@@ -66,7 +66,7 @@ jobs:
           echo "LAYERS=${DIR_LIST}" >> $GITHUB_OUTPUT
 
   iac_scan:
-    uses: studiographene/github-action-workflows/.github/workflows/checkov-terraform-iac-scan.yml@master # if you want pin to tag version
+    uses: studiographene/github-action-workflows/.github/workflows/checkov-terraform-iac-scan.yml@master # if you want alternatively pin to tag version version
     secrets: inherit
     needs: find_all_layers
     with:
