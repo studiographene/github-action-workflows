@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/studiographene/github-action-workflows/compare/v1.2.0...v1.3.0) (2024-05-08)
+
+
+### Features
+
+* **php-ci:** new workflow addition ([0a4f553](https://github.com/studiographene/github-action-workflows/commit/0a4f553909a26b4cf5872fb7fe06fd62e926b0e7))
+
 ## [1.2.0](https://github.com/studiographene/github-action-workflows/compare/v1.1.1...v1.2.0) (2024-05-08)
 
 
