@@ -16,14 +16,14 @@ To perform container scan and report vulnerabilities on PR
 
 # How to setup
 
-```
+```yaml
 name: container-scan
 on:
   push:
     pull_request: {}
 
 jobs:
-  container-scan:
+  container_scan:
     uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master # if you want alternatively pin to tag version
     secrets: inherit
 ```
