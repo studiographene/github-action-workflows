@@ -87,7 +87,7 @@ jobs:
           skip-dirs: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
 
       - name: Report vulnerability findings in PR
-        if: ${{ always() && contains('success,failure', steps.container_scan.outcome)  }}
+        if: ${{ always() && contains('success,failure', steps.container_scan.outcome) && github.event_name == 'pull_request' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
