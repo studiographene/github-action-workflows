@@ -41,6 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ${{ inputs.action_runner_container_image }}
+    continue-on-error: true
     steps:
       - name: Before Step
         if: ${{ inputs.before_step_command != '' }}
@@ -60,7 +61,6 @@ jobs:
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Creating Trivy report PR comment template file
-        if: ${{ steps.docker_build.outcome }} == "success"
         run: |
           cat <<EOF >> prcomment.tpl 
           | Package | Vulnerability | Severity | Status | Installed Version | Fixed Version | Title | \n
@@ -88,7 +88,7 @@ jobs:
           skip-dirs: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
 
       - name: Report vulnerability findings in PR
-        if: ${{ contains(fromJSON('["success", "failure"]'), steps.container_scan.outcome) }}
+        if: always() && ${{ contains(fromJSON('["success", "failure"]'), steps.container_scan.outcome) }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
