@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/studiographene/github-action-workflows/compare/v1.1.0...v1.1.1) (2024-05-08)
+
+
+### Bug Fixes
+
+* **container-scan:** scan report job condition ([#7](https://github.com/studiographene/github-action-workflows/issues/7)) ([cd187bc](https://github.com/studiographene/github-action-workflows/commit/cd187bca0aa146e550ee0a1a720c1cd7f330c84a))
+
 ## [1.1.0](https://github.com/studiographene/github-action-workflows/compare/v1.0.0...v1.1.0) (2024-05-08)
 
 
