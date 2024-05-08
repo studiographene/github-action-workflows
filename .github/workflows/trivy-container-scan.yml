@@ -2,6 +2,10 @@ name: Trivy Container Scan
 on:
   workflow_call:
     inputs:
+      action_runner_container_image:
+        description: "Action runner container image. Default = public.ecr.aws/studiographene/ci:node-20-alpine"
+        type: string
+        default: public.ecr.aws/studiographene/ci:node-20-alpine
       docker_build_command:
         type: string
         default: "docker build -t local:latest ."
@@ -36,7 +40,7 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine-v1
+      image: ${{ inputs.action_runner_container_image }}
     steps:
       - name: Before Step
         if: ${{ inputs.before_step_command != '' }}
