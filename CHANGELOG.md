@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/studiographene/github-action-workflows/compare/v1.0.0...v1.1.0) (2024-05-08)
+
+
+### Features
+
+* **container-scan:** trivy-container-scan workflow addition ([#4](https://github.com/studiographene/github-action-workflows/issues/4)) ([525b3bc](https://github.com/studiographene/github-action-workflows/commit/525b3bcd1cfee954cefb2c4ca9a76ece3d27e30d))
+
 ## 1.0.0 (2024-05-07)
 
 
