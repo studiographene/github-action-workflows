@@ -56,7 +56,7 @@ jobs:
             NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
         - name: Creating Trivy report PR comment template file
-          if: ${{ setps.docker_build.outcome == "success" }}
+          if: ${{ setps.docker_build.outcome }} == "success"
           run: |
             cat <<EOF >> prcomment.tpl 
             | Package | Vulnerability | Severity | Status | Installed Version | Fixed Version | Title | \n
