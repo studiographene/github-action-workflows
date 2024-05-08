@@ -44,7 +44,7 @@ on:
   issue_comment:
 
 jobs:
-  ci:
+  call-workflow:
     uses: studiographene/github-action-workflows/.github/workflows/nodejs-ci.yml@master # if you want alternatively pin to tag version version
     with:
       package_manager: pnpm
