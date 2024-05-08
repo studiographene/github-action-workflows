@@ -73,7 +73,6 @@ jobs:
 
       - name: Trivy container vulnerability scan
         id: container_scan
-        continue-on-error: true
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ inputs.docker_build_image_id }}
@@ -88,11 +87,12 @@ jobs:
           skip-dirs: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
 
       - name: Report vulnerability findings in PR
+        if: ${{ always() && (steps.container_scan.outcome == 'failure' || steps.container_scan.outcome == 'success')  }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          echo -n '{\"body\":\"# Trivy Contianer Scan\n\"' > prcomment.json
+          echo -n "{\"body\":\"# Trivy Contianer Scan\n" > prcomment.json
           if [ ${{ steps.container_scan.outcome }} == "failure" ]
           then
             echo -n "### :warning: Vulnerabilities detected\nThe following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.\n\n" >> prcomment.json
