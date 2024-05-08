@@ -18,7 +18,7 @@ Report is pusblised on to [Pulse](https://pulse.studiographene.com)
 1. Under `./github/workflows` directory, create a file `sast-analytics.yml` with below content (change inputs as required).
 
 ```yaml
-name: StudioGraphene SAST Analytics
+name: StudioGraphene-SAST-Analytics
 
 on:
   push:
