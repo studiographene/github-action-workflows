@@ -92,7 +92,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          echo -n "{\"body\":\"# Trivy Contianer Scan\n" > prcomment.json
+          echo -n "{\"body\":\"# Trivy Container Scan\n" > prcomment.json
           if [ ${{ steps.container_scan.outcome }} == "failure" ]
           then
             echo -n "### :warning: Vulnerabilities detected\nThe following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.\n\n" >> prcomment.json
