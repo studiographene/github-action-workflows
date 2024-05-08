@@ -1,0 +1,356 @@
+name: NodeJs CI
+
+on:
+  workflow_call:
+    inputs:
+      excluded_jobs:
+        type: string
+        default: ""
+      package_manager:
+        type: string
+        default: "npm"
+      npm_token:
+        type: string
+        default: ""
+      build_command:
+        type: string
+        default: "npm run build"
+      docker_build_command:
+        type: string
+        default: "docker build -t local:latest ."
+      docker_build_image_id:
+        description: "Docker image ID as mentioned in docker_build_command"
+        type: string
+        default: "local:latest"
+      CONTAINER_SCANNERS:
+        description: "comma-separated list of what security issues to detect (vuln,secret,config). Default = vuln"
+        type: string
+        required: false
+        default: vuln
+      CONTAINER_SCAN_SKIP_DIRS:
+        description: "Comma separated list of directories to skip scanning"
+        type: string
+        required: false
+      lint_command:
+        type: string
+        default: "npm run lint"
+      allowedLicenses:
+        type: string
+        default: "allowed_licenses.txt"
+      semgrep_options:
+        type: string
+        default: ""
+      security_scan_before_step_command:
+        type: string
+        default: ""
+      security_scan_after_step_command:
+        type: string
+        default: ""
+      pr_agent_before_step_command:
+        type: string
+        default: ""
+      pr_agent_after_step_command:
+        type: string
+        default: ""
+      caching_before_step_command:
+        type: string
+        default: ""
+      caching_after_step_command:
+        type: string
+        default: ""
+      technology_based_scans_before_step_command:
+        type: string
+        default: ""
+      technology_based_scans_after_step_command:
+        type: string
+        default: ""
+      container_scan_before_step_command:
+        description: "Command to execute at the start of the container scan"
+        type: string
+        default: ""
+      container_scan_after_step_command:
+        description: "Command to execute at the end of the container scan"
+        type: string
+        default: ""
+
+jobs:
+  caching:
+    name: Cache node modules
+    runs-on: ubuntu-latest
+    permissions: write-all
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.REF }}
+      - name: before step
+        if: ${{ inputs.caching_before_step_command != '' }}
+        run: |
+          ${{ inputs.caching_before_step_command}}
+      - name: Install dependencies
+        run: |
+          ${{ inputs.package_manager }} install
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Convert lockfile version > 2 in case of npm
+        if: inputs.package_manager == 'npm'
+        run: |
+          ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cache npm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'npm'
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+      - name: Cache yarn modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'yarn'
+        with:
+          path: /usr/local/share/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'pnpm'
+        with:
+          path: /__w/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - name: Upload package-lock
+        uses: actions/upload-artifact@v2
+        if: inputs.package_manager == 'npm'
+        with:
+          name: lockFile
+          path: package-lock.json
+      - name: Upload yarn-lock
+        uses: actions/upload-artifact@v2
+        if: inputs.package_manager == 'yarn'
+        with:
+          name: lockFile
+          path: yarn.lock
+      - name: Upload pnpm-lock
+        uses: actions/upload-artifact@v2
+        if: inputs.package_manager == 'pnpm'
+        with:
+          name: lockFile
+          path: pnpm-lock.yaml
+      - name: after step
+        if: ${{ inputs.caching_after_step_command != '' }}
+        run: |
+          ${{ inputs.caching_after_step_command}}
+
+  Security-scans:
+    name: Security scans
+    runs-on: ubuntu-latest
+    permissions: write-all
+    needs: caching
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.REF }}
+
+      - name: Security scans before step
+        if: ${{ inputs.security_scan_before_step_command != '' }}
+        run: |
+          ${{ inputs.security_scan_before_step_command}}
+      - name: SAST Scan
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
+
+        id: generate_sast_report
+        run: |
+          set +e
+          semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
+          SEMGREP_EXIT_CODE=$?
+          set -e
+          if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
+            echo "## Semgrep SAST Scan Report" > sast_report.md
+            echo "### Below are the vulnerabilities found in the code. Please resolve these before merging the pull request: " >> sast_report.md
+            echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> sast_report.md
+            echo "| --- | --- | --- | --- | --- |" >> sast_report.md
+            echo 'const fs = require("fs");
+            const sarifFile = fs.readFileSync("semgrep.sarif", "utf8");
+            const sarifData = JSON.parse(sarifFile);
+            for (const run of sarifData.runs) {
+              for (const result of run.results) {
+                let ruleId = result.ruleId.replaceAll(",",";");
+                ruleId = ruleId.replaceAll("\n","");
+                let message = result.message.text.replaceAll(",", ";");
+                message = message.replaceAll("\n","");
+                const severity = result.level;
+                const location = result.locations[0].physicalLocation;
+                const lineNumber = location.region.startLine;
+                const fileName = location.artifactLocation.uri;
+                console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
+              }
+            }' > sast_report_format.js
+            node sast_report_format.js >> sast_report.md
+
+            else
+              echo "## Semgrep SAST Scan Report" > sast_report.md
+              echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
+            fi
+            exit $SEMGREP_EXIT_CODE
+
+      - uses: mshick/add-pr-comment@v2
+        if: always()
+        with:
+          message-id: sast-scan
+          message-path: sast_report.md
+
+      - name: Gitleaks scan
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }}
+        uses: gitleaks/gitleaks-action@v1.6.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download LockFile Artifact
+        if: always()
+        uses: actions/download-artifact@v2
+        with:
+          name: lockFile
+          path: .
+      - name: Generate SBOM using CycloneDX
+        if: always ()
+        run: |
+          cdxgen --no-recurse -o bom.xml -p
+        env:
+          FETCH_LICENSE: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CDXGEN_DEBUG_MODE: debug
+
+      - name: License Scan
+        env:
+          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
+          PROJECT_NAME: ${{ github.event.repository.name }}
+          PROJECT_OWNER: ${{ github.repository_owner }}
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
+        run: |
+          if [ ! -f $(pwd)/allowed_licenses.txt ]; then
+            touch $(pwd)/allowed_licenses.txt
+          fi
+          /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
+
+      - name: Dependency Scan using Google OSV
+        id: dependency_scan
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
+        run: |
+          set +e
+          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_raw_report.md 
+          OSV_EXIT_CODE=$?
+          set -e    
+          if [ $OSV_EXIT_CODE -ne 0 ]; then
+            echo "## OSV Dependency Scan Report" >> osv_report.md
+            echo "### The following vulnerabilities have been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
+            cat osv_raw_report.md >> osv_report.md
+          else
+            echo "## OSV Dependency Scan Report" >> osv_report.md
+            echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
+          fi
+
+          exit $OSV_EXIT_CODE
+
+      - name: generate_osv_report
+        if: always()
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: dependency_scan
+          message-path: osv_report.md
+      - name: Security scans after step
+        if: ${{ inputs.security_scan_after_step_command != '' }}
+        run: |
+          ${{ inputs.security_scan_after_step_command }}
+
+  Technology_based_scans:
+    name: Technology based scans
+    runs-on: ubuntu-latest
+    permissions: write-all
+    needs: caching
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine-v1.0.4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.REF }}
+      - name: Technology based scans before step
+        if: ${{ inputs.technology_based_scans_before_step_command != '' }}
+        run: |
+          ${{ inputs.technology_based_scans_before_step_command}}
+      - name: Cache npm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'npm'
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+      - name: Cache yarn modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'yarn'
+        with:
+          path: /usr/local/share/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'pnpm'
+        with:
+          path: /__w/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - name: Install dependencies
+        run: |
+          ${{ inputs.package_manager }} install
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Eslint scan
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'lint' )  }}
+        run: |
+          ${{ inputs.lint_command }}
+      - name: Build project
+        if: ${{always() && !contains( inputs.excluded_jobs, 'build' )  }}
+        run: |
+          ${{ inputs.build_command }}
+      - name: Technology based scans after step
+        if: ${{ inputs.technology_based_scans_after_step_command != '' }}
+        run: |
+          ${{ inputs.technology_based_scans_after_step_command}}
+
+  container_scan:
+    name: Container Scan
+    if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && !contains( inputs.excluded_jobs, 'container_scan' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) }}
+    uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master
+    secrets: inherit
+    with:
+      docker_build_command: ${{ inputs.docker_build_command }}
+      docker_build_image_id: ${{ inputs.docker_build_image_id }}
+      CONTAINER_SCANNERS: ${{ inputs.CONTAINER_SCANNERS }}
+      CONTAINER_SCAN_SKIP_DIRS: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
+      before_step_command: ${{ inputs.container_scan_before_step_command }}
+      after_step_command: ${{ inputs.container_scan_after_step_command}}
+
+  pr_agent:
+    name: Codium PR Agent
+    if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) }}
+    uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@master
+    secrets: inherit
+    with:
+      before_step_command: ${{ inputs.pr_agent_before_step_command }}
+      after_step_command: ${{ inputs.pr_agent_after_step_command}}

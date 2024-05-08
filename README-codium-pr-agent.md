@@ -4,18 +4,17 @@ To execute [Codium PR agent](https://www.codium.ai/products/git-plugin/)
 
 # Workflow Inputs
 
-
-|name|description|type|required|default|
-|---|---|---|---|---|
-|`before_step_command`| Command to execute at the start of the job |string| no| |
-|`after_step_command`| Command to execute at the end of the job |string| no| |
+| name                  | description                                | type   | required | default |
+| --------------------- | ------------------------------------------ | ------ | -------- | ------- |
+| `before_step_command` | Command to execute at the start of the job | string | no       |         |
+| `after_step_command`  | Command to execute at the end of the job   | string | no       |         |
 
 # Action Secrets
 
-|name|description|type|required|default|
-|---|---|---|---|---|
-|`OPENAI_KEY`| OpenAI key for Codium to use |string| yes| |
-|`GITHUB_TOKEN`| GitHub access token, this is not requrired mostly when executing from the same repo |string| no| |
+| name           | description                                                                         | type   | required | default |
+| -------------- | ----------------------------------------------------------------------------------- | ------ | -------- | ------- |
+| `OPENAI_KEY`   | OpenAI key for Codium to use                                                        | string | yes      |         |
+| `GITHUB_TOKEN` | GitHub access token, this is not requrired mostly when executing from the same repo | string | no       |         |
 
 # How to setup
 
