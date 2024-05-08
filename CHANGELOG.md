@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/studiographene/github-action-workflows/compare/v1.1.1...v1.2.0) (2024-05-08)
+
+
+### Features
+
+* **container-scan:** add report  only if it is PR ([44894dd](https://github.com/studiographene/github-action-workflows/commit/44894dd4ce64f7d52651302a3bf9e0331f1d010c))
+* nodejs ci, and Pulse analytics made reusable workflow ([#10](https://github.com/studiographene/github-action-workflows/issues/10)) ([95c43c6](https://github.com/studiographene/github-action-workflows/commit/95c43c66c80105666a12c2ad36d6de4dc2621a42))
+
 ## [1.1.1](https://github.com/studiographene/github-action-workflows/compare/v1.1.0...v1.1.1) (2024-05-08)
 
 
