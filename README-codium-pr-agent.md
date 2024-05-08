@@ -7,8 +7,8 @@ To execute [Codium PR agent](https://www.codium.ai/products/git-plugin/)
 
 |name|description|type|required|default|
 |---|---|---|---|---|
-|`pr_agent_before_step_command`| Command to execute before the Codium PR agent is executed |string| no| |
-|`pr_agent_after_step_command`| Command to execute after the Codium PR agent is executed |string| no| |
+|`before_step_command`| Command to execute at the start of the job |string| no| |
+|`after_step_command`| Command to execute at the end of the job |string| no| |
 
 # Action Secrets
 
@@ -32,7 +32,7 @@ on:
 
   pr_agent:
     if: ${{ github.event.sender.type != 'Bot' }}
-    uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@master # if you want pin to tag version
+    uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@master # if you want alternatively pin to tag version version
     secrets: inherit
 ```
 
@@ -47,6 +47,6 @@ on:
 jobs:
   codium:
     if: ${{ github.event.sender.type != 'Bot' }}
-    uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@master # if you want pin to tag version
+    uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@master # if you want alternatively pin to tag version version
     secrets: inherit
 ```
