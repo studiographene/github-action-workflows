@@ -1,0 +1,130 @@
+name: Pulse Dependencies Analytics
+
+on:
+  workflow_call:
+    inputs:
+      PULSE_URL:
+        type: string
+        default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com"
+      before_step_command:
+        type: string
+        default: ""
+      after_step_command:
+        type: string
+        default: ""
+
+jobs:
+  read_dependencies:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "20"
+
+      - name: Install jq and curl
+        run: sudo apt-get install -y jq curl
+
+      - name: before step
+        if: ${{ inputs.before_step_command != '' }}
+        run: |
+          ${{ inputs.before_step_command}}
+
+      - name: Read dependencies
+        run: |
+          #!/bin/bash
+
+          all_deps='{}'
+          engines_total='{}'
+          internal_packages='[]'
+
+          while read -r file; do
+              name=$(jq -r '.name' "$file")
+              deps=$(jq '.dependencies + .devDependencies' "$file")
+              engines=$(jq '.engines' "$file")
+
+              if [ "$deps" != "null" ]; then
+                  all_deps=$(jq -s add <(echo "$all_deps") <(echo "$deps"))
+              fi
+              if [ "$engines" != "null" ]; then
+                  engines_total=$(jq -s add <(echo "$engines_total") <(echo "$engines"))
+              fi
+
+              internal_packages=$(jq --arg name "$name" '. + [$name]' <<< "$internal_packages")
+          done < <(find . -name 'package.json')
+
+          # Extract the names of the dependencies
+          dep_names=$(echo "$all_deps" | jq -r 'keys[]')
+
+          # Initialize an empty JSON object
+          dep_info='{}'
+          dependencies_array='[]'
+          core_dependencies_array='[]'
+
+          # Get the version, repository URL, owner, and repo name for each dependency
+          for dep in $dep_names; do
+          version=$(echo "$all_deps" | jq -r ".[\"$dep\"]" | sed 's/^~\|^>=\|^<=\|^>\|^<\|^=\|^*//')
+          repo_url=""
+
+          set -e
+
+          if npm view "$dep" repository.url --json 2>/dev/null | grep -q "http"; then
+          repo_url=$(npm view "$dep" repository.url --json 2>/dev/null) || {
+            echo "Failed to get repository URL for $dep"
+          }
+          fi
+
+          if [[ $repo_url == http* || $repo_url == git+http* ]]; then
+          repo_url=${repo_url#*://github.com/}
+          repo_url=${repo_url%.git}
+          IFS='/' read -r owner repo_name <<< "$repo_url"
+          else
+            owner=null
+            repo_name=null
+          fi
+          # Skip dependencies that start with "workspace:"
+          if [[ "$version" == workspace:* ]]; then
+            continue
+          fi
+
+          # Remove the "^" character from the version string and remove any spaces
+          version=$(echo "$version" | sed 's/\^//; s/ //g')
+          if [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+          dependencies_array=$(echo "$dependencies_array" | jq ". += [{\"dependencyName\": \"$dep\", \"currentVersion\": \"$version\"}]")
+          else
+            echo "Invalid version format for dependency $dep: $version"
+            # Your code when the version does not match the regex
+            continue  # Skip to the next iteration of the loop
+          fi
+          done
+
+          # Convert the engines_total object into an array of objects with dependencyName and currentVersion fields
+          core_dep_names=$(echo "$engines_total" | jq -r 'keys[]')
+
+          for core_dep in $core_dep_names; do
+          # Remove the ">=" characters from core_version
+          core_version=$(echo "$engines_total" | jq -r ".[\"$core_dep\"]" | sed 's/^~\|^>=\|^<=\|^>\|^<\|^=\|^*\|\^//')
+          core_dependencies_array=$(echo "$core_dependencies_array" | jq ". += [{\"dependencyName\": \"$core_dep\", \"currentVersion\": \"$core_version\"}]")
+          done
+
+          # Remove objects from dependencies_array that have the same name as internal_packages array values
+          dependencies_array=$(jq --argjson internal_packages "$internal_packages" 'map(select(.dependencyName | IN($internal_packages[]) | not))' <<< "$dependencies_array")
+
+
+          nested_info="{\"coreDependencies\": $core_dependencies_array, \"repositoryInfo\": {\"repoName\": \"${{ github.repository }}\", \"repoId\": \"${{ github.repository_id }}\", \"repoOwner\": \"${{ github.repository_owner }}\"}, \"dependencies\": $dependencies_array}"
+          echo "Dependencies information:"
+          echo "$nested_info"
+
+          # Make a POST request with all the JSON object information as the body
+          curl -X POST -H "Content-Type: application/json" -d "$nested_info" "${{ inputs.PULSE_URL }}/github/repo-libraries"
+
+      - name: after step
+        if: ${{ inputs.after_step_command != '' }}
+        run: |
+          ${{ inputs.after_step_command}}

@@ -1,4 +1,5 @@
-name: studiographene-ci
+name: NodeJs CI
+
 on:
   workflow_call:
     inputs:

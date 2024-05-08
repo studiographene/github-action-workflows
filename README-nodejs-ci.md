@@ -1,6 +1,6 @@
 # Purpose
 
-CI scans workflows for NodeJS based projects.
+CI scans workflow for NodeJS based projects.
 
 # Workflow Inputs
 
