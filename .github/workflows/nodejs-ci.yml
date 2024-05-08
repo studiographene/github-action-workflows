@@ -1,4 +1,4 @@
-name: NodeJs CI
+name: Studiographene NodeJs CI
 
 on:
   workflow_call:
