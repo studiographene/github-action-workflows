@@ -19,13 +19,13 @@ on:
         type: string
         required: false
       before_step_command:
-        description: "Command to execute at the start of the job" 
+        description: "Command to execute at the start of the job"
         type: string
         default: ""
       after_step_command:
-        description: "Command to execute at the end of the job" 
+        description: "Command to execute at the end of the job"
         type: string
-        default: ""        
+        default: ""
 
 permissions:
   issues: write
@@ -34,77 +34,77 @@ permissions:
 
 jobs:
   scan:
-      runs-on: ubuntu-latest
-      container:
-        image: public.ecr.aws/studiographene/ci:node-20-alpine-v1
-      steps:
-        - name: Before Step
-          if: ${{ inputs.before_step_command != '' }}
-          run: |
-            ${{ inputs.before_step_command}}
+    runs-on: ubuntu-latest
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine-v1
+    steps:
+      - name: Before Step
+        if: ${{ inputs.before_step_command != '' }}
+        run: |
+          ${{ inputs.before_step_command}}
 
-        - name: Checkout
-          uses: actions/checkout@v4
-          with:
-            ref: ${{ github.REF }}
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.REF }}
 
-        - name: Docker Build
-          id: docker_build
-          run: |
-            ${{ inputs.docker_build_command }}
-          env:
-            NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Docker Build
+        id: docker_build
+        run: |
+          ${{ inputs.docker_build_command }}
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Creating Trivy report PR comment template file
-          if: ${{ setps.docker_build.outcome }} == "success"
-          run: |
-            cat <<EOF >> prcomment.tpl 
-            | Package | Vulnerability | Severity | Status | Installed Version | Fixed Version | Title | \n
-            | ------- | ------------- | -------- | ------ | ----------------- | ------------- | ----- |
-            {{- range .}}
-            {{- range .Vulnerabilities}}
-            \n | {{ .PkgName | html }} | {{ .VulnerabilityID | html }} | {{ .Severity | html }} | {{ .Status | html }} | {{ .InstalledVersion | html }} | {{ .FixedVersion | html }} | {{ .Title | html }} |
-            {{ end }}
-            {{- end }}
-            EOF
+      - name: Creating Trivy report PR comment template file
+        if: ${{ steps.docker_build.outcome }} == "success"
+        run: |
+          cat <<EOF >> prcomment.tpl 
+          | Package | Vulnerability | Severity | Status | Installed Version | Fixed Version | Title | \n
+          | ------- | ------------- | -------- | ------ | ----------------- | ------------- | ----- |
+          {{- range .}}
+          {{- range .Vulnerabilities}}
+          \n | {{ .PkgName | html }} | {{ .VulnerabilityID | html }} | {{ .Severity | html }} | {{ .Status | html }} | {{ .InstalledVersion | html }} | {{ .FixedVersion | html }} | {{ .Title | html }} |
+          {{ end }}
+          {{- end }}
+          EOF
 
-        - name: Trivy container vulnerability scan
-          id: container_scan
-          uses: aquasecurity/trivy-action@master
-          with:
-            image-ref: ${{ inputs.docker_build_image_id }}
-            format: "template"
-            template: "@prcomment.tpl"
-            output: "trivyreport.json"
-            exit-code: "1"
-            ignore-unfixed: true
-            vuln-type: "os,library"
-            severity: "CRITICAL,HIGH"
-            scanners: ${{ inputs.CONTAINER_SCANNERS }}
-            skip-dirs: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
+      - name: Trivy container vulnerability scan
+        id: container_scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ inputs.docker_build_image_id }}
+          format: "template"
+          template: "@prcomment.tpl"
+          output: "trivyreport.json"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+          scanners: ${{ inputs.CONTAINER_SCANNERS }}
+          skip-dirs: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
 
-        - name: Report vulnerability findings in PR
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          shell: bash
-          run: |
-            echo -n "{\"body\":\"# Trivy Contianer Scan\n\" > prcomment.json
-            if [ ${{ steps.container_scan.outcome }} == "failure" ]
-            then
-              echo -n "### :warning: Vulnerabilities detected\nThe following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.\n\n" >> prcomment.json
-              cat trivyreport.json >> prcomment.json
-            elif [ ${{ steps.container_scan.outcome }} == "success" ]
-            then
-              echo -n "### :rainbow: No vulnerabilities of HIGH or CRITICAL severity has been detected\"}" >> prcomment.json
-            fi
-            echo "\"}" >> prcomment.json
-            curl -X POST -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-              ${{ github.event.pull_request.comments_url }} \
-              -d @prcomment.json
+      - name: Report vulnerability findings in PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          echo -n "{\"body\":\"# Trivy Contianer Scan\n\" > prcomment.json
+          if [ ${{ steps.container_scan.outcome }} == "failure" ]
+          then
+            echo -n "### :warning: Vulnerabilities detected\nThe following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.\n\n" >> prcomment.json
+            cat trivyreport.json >> prcomment.json
+          elif [ ${{ steps.container_scan.outcome }} == "success" ]
+          then
+            echo -n "### :rainbow: No vulnerabilities of HIGH or CRITICAL severity has been detected\"}" >> prcomment.json
+          fi
+          echo "\"}" >> prcomment.json
+          curl -X POST -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            ${{ github.event.pull_request.comments_url }} \
+            -d @prcomment.json
 
-        - name: After Step
-          if: ${{ inputs.after_step_command != '' }}
-          run: |
-              ${{ inputs.after_step_command}} 
+      - name: After Step
+        if: ${{ inputs.after_step_command != '' }}
+        run: |
+          ${{ inputs.after_step_command}}
