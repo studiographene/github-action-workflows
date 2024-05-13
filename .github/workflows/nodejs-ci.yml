@@ -166,44 +166,40 @@ jobs:
         if: ${{ inputs.security_scan_before_step_command != '' }}
         run: |
           ${{ inputs.security_scan_before_step_command}}
-      - name: SAST Scan
+      - name: Semgrep SAST Scan
         if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
 
         id: generate_sast_report
         run: |
           set +e
-          semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
-          SEMGREP_EXIT_CODE=$?
-          set -e
-          if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
-            echo "## Semgrep SAST Scan Report" > sast_report.md
-            echo "### Below are the vulnerabilities found in the code. Please resolve these before merging the pull request: " >> sast_report.md
-            echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> sast_report.md
-            echo "| --- | --- | --- | --- | --- |" >> sast_report.md
-            echo 'const fs = require("fs");
-            const sarifFile = fs.readFileSync("semgrep.sarif", "utf8");
-            const sarifData = JSON.parse(sarifFile);
-            for (const run of sarifData.runs) {
-              for (const result of run.results) {
-                let ruleId = result.ruleId.replaceAll(",",";");
+            cp /root/configs/semgrep/rules/eslint.v1.3.32.yml eslint.v1.3.32.yml
+            semgrep scan --error --config  "p/default" --config eslint.v1.3.32.yml --json ${{ inputs.semgrep_options }} > semgrep.json
+            SEMGREP_EXIT_CODE=$?
+            set -e
+            if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
+              echo "## Semgrep SAST Scan Report" > sast_report.md
+              echo "### Below are the vulnerabilities found in the code. Please resolve these before merging the pull request: " >> sast_report.md
+              echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> sast_report.md
+              echo "| --- | --- | --- | --- | --- |" >> sast_report.md
+              echo 'const fs = require("fs");
+              const semgrepFile = fs.readFileSync("semgrep.json", "utf8");
+              const semgrepData = JSON.parse(semgrepFile);
+              for (const result of semgrepData.results) {
+                let ruleId = result.check_id.replaceAll(",",";");
                 ruleId = ruleId.replaceAll("\n","");
-                let message = result.message.text.replaceAll(",", ";");
+                let message = result.extra.message.replaceAll(",", ";");
                 message = message.replaceAll("\n","");
-                const severity = result.level;
-                const location = result.locations[0].physicalLocation;
-                const lineNumber = location.region.startLine;
-                const fileName = location.artifactLocation.uri;
+                const severity = result.extra.severity;
+                const lineNumber = result.start.line;
+                const fileName = result.path;
                 console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
-              }
-            }' > sast_report_format.js
-            node sast_report_format.js >> sast_report.md
-
+              }' > sast_report_format.js
+              node sast_report_format.js >> sast_report.md
             else
               echo "## Semgrep SAST Scan Report" > sast_report.md
               echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
             fi
             exit $SEMGREP_EXIT_CODE
-
       - uses: mshick/add-pr-comment@v2
         if: always()
         with:
@@ -248,6 +244,9 @@ jobs:
         id: dependency_scan
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
         run: |
+          cat >> /root/configs/osv/config.toml <<EOF
+              ${{ vars.OSV_SUPPRESSION_ID }}
+          EOF
           set +e
           osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_raw_report.md 
           OSV_EXIT_CODE=$?
@@ -260,7 +259,6 @@ jobs:
             echo "## OSV Dependency Scan Report" >> osv_report.md
             echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
           fi
-
           exit $OSV_EXIT_CODE
 
       - name: generate_osv_report
