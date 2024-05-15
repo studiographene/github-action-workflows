@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/studiographene/github-action-workflows/compare/v1.3.0...v1.4.0) (2024-05-15)
+
+
+### Features
+
+* **release-please:** deprecated workflow updated to googleapis ([#13](https://github.com/studiographene/github-action-workflows/issues/13)) ([f8bec34](https://github.com/studiographene/github-action-workflows/commit/f8bec34a53ba5b109b61eca53e91b47ddab8e5de))
+
 ## [1.3.0](https://github.com/studiographene/github-action-workflows/compare/v1.2.0...v1.3.0) (2024-05-08)
 
 
