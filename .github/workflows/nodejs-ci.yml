@@ -245,8 +245,9 @@ jobs:
         id: dependency_scan
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
         run: |
-          set +e
           echo suppression_id = ${{ vars.OSV_SUPPRESSION_ID }} >> /root/configs/osv/config.toml
+          cat /root/configs/osv/config.toml
+          set +e
           osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_raw_report.md 
           OSV_EXIT_CODE=$?
           set -e    
