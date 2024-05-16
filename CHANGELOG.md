@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/studiographene/github-action-workflows/compare/v1.4.0...v1.5.0) (2024-05-16)
+
+
+### Features
+
+* added osv scan suppression config and json report support for semgrep and osv scans ([#15](https://github.com/studiographene/github-action-workflows/issues/15)) ([f913912](https://github.com/studiographene/github-action-workflows/commit/f913912c3fc15d72f4007d08532d37c4270b6b25))
+
 ## [1.4.0](https://github.com/studiographene/github-action-workflows/compare/v1.3.0...v1.4.0) (2024-05-15)
 
 
