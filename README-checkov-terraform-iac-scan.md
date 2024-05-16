@@ -18,8 +18,8 @@ Terraform scan using [CheckOV](https://github.com/marketplace/actions/checkov-gi
 
 |name|description|type|required| default|
 |---|--|--|--|--|
-| `IAC_SCAN_SKIP_CHECK` | comma separated list of check IDs to skip scan | string | no |   |
-| `IAC_SCAN_SKIP_CVE_PACKAGE` | comma separated list of CVE package IDs to skip scan | string | no  |   |
+| `IAC_SCAN_SKIP_CHECKS` | comma separated list of check IDs to skip scan | string | no |   |
+| `IAC_SCAN_SKIP_CVE_PACKAGES` | comma separated list of CVE package IDs to skip scan | string | no  |   |
 
 # How to setup
 

@@ -48,8 +48,8 @@ jobs:
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: ${{ matrix.directory }}
-          skip_check: ${{ vars.IAC_SCAN_SKIP_CHECK }}
-          skip_cve_package: ${{ vars.IAC_SCAN_SKIP_CVE_PACKAGE }}
+          skip_check: ${{ vars.IAC_SCAN_SKIP_CHECKS }}
+          skip_cve_package: ${{ vars.IAC_SCAN_SKIP_CVE_PACKAGES }}
           quiet: ${{ inputs.quiet }}
           download_external_modules: ${{ inputs.download_external_modules }}
           var_file: ${{ inputs.var_file }}
