@@ -82,9 +82,17 @@ jobs:
         uses: gitleaks/gitleaks-action@v1.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+      - name: Check for composer.lock or composer.json
+        id: check_files
+        run: |
+          if [ -f composer.lock ] || [ -f composer.json ]; then
+            echo "Files exist"
+            echo "SKIP_STEP=true" >> $GITHUB_OUTPUT
+          else
+            echo "Files do not exist"
+            echo "SKIP_STEP=false" >> $GITHUB_OUTPUT
       - name: Download LockFile Artifact
-        if: always()
+        if: always() && steps.check_files.outputs.SKIP_STEP != 'true'
         uses: actions/download-artifact@v2
         with:
           name: lockFile

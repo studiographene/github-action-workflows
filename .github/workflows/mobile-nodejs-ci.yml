@@ -55,7 +55,7 @@ on:
         default: ""
 
 jobs:
-  caching:
+  caching-and-lint:
     name: Cache node modules & Lint check
     runs-on: ubuntu-latest
     permissions: write-all
@@ -133,9 +133,9 @@ jobs:
         run: |
           ${{ inputs.caching_after_step_command}}
 
-  Security-and-lint-scans:
+  Security-scans:
     name: Security scans
-    needs: caching
+    needs: caching-and-lint
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     uses: studiographene/github-action-workflows/.github/workflows/Security-scans.yml@feature/moblie-scans
     secrets: inherit
