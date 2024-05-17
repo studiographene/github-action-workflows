@@ -56,6 +56,8 @@ Jobs & its steps:
 
 - Codium PR Agent
 - Container Scan
+ - Docker Build Check
+ - Trivy Container Scans
 - Security scans
   - SAST Scan
   - Gitleaks scan
