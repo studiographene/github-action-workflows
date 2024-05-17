@@ -72,7 +72,7 @@ jobs:
             fi
             exit $SEMGREP_EXIT_CODE
       - uses: mshick/add-pr-comment@v2
-        if: always()
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
         with:
           message-id: sast-scan
           message-path: sast_report.md
@@ -83,6 +83,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Check for composer.lock or composer.json
+        if: ${{ always() && !(contains(fromJSON('["licenseScan", "dependency_scan"]'), excluded_jobs)) }}
         id: check_files
         run: |
           if [ -f composer.lock ] || [ -f composer.json ]; then
