@@ -71,118 +71,13 @@ jobs:
       after_step_command: ${{ inputs.container_scan_after_step_command}}
 
   Security-scans:
-    runs-on: ubuntu-latest
-    permissions: write-all
+    name: Security scans
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
-    container:
-      image: public.ecr.aws/studiographene/ci:php-8.3-alpine
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.REF }}
-
-      - name: Security scans before step
-        if: ${{ inputs.security_scan_before_step_command != '' }}
-        run: |
-          ${{ inputs.security_scan_before_step_command}}
-      - name: SAST Scan
-        if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
-        id: generate_sast_report
-        run: |
-            set +e
-            cp /root/configs/semgrep/rules/eslint.v1.3.32.yml eslint.v1.3.32.yml
-            semgrep scan --error --config  "p/default" --config eslint.v1.3.32.yml --json ${{ inputs.semgrep_options }} > semgrep.json
-            SEMGREP_EXIT_CODE=$?
-            set -e
-            if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
-              echo "## Semgrep SAST Scan Report" > sast_report.md
-              echo "### Below are the vulnerabilities found in the code. Please resolve these before merging the pull request: " >> sast_report.md
-              echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> sast_report.md
-              echo "| --- | --- | --- | --- | --- |" >> sast_report.md
-              echo 'const fs = require("fs");
-              const semgrepFile = fs.readFileSync("semgrep.json", "utf8");
-              const semgrepData = JSON.parse(semgrepFile);
-              for (const result of semgrepData.results) {
-                let ruleId = result.check_id.replaceAll(",",";");
-                ruleId = ruleId.replaceAll("\n","");
-                let message = result.extra.message.replaceAll(",", ";");
-                message = message.replaceAll("\n","");
-                const severity = result.extra.severity;
-                const lineNumber = result.start.line;
-                const fileName = result.path;
-                console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
-              }' > sast_report_format.js
-              node sast_report_format.js >> sast_report.md
-            else
-              echo "## Semgrep SAST Scan Report" > sast_report.md
-              echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
-            fi
-            exit $SEMGREP_EXIT_CODE
-
-      - uses: mshick/add-pr-comment@v2
-        if: always()
-        with:
-          message-id: sast-scan
-          message-path: sast_report.md
-
-      - name: Gitleaks scan
-        if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }}
-        uses: gitleaks/gitleaks-action@v1.6.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate SBOM using CycloneDX
-        if: always ()
-        run: |
-          cdxgen --no-recurse -o bom.xml -p
-        env:
-          FETCH_LICENSE: true
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CDXGEN_DEBUG_MODE: debug
-
-      - name: License Scan
-        env:
-          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.number }}
-          PROJECT_NAME: ${{ github.event.repository.name }}
-          PROJECT_OWNER: ${{ github.repository_owner }}
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
-        run: |
-          if [ ! -f $(pwd)/allowed_licenses.txt ]; then
-            touch $(pwd)/allowed_licenses.txt
-          fi
-          /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
-
-      - name: Dependency Scan using Google OSV
-        id: dependency_scan
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
-        run: |
-          cat >> /root/configs/osv/config.toml <<EOF
-              ${{ vars.OSV_SUPPRESSIONS }}
-          EOF
-          set +e
-          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_raw_report.md 
-          OSV_EXIT_CODE=$?
-          set -e    
-          if [ $OSV_EXIT_CODE -ne 0 ]; then
-            echo "## OSV Dependency Scan Report" >> osv_report.md
-            echo "### The following vulnerabilities have been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
-            cat osv_raw_report.md >> osv_report.md
-          else
-            echo "## OSV Dependency Scan Report" >> osv_report.md
-            echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
-          fi
-          exit $OSV_EXIT_CODE
-
-      - name: Post OSV Dependency scan report on PR
-        if: always()
-        uses: mshick/add-pr-comment@v2
-        with:
-          message-id: dependency_scan
-          message-path: osv_report.md
-
-      - name: Security scans after step
-        if: ${{ inputs.security_scan_after_step_command != '' }}
-        run: |
-          ${{ inputs.security_scan_after_step_command }}
+    uses: studiographene/github-action-workflows/.github/workflows/Security-scans.yml@master
+    secrets: inherit
+    with:
+      security_scan_before_step_command: ${{ inputs.security_scan_before_step_command }}
+      security_scan_after_step_command: ${{ inputs.security_scan_after_step_command }}
+      excluded_jobs: ${{ inputs.excluded_jobs }}
+      semgrep_options: ${{ inputs.semgrep_options }}
+      allowedLicenses: ${{ inputs.allowedLicenses }}
