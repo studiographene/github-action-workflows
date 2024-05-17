@@ -92,6 +92,7 @@ jobs:
           else
             echo "Files do not exist"
             echo "SKIP_STEP=false" >> $GITHUB_OUTPUT
+          fi  
       - name: Download LockFile Artifact
         if: always() && steps.check_files.outputs.SKIP_STEP != 'true'
         uses: actions/download-artifact@v2
