@@ -83,7 +83,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Check for composer.lock or composer.json
-        if: ${{ always() && !(contains(fromJSON('["licenseScan", "dependency_scan"]'), excluded_jobs)) }}
+        if: ${{ always() && !(contains(fromJSON('["licenseScan", "dependency_scan"]'), inputs.excluded_jobs)) }}
         id: check_files
         run: |
           if [ -f composer.lock ] || [ -f composer.json ]; then
