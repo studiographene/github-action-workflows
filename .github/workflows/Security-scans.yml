@@ -88,13 +88,13 @@ jobs:
         run: |
           if [ -f composer.lock ] || [ -f composer.json ]; then
             echo "Files exist"
-            echo "SKIP_STEP=true" >> $GITHUB_OUTPUT
+            echo "SKIP_DOWNLOAD_LOCKFILE=true" >> $GITHUB_OUTPUT
           else
             echo "Files do not exist"
-            echo "SKIP_STEP=false" >> $GITHUB_OUTPUT
+            echo "SKIP_DOWNLOAD_LOCKFILE=false" >> $GITHUB_OUTPUT
           fi  
       - name: Download LockFile Artifact
-        if: always() && steps.check_files.outputs.SKIP_STEP != 'true'
+        if: always() && steps.check_files.outputs.SKIP_DOWNLOAD_LOCKFILE != 'true'
         uses: actions/download-artifact@v2
         with:
           name: lockFile
