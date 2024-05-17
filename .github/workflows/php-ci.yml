@@ -73,7 +73,7 @@ jobs:
   Security-scans:
     name: Security scans
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
-    uses: studiographene/github-action-workflows/.github/workflows/Security-scans.yml@feature/moblie-scans
+    uses: studiographene/github-action-workflows/.github/workflows/Security-scans.yml@master
     secrets: inherit
     with:
       security_scan_before_step_command: ${{ inputs.security_scan_before_step_command }}
