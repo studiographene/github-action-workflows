@@ -148,8 +148,8 @@ jobs:
         run: |
           ${{ inputs.caching_after_step_command}}
 
-  Security-scans:
-      name: Security scans
+  security-scans:
+      name: security scans
       needs: caching
       if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
       uses: studiographene/github-action-workflows/.github/workflows/security-scans.yml@master
