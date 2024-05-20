@@ -14,12 +14,13 @@ Terraform scan using [CheckOV](https://github.com/marketplace/actions/checkov-gi
 | `var_file | variable files to load in addition to the default `terraform.tfvars` | string | no |   |
 
 # Action variables
-> Set them in Repository variable 
 
-|name|description|type|required| default|
-|---|--|--|--|--|
-| `IAC_SCAN_SKIP_CHECKS` | comma separated list of check IDs to skip scan | string | no |   |
-| `IAC_SCAN_SKIP_CVE_PACKAGES` | comma separated list of CVE package IDs to skip scan | string | no  |   |
+> Repository Action Variables to be defined in GitHub UI
+
+|name|description|type|required|
+|---|--|--|--|
+| `IAC_SCAN_SKIP_CHECKS` | comma separated list of check IDs to skip scan | string | no |
+| `IAC_SCAN_SKIP_CVE_PACKAGES` | comma separated list of CVE package IDs to skip scan | string | no  |
 
 # How to setup
 

@@ -6,13 +6,14 @@ Security scans workflow for NodeJS, PHP and Mobile applicatons code.
 | name                                 | description                                                                                   | type   | required | default            |
 |--------------------------------------|-----------------------------------------------------------------------------------------------|--------|----------|--------------------|
 | excluded_jobs                        | Comma-separated list of jobs to be excluded from execution                                     | string | no       |                    |
-| allowedLicenses                      | A file containing allowed licenses name in License scan finding                                | string | no       | allowed_licenses.txt |
 | semgrep_options                      | SEMGREP command options                                                                                              | string | no       |                    |
 | security_scan_before_step_command    | Optional commands to pass before security scan job steps execution                              | string | no       |                    |
 | security_scan_after_step_command     | Optional commands to pass after security scan job steps execution                               | string | no       |                    |
 
 
 # Action variables
+
+> Repository Action Variables to be defined in GitHub UI
 
 | name | description | type | example | required | default |
 | --- | --- | --- | --- | --- | --- |

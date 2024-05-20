@@ -24,7 +24,7 @@ on:
         required: false
       allowedLicenses:
         type: string
-        default: "allowed_licenses.txt"
+        deprecationMessage: "`allowedLicenses` input is deprecated, and not used anymore. You can set allowed licenses using `ALLOWED_LICENSES` in GitHub action variables in UI."
       semgrep_options:
         type: string
         default: ""
@@ -80,4 +80,3 @@ jobs:
       security_scan_after_step_command: ${{ inputs.security_scan_after_step_command }}
       excluded_jobs: ${{ inputs.excluded_jobs }}
       semgrep_options: ${{ inputs.semgrep_options }}
-      allowedLicenses: ${{ inputs.allowedLicenses }}

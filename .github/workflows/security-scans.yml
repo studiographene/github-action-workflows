@@ -6,9 +6,6 @@ on:
       excluded_jobs:
         type: string
         default: ""
-      allowedLicenses:
-        type: string
-        default: "allowed_licenses.txt"
       semgrep_options:
         type: string
         default: ""
@@ -116,10 +113,10 @@ jobs:
           PROJECT_OWNER: ${{ github.repository_owner }}
         if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
         run: |
-          if [ ! -f $(pwd)/allowed_licenses.txt ]; then
-            touch $(pwd)/allowed_licenses.txt
-          fi
-          /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
+          echo Apache-2.0\\nMIT\\nBSD-2-Clause\\nBSD-3-Clause\\nISC\\nNo-Licence\\nCC-BY-4.0\\nCC0-1.0 >> allowedLicenses.txt
+          echo 0BSD\\nUnlicense\\nLGPL-2.1LGPL-2.1-or-later\\nGPL-2.0-only\\nGPL-3.0-only\\nLGPL-3.0 >> allowedLicenses.txt
+          [[ -n ${{ vars.ALLOWED_LICENSES }} ]] && echo ${{ vars.ALLOWED_LICENSES }} > allowedLicenses.txt
+          /root/executables/ci-utility check --sbom bom.xml --allowedLicences allowedLicenses.txt
 
       - name: Dependency Scan using Google OSV
         id: dependency_scan
