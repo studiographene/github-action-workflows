@@ -67,5 +67,6 @@ jobs:
   - Gitleaks scan
   - License Scan
   - Dependency Scan using Google OSV
+- Technology based scans
   - Eslint scan
 - Codium PR Agent
