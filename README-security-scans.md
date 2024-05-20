@@ -1,14 +1,14 @@
 # Purpose
 
-Security scans workflow for NodeJS, PHP and Mobile applicatons code.
+Security scans workflow for CI checks for codes such as NodeJS, NodeJs Mobile, PhP, etc.,.
 
 # Workflow Inputs
 | name                                 | description                                                                                   | type   | required | default            |
 |--------------------------------------|-----------------------------------------------------------------------------------------------|--------|----------|--------------------|
-| excluded_jobs                        | Comma-separated list of jobs to be excluded from execution                                     | string | no       |                    |
-| semgrep_options                      | SEMGREP command options                                                                                              | string | no       |                    |
-| security_scan_before_step_command    | Optional commands to pass before security scan job steps execution                              | string | no       |                    |
-| security_scan_after_step_command     | Optional commands to pass after security scan job steps execution                               | string | no       |                    |
+| excluded_jobs                        | Comma-separated list of jobs to be excluded from execution                                    | string | no       |                    |
+| semgrep_options                      | SEMGREP command options                                                                       | string | no       |                    |
+| security_scan_before_step_command    | Optional commands to pass before security scan job steps execution                            | string | no       |                    |
+| security_scan_after_step_command     | Optional commands to pass after security scan job steps execution                             | string | no       |                    |
 
 
 # Action variables
