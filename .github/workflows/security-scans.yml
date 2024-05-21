@@ -61,8 +61,8 @@ jobs:
                 const lineNumber = result.start.line;
                 const fileName = result.path;
                 console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
-              }' > sast_report_format.js
-              node sast_report_format.js >> sast_report.md
+              }' > sast_report_format.cjs
+              node sast_report_format.cjs >> sast_report.md
             else
               echo "## Semgrep SAST Scan Report" > sast_report.md
               echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
