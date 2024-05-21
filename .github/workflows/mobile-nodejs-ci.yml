@@ -15,9 +15,6 @@ on:
       lint_command:
         type: string
         default: "npm run lint"
-      allowedLicenses:
-        type: string
-        default: "allowed_licenses.txt"
       semgrep_options:
         type: string
         default: ""
@@ -138,9 +135,6 @@ jobs:
       security_scan_after_step_command: ${{ inputs.security_scan_after_step_command }}
       excluded_jobs: ${{ inputs.excluded_jobs }}
       semgrep_options: ${{ inputs.semgrep_options }}
-      allowedLicenses: ${{ inputs.allowedLicenses }}
-    
-
 
   pr_agent:
     name: Codium PR Agent
