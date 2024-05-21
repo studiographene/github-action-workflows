@@ -14,7 +14,8 @@ on:
         default: ""
       security_scan_after_step_command:
         type: string
-        default: ""               
+        default: "" 
+                      
 
 jobs:
    security-scans:

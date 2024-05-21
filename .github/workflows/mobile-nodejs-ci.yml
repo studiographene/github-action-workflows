@@ -46,7 +46,7 @@ on:
         default: ""
 
 jobs:
-  technology based scans:
+  technology-based-scans:
     name: Cache node modules & Lint check
     runs-on: ubuntu-latest
     permissions: write-all
@@ -126,7 +126,7 @@ jobs:
 
   security-scans:
     name: security scans
-    needs: caching-and-lint
+    needs: technology-based-scans
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     uses: studiographene/github-action-workflows/.github/workflows/security-scans.yml@master
     secrets: inherit

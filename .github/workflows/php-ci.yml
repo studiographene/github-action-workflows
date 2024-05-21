@@ -24,7 +24,8 @@ on:
         required: false
       allowedLicenses:
         type: string
-        deprecationMessage: "`allowedLicenses` input is deprecated, and not used anymore. You can set allowed licenses using `ALLOWED_LICENSES` in GitHub action variables in UI."
+        required: false
+        description: "`allowedLicenses` input is deprecated, and not used anymore. You can set allowed licenses using `ALLOWED_LICENSES` in GitHub action variables in UI."
       semgrep_options:
         type: string
         default: ""
