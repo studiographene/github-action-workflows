@@ -36,7 +36,6 @@ CI scans workflow for NodeJS code.
     Ref to [OSV_SUPPRESSIONS](#action_variable_OSV_SUPPRESSIONS) variable in above `Action variables`
 - **License Scan**
     Ref to [ALLOWED_LICENSES](#action_variable_ALLOWED_LICENSES) variable in above `Action variables` 
-     
 
 ## How To setup:
 

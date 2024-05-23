@@ -112,10 +112,28 @@ jobs:
           PR_NUMBER: ${{ github.event.number }}
           PROJECT_NAME: ${{ github.event.repository.name }}
           PROJECT_OWNER: ${{ github.repository_owner }}
+          DEFAULT_ALLOWED_LICENSES: |
+            Apache-2.0
+            MIT
+            BSD-2-Clause
+            BSD-3-Clause
+            ISC
+            0BSD
+            CC-BY-4.0
+            BlueOak-1.0.0
+            No-Licence
+            Unlicense
+            Python-2.0
+            CC-BY-3.0
+            CC0-1.0
+            MPL-2.0
+            CC-BY-4.0
+            Unicode-DFS-2016
         if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
         run: |
-          echo Apache-2.0\\nMIT\\nBSD-2-Clause\\nBSD-3-Clause\\nISC\\nNo-Licence\\nCC-BY-4.0\\nCC0-1.0 >> allowedLicenses.txt
-          echo 0BSD\\nUnlicense\\nLGPL-2.1LGPL-2.1-or-later\\nGPL-2.0-only\\nGPL-3.0-only\\nLGPL-3.0 >> allowedLicenses.txt
+          cat > allowedLicenses.txt <<EOF
+              $DEFAULT_ALLOWED_LICENSES
+          EOF
           cat >> allowedLicenses.txt <<EOF
               ${{ vars.ALLOWED_LICENSES }}
           EOF
