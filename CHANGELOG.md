@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.6.0](https://github.com/studiographene/github-action-workflows/compare/v1.5.0...v1.6.0) (2024-05-23)
+
+
+### Features
+
+* **Mobile-scans:** Added mobile scan and centralised security scans workflow configuration ([#17](https://github.com/studiographene/github-action-workflows/issues/17)) ([82cf1e5](https://github.com/studiographene/github-action-workflows/commit/82cf1e523fdf7e3b7ff63f2b3eaef17684aee7cc))
+
+
+### Bug Fixes
+
+* **License scans:** updated the list of allowed licenses default values ([#19](https://github.com/studiographene/github-action-workflows/issues/19)) ([51814e1](https://github.com/studiographene/github-action-workflows/commit/51814e123ee135b945a78ab77d46515efd11810b))
+* setting release verison to 1.6.0 ([#20](https://github.com/studiographene/github-action-workflows/issues/20)) ([10c1fa5](https://github.com/studiographene/github-action-workflows/commit/10c1fa5916efae5bf59ee83e794ffd2162c76f28))
+
 ## [1.5.0](https://github.com/studiographene/github-action-workflows/compare/v1.4.0...v1.5.0) (2024-05-16)
 
 
