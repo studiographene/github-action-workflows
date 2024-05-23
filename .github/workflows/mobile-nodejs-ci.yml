@@ -1,0 +1,146 @@
+name: Studiographene Mobile NodeJs CI
+
+on:
+  workflow_call:
+    inputs:
+      excluded_jobs:
+        type: string
+        default: ""
+      package_manager:
+        type: string
+        default: "npm"
+      npm_token:
+        type: string
+        default: ""
+      lint_command:
+        type: string
+        default: "npm run lint"
+      semgrep_options:
+        type: string
+        default: ""
+      security_scan_before_step_command:
+        type: string
+        default: ""
+      security_scan_after_step_command:
+        type: string
+        default: ""
+      pr_agent_before_step_command:
+        type: string
+        default: ""
+      pr_agent_after_step_command:
+        type: string
+        default: ""
+      technology_based_scans_before_step_command:
+        type: string
+        default: ""
+      technology_based_scans_after_step_command:
+        type: string
+        default: ""
+      container_scan_before_step_command:
+        description: "Command to execute at the start of the container scan"
+        type: string
+        default: ""
+      container_scan_after_step_command:
+        description: "Command to execute at the end of the container scan"
+        type: string
+        default: ""
+
+jobs:
+  technology-based-scans:
+    name: Cache node modules & Lint check
+    runs-on: ubuntu-latest
+    permissions: write-all
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.REF }}
+      - name: before step
+        if: ${{ inputs.technology_based_scans_before_step_command != '' }}
+        run: |
+          ${{ inputs.technology_based_scans_before_step_command}}
+      - name: Install dependencies
+        run: |
+          ${{ inputs.package_manager }} install
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Convert lockfile version > 2 in case of npm
+        if: inputs.package_manager == 'npm'
+        run: |
+          ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cache npm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'npm'
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+      - name: Cache yarn modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'yarn'
+        with:
+          path: /usr/local/share/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'pnpm'
+        with:
+          path: /__w/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - name: Upload package-lock
+        uses: actions/upload-artifact@v2
+        if: inputs.package_manager == 'npm'
+        with:
+          name: lockFile
+          path: package-lock.json
+      - name: Upload yarn-lock
+        uses: actions/upload-artifact@v2
+        if: inputs.package_manager == 'yarn'
+        with:
+          name: lockFile
+          path: yarn.lock
+      - name: Upload pnpm-lock
+        uses: actions/upload-artifact@v2
+        if: inputs.package_manager == 'pnpm'
+        with:
+          name: lockFile
+          path: pnpm-lock.yaml
+      - name: Eslint scan
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'lint' )  }}
+        run: |
+          ${{ inputs.lint_command }}    
+      - name: after step
+        if: ${{ inputs.technology_based_scans_after_step_command != '' }}
+        run: |
+          ${{ inputs.technology_based_scans_after_step_command}}
+
+  security-scans:
+    name: security scans
+    needs: technology-based-scans
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    uses: studiographene/github-action-workflows/.github/workflows/security-scans.yml@master
+    secrets: inherit
+    with:
+      security_scan_before_step_command: ${{ inputs.security_scan_before_step_command }}
+      security_scan_after_step_command: ${{ inputs.security_scan_after_step_command }}
+      excluded_jobs: ${{ inputs.excluded_jobs }}
+      semgrep_options: ${{ inputs.semgrep_options }}
+
+  pr_agent:
+    name: Codium PR Agent
+    if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) }}
+    uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@master
+    secrets: inherit
+    with:
+      before_step_command: ${{ inputs.pr_agent_before_step_command }}
+      after_step_command: ${{ inputs.pr_agent_after_step_command}}
