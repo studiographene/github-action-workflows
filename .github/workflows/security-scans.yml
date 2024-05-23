@@ -116,7 +116,9 @@ jobs:
         run: |
           echo Apache-2.0\\nMIT\\nBSD-2-Clause\\nBSD-3-Clause\\nISC\\nNo-Licence\\nCC-BY-4.0\\nCC0-1.0 >> allowedLicenses.txt
           echo 0BSD\\nUnlicense\\nLGPL-2.1LGPL-2.1-or-later\\nGPL-2.0-only\\nGPL-3.0-only\\nLGPL-3.0 >> allowedLicenses.txt
-          echo ${{ vars.ALLOWED_LICENSES }} >> allowedLicenses.txt
+          cat >> allowedLicenses.txt <<EOF
+              ${{ vars.ALLOWED_LICENSES }}
+          EOF
           /root/executables/ci-utility check --sbom bom.xml --allowedLicences allowedLicenses.txt
 
       - name: Dependency Scan using Google OSV
