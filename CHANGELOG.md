@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.1](https://github.com/studiographene/github-action-workflows/compare/v1.6.0...v1.6.1) (2024-05-24)
+
+
+### Features
+
+* **license scan:** license addition: MIT-0 ([97151af](https://github.com/studiographene/github-action-workflows/commit/97151af59eb0e39deda607dc42ad24f2e8d9bcf0))
+
+
+### Bug Fixes
+
+* releasing as v1.6.1 ([6460790](https://github.com/studiographene/github-action-workflows/commit/646079033850db79a30ab650701e42aa16a12d04))
+
 ## [1.6.0](https://github.com/studiographene/github-action-workflows/compare/v1.5.0...v1.6.0) (2024-05-23)
 
 
