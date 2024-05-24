@@ -1,4 +1,4 @@
-name:  Security scans
+name: Security scans
 
 on:
   workflow_call:
@@ -14,11 +14,10 @@ on:
         default: ""
       security_scan_after_step_command:
         type: string
-        default: "" 
-                      
+        default: ""
 
 jobs:
-   security-scans:
+  security-scans:
     name: security scans
     runs-on: ubuntu-latest
     permissions: write-all
@@ -40,35 +39,35 @@ jobs:
 
         id: generate_sast_report
         run: |
-            set +e
-            cp /root/configs/semgrep/rules/eslint.v1.3.32.yml eslint.v1.3.32.yml
-            semgrep scan --error --config  "p/default" --config eslint.v1.3.32.yml --json ${{ inputs.semgrep_options }} > semgrep.json
-            SEMGREP_EXIT_CODE=$?
-            set -e
-            if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
-              echo "## Semgrep SAST Scan Report" > sast_report.md
-              echo "### Below are the vulnerabilities found in the code. Please resolve these before merging the pull request: " >> sast_report.md
-              echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> sast_report.md
-              echo "| --- | --- | --- | --- | --- |" >> sast_report.md
-              echo 'const fs = require("fs");
-              const semgrepFile = fs.readFileSync("semgrep.json", "utf8");
-              const semgrepData = JSON.parse(semgrepFile);
-              for (const result of semgrepData.results) {
-                let ruleId = result.check_id.replaceAll(",",";");
-                ruleId = ruleId.replaceAll("\n","");
-                let message = result.extra.message.replaceAll(",", ";");
-                message = message.replaceAll("\n","");
-                const severity = result.extra.severity;
-                const lineNumber = result.start.line;
-                const fileName = result.path;
-                console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
-              }' > sast_report_format.cjs
-              node sast_report_format.cjs >> sast_report.md
-            else
-              echo "## Semgrep SAST Scan Report" > sast_report.md
-              echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
-            fi
-            exit $SEMGREP_EXIT_CODE
+          set +e
+          cp /root/configs/semgrep/rules/eslint.v1.3.32.yml eslint.v1.3.32.yml
+          semgrep scan --error --config  "p/default" --config eslint.v1.3.32.yml --json ${{ inputs.semgrep_options }} > semgrep.json
+          SEMGREP_EXIT_CODE=$?
+          set -e
+          if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
+            echo "## Semgrep SAST Scan Report" > sast_report.md
+            echo "### Below are the vulnerabilities found in the code. Please resolve these before merging the pull request: " >> sast_report.md
+            echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> sast_report.md
+            echo "| --- | --- | --- | --- | --- |" >> sast_report.md
+            echo 'const fs = require("fs");
+            const semgrepFile = fs.readFileSync("semgrep.json", "utf8");
+            const semgrepData = JSON.parse(semgrepFile);
+            for (const result of semgrepData.results) {
+              let ruleId = result.check_id.replaceAll(",",";");
+              ruleId = ruleId.replaceAll("\n","");
+              let message = result.extra.message.replaceAll(",", ";");
+              message = message.replaceAll("\n","");
+              const severity = result.extra.severity;
+              const lineNumber = result.start.line;
+              const fileName = result.path;
+              console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
+            }' > sast_report_format.cjs
+            node sast_report_format.cjs >> sast_report.md
+          else
+            echo "## Semgrep SAST Scan Report" > sast_report.md
+            echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
+          fi
+          exit $SEMGREP_EXIT_CODE
       - uses: mshick/add-pr-comment@v2
         if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
         with:
@@ -90,7 +89,7 @@ jobs:
           else
             echo "Files do not exist"
             echo "SKIP_DOWNLOAD_LOCKFILE=false" >> $GITHUB_OUTPUT
-          fi  
+          fi
       - name: Download LockFile Artifact
         if: always() && steps.check_files.outputs.SKIP_DOWNLOAD_LOCKFILE != 'true'
         uses: actions/download-artifact@v2
@@ -115,6 +114,7 @@ jobs:
           DEFAULT_ALLOWED_LICENSES: |
             Apache-2.0
             MIT
+            MIT-0
             BSD-2-Clause
             BSD-3-Clause
             ISC
