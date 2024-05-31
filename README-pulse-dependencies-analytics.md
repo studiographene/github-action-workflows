@@ -24,7 +24,7 @@ on:
     branches: [<enter-branch-name>]
 
 jobs:
-  dependency_analytics:
+  call-worflow:
     uses: studiographene/github-action-workflows/.github/workflows/pulse-dependencies-analytics.yml@master # if you want alternatively pin to tag version version
     secrets: inherit
 ```

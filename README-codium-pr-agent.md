@@ -44,7 +44,7 @@ on:
   issue_comment:
 
 jobs:
-  codium:
+  call-worflow:
     if: ${{ github.event.sender.type != 'Bot' }}
     uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@master # if you want alternatively pin to tag version version
     secrets: inherit

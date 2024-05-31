@@ -23,7 +23,7 @@ on:
     pull_request: {}
 
 jobs:
-  container_scan:
+  call-worflow:
     uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master # if you want alternatively pin to tag version
     secrets: inherit
     with:

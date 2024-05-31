@@ -40,7 +40,7 @@ on:
       - main
 
 jobs:
-  release_please:
+  call-worflow:
     uses: studiographene/github-action-workflows/.github/workflows/release-please.yml@master # if you want alternatively pin to tag version version
     secrets: inherit
 ```
