@@ -2,6 +2,9 @@
 
 To perform container scan and report vulnerabilities on PR
 
+> By default `GITHUB_TOKEN` will be used as `NPM_TOKEN` and passed to Docker build arg.
+> To use any other token, create an Action secret in the repository with key `NPM_TOKEN`, and make sure this workflow call job has inherits secrets or passess `NPM_TOKEN` secret.
+
 # Workflow Inputs
 
 | name                            | description                                                                 | type   | required | default                                           |
@@ -18,9 +21,9 @@ To perform container scan and report vulnerabilities on PR
 
 > Repository Action Secrets to be defined in GitHub UI [Creating secrets for an environment](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository/Creating%20secrets%20for%20a%20repository)
 
-| name      | description                                                                                                                                               | example | required |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | -------- |
-| NPM_TOKEN | A GitHub PersonalAccessToken used to access NPM package regististy. NPM_TOKEN is passed as Docker build --build-arg. If not defined GITHUB_TOKEN is used. |         | no       |
+| name        | description                                                                                                                                               | example | required |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | -------- |
+| `NPM_TOKEN` | A GitHub PersonalAccessToken used to access NPM package regististy. NPM_TOKEN is passed as Docker build --build-arg. If not defined GITHUB_TOKEN is used. |         | no       |
 
 # How to setup
 
