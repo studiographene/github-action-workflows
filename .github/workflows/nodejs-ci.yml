@@ -223,7 +223,7 @@ jobs:
   container_scan:
     name: Container Scan
     if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && !contains( inputs.excluded_jobs, 'container_scan' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) }}
-    uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@fix/container-scan/npm-token
+    uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master
     secrets: inherit
     with:
       docker_build_command: ${{ inputs.docker_build_command }}
