@@ -15,6 +15,9 @@ on:
       build_command:
         type: string
         default: "npm run build"
+      run_unit_test:
+        type: boolean
+        default: false
       docker_build_command:
         type: string
         default: "docker build -t local:latest ."
@@ -215,6 +218,24 @@ jobs:
         if: ${{always() && !contains( inputs.excluded_jobs, 'build' )  }}
         run: |
           ${{ inputs.build_command }}
+      - name: Unit Test
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'unit_test') && inputs.run_unit_test == 'true' && github.event.pull_request.base.ref == 'qa' }}
+        run: |
+          ${{ inputs.package_manager }} run test
+      - name: Unit Test Coverage Report Comment 
+        uses: MishaKav/jest-coverage-comment@b3268855834f7013ffb51ee780165ec7c0d5ec28
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'unit_test') && inputs.run_unit_test == 'true' && github.event.pull_request.base.ref == 'qa' }}
+        with:
+          coverage-summary-path: ./coverage/coverage-summary.json
+          title: Coverage Summary
+          badge-title: Coverage
+          hide-comment: false
+          create-new-comment: false
+          hide-summary: false
+          unitxml-title: Junit Summary
+          junitxml-path: ./coverage/report.xml
+          coverage-title: Code coverage Report
+          coverage-path: coverage.txt          
       - name: Technology based scans after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}
         run: |
