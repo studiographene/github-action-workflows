@@ -62,7 +62,8 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          [[ -n ${{ inputs.docker_build_command }} ]] && ${{ inputs.docker_build_command }} || "docker build --build-arg NPM_TOKEN=([[ -n ${{ secrets.NPM_TOKEN }} ]] && ${{ secrets.NPM_TOKEN }} || ${{ secrets.GITHUB_TOKEN }}) -t local:latest ."
+          TOKEN=$([[ -n ${{ secrets.NPM_TOKEN }} ]] && ${{ secrets.NPM_TOKEN }} || ${{ secrets.GITHUB_TOKEN }})
+          [[ -n ${{ inputs.docker_build_command }} ]] && ${{ inputs.docker_build_command }} || "docker build --build-arg NPM_TOKEN=$TOKEN -t local:latest ."
 
       - name: Creating Trivy report PR comment template file
         run: |
