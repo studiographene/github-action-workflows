@@ -25,17 +25,17 @@ CI scans workflow for NodeJS code.
 
 | name | description | type | example | required |
 | --- | --- | --- | --- | --- |
-| <a name="action_variable_OSV_SUPPRESSIONS"></a> [OSV_SUPPRESSIONS](#action_variable_OSV_SUPPRESSIONS) | <ul><li>OSV Dependency IDs to suppress from the scan</li><li>Set this in Repository Action variable.</li><li>To define multiple suppression, define them with empty line between each.</ul> | string |[[IgnoredVulns]]<br>id = "GHSA-fx4w-v43j-vc45"<br>reason = "No fix is currently available for this vulnerability."<br><br>[[IgnoredVulns]]<br>id = "GHSA-fx4w-v43j-vc45"<br>reason = "No fix is currently available for this vulnerability."<br><br><ul><li>`id` is OSV Dependency ID you would want to suppress (values can be taken from OSV Report in PR comment)</li><li>In addition to the above mandatory value, date until which to apply suppression can be set using `ignoreUntil = 2022-11-09` (optional)</li></ul>| no |
-| <a name="action_variable_ALLOWED_LICENSES"></a> [ALLOWED_LICENSES](#action_variable_OSV_SUPPRESSIONS) | List of allowed package licenses. Enter each license in new line | string | Apache-2.0<br>MIT<br>BSD-2-Clause<br>No-Licence<br>Unlicense<br>LGPL-2.1 | no |
+| `OSV_SUPPRESSIONS` <a name="action_variables_OSV_SUPPRESSIONS"></a> | <ul><li>OSV Dependency IDs to suppress from the scan</li><li>Set this in Repository Action variable.</li><li>To define multiple suppression, define them with empty line between each.</ul> | string |[[IgnoredVulns]]<br>id = "GHSA-fx4w-v43j-vc45"<br>reason = "No fix is currently available for this vulnerability."<br><br>[[IgnoredVulns]]<br>id = "GHSA-fx4w-v43j-vc45"<br>reason = "No fix is currently available for this vulnerability."<br><br><ul><li>`id` is OSV Dependency ID you would want to suppress (values can be taken from OSV Report in PR comment)</li><li>In addition to the above mandatory value, date until which to apply suppression can be set using `ignoreUntil = 2022-11-09` (optional)</li></ul>| no |
+| `ALLOWED_LICENSES` <a name="action_variables_ALLOWED_LICENSES"></a> | List of allowed package licenses. Enter each license in new line | string | Apache-2.0<br>MIT<br>BSD-2-Clause<br>No-Licence<br>Unlicense<br>LGPL-2.1 | no |
 
 ## How To Supress Vulnerability Findings
 
 - **SAST**
     ref: https://semgrep.dev/docs/ignoring-files-folders-code
 - **OSV DEPENDENCY SCAN**
-    Ref to [OSV_SUPPRESSIONS](#action_variable_OSV_SUPPRESSIONS) variable in above `Action variables`
+    Ref to [OSV_SUPPRESSIONS](#action_variables_OSV_SUPPRESSIONS) above
 - **License Scan**
-    Ref to [ALLOWED_LICENSES](#action_variable_ALLOWED_LICENSES) variable in above `Action variables` 
+    Ref to [ALLOWED_LICENSES](#action_variables_ALLOWED_LICENSES) above
 
 ## How To setup:
 
