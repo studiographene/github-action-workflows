@@ -68,7 +68,7 @@ jobs:
         run: |
           [[ -n $NPM_TOKEN ]] && FINAL_NPM_TOKEN=$NPM_TOKEN || FINAL_NPM_TOKEN=${{ secrets.GITHUB_TOKEN }}
           if [[ -n ${{ inputs.docker_build_command }} ]]; then
-            ${{ inputs.docker_build_command }}
+            echo "executing user defined Docker build command... # && ${{ inputs.docker_build_command }}
           else
             docker build --build-arg NPM_TOKEN=$FINAL_NPM_TOKEN -t local:latest .
           fi
