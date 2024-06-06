@@ -63,15 +63,10 @@ jobs:
 
       - name: Docker Build
         id: docker_build
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          [[ -n $NPM_TOKEN ]] && FINAL_NPM_TOKEN=$NPM_TOKEN || FINAL_NPM_TOKEN=${{ secrets.GITHUB_TOKEN }}
-          if [[ -n ${{ inputs.docker_build_command }} ]]; then
-            echo "executing user defined Docker build command..." # && ${{ inputs.docker_build_command }}
-          else
-            docker build --build-arg NPM_TOKEN=$FINAL_NPM_TOKEN -t local:latest .
-          fi
+          [[ -n ${{ secrets.NPM_TOKEN }} ]] && FINAL_NPM_TOKEN=${{ secrets.NPM_TOKEN }} || FINAL_NPM_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          [[ -n ${{ inputs.docker_build_command }} ]] && FINAL_DOCKER_BUILD_COMMAND=${{ inputs.docker_build_command }} || FINAL_DOCKER_BUILD_COMMAND="docker build --build-arg NPM_TOKEN=${FINAL_NPM_TOKEN} -t local:latest ."
+          ${FINAL_DOCKER_BUILD_COMMAND}
 
       - name: Creating Trivy report PR comment template file
         run: |
