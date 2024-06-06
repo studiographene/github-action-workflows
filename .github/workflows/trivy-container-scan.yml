@@ -20,12 +20,12 @@ on:
         type: string
         required: false
         default: "localbuild:latest"
-      CONTAINER_SCANNERS:
+      container_scanners:
         description: "comma-separated list of what security issues to detect (vuln,secret,config). Default = vuln"
         type: string
         required: false
         default: vuln
-      CONTAINER_SCAN_SKIP_DIRS:
+      container_scan_skip_dirs:
         description: "Comma separated list of directories to skip scanning"
         type: string
         required: false
@@ -63,19 +63,9 @@ jobs:
 
       - name: Docker Build
         id: docker_build
-        shell: bash
+        env:
+          FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker build --build-arg NPM_TOKEN={0} -t  {1} .', secrets.NPM_TOKEN, inputs.docker_build_image_id) }}
         run: |
-          if [[ -z ${{ secrets.NPM_TOKEN }}]]; then
-            FINAL_NPM_TOKEN=${{ secrets.GITHUB_TOKEN }}
-          else
-            FINAL_NPM_TOKEN=${{ secrets.NPM_TOKEN }}
-          fi
-          if [[ -z ${{ inputs.docker_build_command }}]]
-            FINAL_DOCKER_BUILD_COMMAND="docker build --build-arg NPM_TOKEN=$FINAL_NPM_TOKEN -t ${{ inputs.docker_build_image_id }} ."
-          else
-            FINAL_DOCKER_BUILD_COMMAND=${{ inputs.docker_build_command }}
-          fi
-          echo $FINAL_NPM_TOKEN
           echo $FINAL_DOCKER_BUILD_COMMAND
           eval $FINAL_DOCKER_BUILD_COMMAND
 
@@ -103,14 +93,14 @@ jobs:
           ignore-unfixed: true
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
-          scanners: ${{ inputs.CONTAINER_SCANNERS }}
-          skip-dirs: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
+          scanners: ${{ inputs.container_scanners }}
+          skip-dirs: ${{ inputs.container_scan_skip_dirs }}
 
       - name: Create container vulnerability report
         shell: bash
         run: |
           echo "# Trivy Container Scan" > container_scan_prcomment.json
-          if [ ${{ steps.container_scan.outcome }} == "failure" ]
+          if [ ${{ steps.container_scan.outcome }} ]
           then
             echo "### :warning: Vulnerabilities detected\\nThe following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.\n\n" >> container_scan_prcomment.json
             cat trivyreport.json >> container_scan_prcomment.json

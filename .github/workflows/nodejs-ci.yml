@@ -23,12 +23,12 @@ on:
         description: "Docker image ID as mentioned in docker_build_command"
         type: string
         default: "local:latest"
-      CONTAINER_SCANNERS:
+      container_scanners:
         description: "comma-separated list of what security issues to detect (vuln,secret,config). Default = vuln"
         type: string
         required: false
         default: vuln
-      CONTAINER_SCAN_SKIP_DIRS:
+      container_scan_skip_dirs:
         description: "Comma separated list of directories to skip scanning"
         type: string
         required: false
@@ -229,8 +229,8 @@ jobs:
     with:
       docker_build_command: ${{ inputs.docker_build_command }}
       docker_build_image_id: ${{ inputs.docker_build_image_id }}
-      CONTAINER_SCANNERS: ${{ inputs.CONTAINER_SCANNERS }}
-      CONTAINER_SCAN_SKIP_DIRS: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
+      container_scanners: ${{ inputs.container_scanners }}
+      container_scan_skip_dirs: ${{ inputs.container_scan_skip_dirs }}
       before_step_command: ${{ inputs.container_scan_before_step_command }}
       after_step_command: ${{ inputs.container_scan_after_step_command}}
 

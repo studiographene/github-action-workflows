@@ -9,8 +9,8 @@ CI scans workflow for PhP code.
 | excluded_jobs                      | A string of comma separated jobs that you want to exculude.                  | no       |                |
 | docker_build_command               | Docker build command                                                         | no       |                |
 | docker_build_image_id              | Docker image ID as mentioned in docker_build_command                         | no       | `local:latest` |
-| CONTAINER_SCANNERS:                | comma-separated list of what security issues to detect (vuln,secret,config)  | no       | `vuln`         |
-| CONTAINER_SCAN_SKIP_DIRS           | Comma separated list of directories to skip scanning                         | no       |                |
+| container_scanners:                | comma-separated list of what security issues to detect (vuln,secret,config)  | no       | `vuln`         |
+| container_scan_skip_dirs           | Comma separated list of directories to skip scanning                         | no       |                |
 | semgrep_options                    | SEMGREP command options                                                      | no       |                |
 | security_scan_before_step_command  | Optional command to execute before secuirty scan job                         | no       |                |
 | security_scan_after_step_command   | Optional command to execute after secuirty scan job steps execution          | no       |                |
