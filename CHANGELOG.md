@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.3](https://github.com/studiographene/github-action-workflows/compare/v1.6.2...v1.6.3) (2024-06-06)
+
+
+### Bug Fixes
+
+* **container scan:** report formatting ([cdfd7e5](https://github.com/studiographene/github-action-workflows/commit/cdfd7e527db0a3b0514e36c36a57ba6527df30c2))
+
 ## [1.6.2](https://github.com/studiographene/github-action-workflows/compare/v1.6.1...v1.6.2) (2024-06-05)
 
 
