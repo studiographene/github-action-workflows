@@ -14,6 +14,7 @@ on:
       docker_build_command:
         type: string
         required: false
+        default: "somendocker_build_command"
       docker_build_image_id:
         description: "Docker image ID as mentioned in docker_build_command"
         type: string
@@ -63,7 +64,7 @@ jobs:
       - name: Docker Build
         id: docker_build
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: "somenpm_token"
         run: |
           [[ -z $NPM_TOKEN ]] && FINAL_NPM_TOKEN=true || FINAL_NPM_TOKEN=false
           [[ -z ${{ inputs.docker_build_command }} ]] && FINAL_DOCKER_BUILD_COMMAND=true || FINAL_DOCKER_BUILD_COMMAND="docker build --build-arg NPM_TOKEN=$FINAL_NPM_TOKEN -t ${{ inputs.docker_build_image_id }} ."
