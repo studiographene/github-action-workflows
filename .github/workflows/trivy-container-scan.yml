@@ -102,7 +102,6 @@ jobs:
           skip-dirs: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
 
       - name: Create container vulnerability report
-        if: ${{ contains('success,failure', steps.container_scan.outcome) }}
         shell: bash
         run: |
           echo "# Trivy Container Scan\n" > container_scan_prcomment.json
@@ -116,7 +115,6 @@ jobs:
           fi
 
       - name: PR comment the container scan report
-        if: ${{ contains('success,failure', steps.container_scan.outcome) }}
         uses: mshick/add-pr-comment@v2
         with:
           message-id: trivy_container_scan
