@@ -14,7 +14,7 @@ on:
       docker_build_command:
         type: string
         required: false
-        default: "somendocker_build_command"
+        default: ""
       docker_build_image_id:
         description: "Docker image ID as mentioned in docker_build_command"
         type: string
