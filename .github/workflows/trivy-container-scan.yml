@@ -65,8 +65,8 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          [[ -n $NPM_TOKEN ]] && FINAL_NPM_TOKEN=true || FINAL_NPM_TOKEN=false
-          [[ -n ${{ inputs.docker_build_command }} ]] && FINAL_DOCKER_BUILD_COMMAND=true || FINAL_DOCKER_BUILD_COMMAND="docker build --build-arg NPM_TOKEN=$FINAL_NPM_TOKEN -t ${{ inputs.docker_build_image_id }} ."
+          [[ -z $NPM_TOKEN ]] && FINAL_NPM_TOKEN=true || FINAL_NPM_TOKEN=false
+          [[ -z ${{ inputs.docker_build_command }} ]] && FINAL_DOCKER_BUILD_COMMAND=true || FINAL_DOCKER_BUILD_COMMAND="docker build --build-arg NPM_TOKEN=$FINAL_NPM_TOKEN -t ${{ inputs.docker_build_image_id }} ."
           echo placeholder
           echo $NPM_TOKEN
           echo $FINAL_NPM_TOKEN
@@ -110,7 +110,7 @@ jobs:
             cat trivyreport.json >> container_scan_prcomment.json
           elif [ ${{ steps.container_scan.outcome }} == "success" ]
           then
-            echo "### :rainbow: No vulnerabilities of HIGH or CRITICAL severity has been detected" >> container_scan_prcomment.json
+            echo "### :rainbow: No vulnerabilities of HIGH or CRITICAL severity has been detected\nthis should be on new line" >> container_scan_prcomment.json
           fi
 
       - name: PR comment the container scan report
