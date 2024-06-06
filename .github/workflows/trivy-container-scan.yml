@@ -102,11 +102,11 @@ jobs:
           echo "# Trivy Container Scan" > container_scan_prcomment.json
           if [ ${{ steps.container_scan.outcome }} == "failure" ]
           then
-            echo -n "### :warning: Vulnerabilities detected\nThe following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.\n\n" >> container_scan_prcomment.json
+            echo "### :warning: Vulnerabilities detected\\nThe following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.\n\n" >> container_scan_prcomment.json
             cat trivyreport.json >> container_scan_prcomment.json
           elif [ ${{ steps.container_scan.outcome }} == "success" ]
           then
-            echo "### :rainbow: No vulnerabilities of HIGH or CRITICAL severity has been detected\nthis should be on new line" >> container_scan_prcomment.json
+            echo "### :rainbow: No vulnerabilities of HIGH or CRITICAL severity has been detected" >> container_scan_prcomment.json
           fi
 
       - name: PR comment the container scan report
