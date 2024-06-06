@@ -14,8 +14,8 @@ To perform container scan and report vulnerabilities on PR
 | `after_step_command`            | Command to execute at the end of the job                                    | string | no       |                                                   |
 | `docker_build_command`          | Docker Build command                                                        | string | no       | `docker build -t local:latest .`                  |
 | `docker_build_image_id`         | Docker image ID as mentioned in docker_build_command                        | string | no       | `local:latest`                                    |
-| `CONTAINER_SCANNERS`            | comma-separated list of what security issues to detect (vuln,secret,config) | string | no       | `vuln`                                            |
-| `CONTAINER_SCAN_SKIP_DIRS`      | Comma separated list of directories to skip scanning                        | string | no       |
+| `container_scanners`            | comma-separated list of what security issues to detect (vuln,secret,config) | string | no       | `vuln`                                            |
+| `container_scan_skip_dirs`      | Comma separated list of directories to skip scanning                        | string | no       |
 
 # Action variables
 
