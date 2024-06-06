@@ -105,10 +105,10 @@ jobs:
       - name: Create container vulnerability report
         shell: bash
         run: |
-          echo "# Trivy Container Scan\n" > container_scan_prcomment.json
+          echo "# Trivy Container Scan" > container_scan_prcomment.json
           if [ ${{ steps.container_scan.outcome }} == "failure" ]
           then
-            echo "### :warning: Vulnerabilities detected\nThe following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.\n\n" >> container_scan_prcomment.json
+            echo -n "### :warning: Vulnerabilities detected\nThe following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.\n\n" >> container_scan_prcomment.json
             cat trivyreport.json >> container_scan_prcomment.json
           elif [ ${{ steps.container_scan.outcome }} == "success" ]
           then
