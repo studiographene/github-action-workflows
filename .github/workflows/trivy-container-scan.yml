@@ -100,7 +100,7 @@ jobs:
         shell: bash
         run: |
           echo "# Trivy Container Scan" > container_scan_prcomment.json
-          if [ ${{ steps.container_scan.outcome }} == "failure" ]
+          if [ ${{ steps.container_scan.outcome }} == "success" ]
           then
             echo "### :warning: Vulnerabilities detected<br>The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.json
             cat trivyreport.json >> container_scan_prcomment.json
