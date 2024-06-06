@@ -19,7 +19,7 @@ on:
         description: "Docker image ID as mentioned in docker_build_command"
         type: string
         required: false
-        default: "local:latest"
+        default: "localbuild:latest"
       CONTAINER_SCANNERS:
         description: "comma-separated list of what security issues to detect (vuln,secret,config). Default = vuln"
         type: string
@@ -70,7 +70,7 @@ jobs:
 
       - name: Creating Trivy report PR comment template file
         run: |
-          cat <<EOF >> prcomment.tpl 
+          cat <<EOF >> trivyreport.tpl 
           | Package | Vulnerability | Severity | Status | Installed Version | Fixed Version | Title |
           | ------- | ------------- | -------- | ------ | ----------------- | ------------- | ----- |
           {{- range .}}
@@ -86,7 +86,7 @@ jobs:
         with:
           image-ref: ${{ inputs.docker_build_image_id }}
           format: "template"
-          template: "@prcomment.tpl"
+          template: "@trivyreport.tpl"
           output: "trivyreport.json"
           exit-code: "1"
           ignore-unfixed: true
