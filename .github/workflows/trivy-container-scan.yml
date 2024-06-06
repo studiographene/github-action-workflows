@@ -14,26 +14,30 @@ on:
       docker_build_command:
         type: string
         required: false
+        default: ""
       docker_build_image_id:
         description: "Docker image ID as mentioned in docker_build_command"
         type: string
-        default: "local:latest"
-      CONTAINER_SCANNERS:
+        required: false
+        default: "localbuild:latest"
+      container_scanners:
         description: "comma-separated list of what security issues to detect (vuln,secret,config). Default = vuln"
         type: string
         required: false
         default: vuln
-      CONTAINER_SCAN_SKIP_DIRS:
+      container_scan_skip_dirs:
         description: "Comma separated list of directories to skip scanning"
         type: string
         required: false
       before_step_command:
         description: "Command to execute at the start of the job"
         type: string
+        required: false
         default: ""
       after_step_command:
         description: "Command to execute at the end of the job"
         type: string
+        required: false
         default: ""
 
 permissions:
@@ -57,22 +61,29 @@ jobs:
         with:
           ref: ${{ github.REF }}
 
+      - # Add support for more platforms with QEMU (optional)
+        # https://github.com/docker/setup-qemu-action
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Docker Build
         id: docker_build
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker build --build-arg NPM_TOKEN={0} -t  {1} .', secrets.NPM_TOKEN, inputs.docker_build_image_id) }}
         run: |
-          [[ -n $NPM_TOKEN ]] && FINAL_NPM_TOKEN=$NPM_TOKEN || FINAL_NPM_TOKEN=${{ secrets.GITHUB_TOKEN }}
-          [[ -n ${{ inputs.docker_build_command }} ]] && ${{ inputs.docker_build_command }} || docker build --build-arg NPM_TOKEN=$FINAL_NPM_TOKEN -t local:latest .
+          echo $FINAL_DOCKER_BUILD_COMMAND
+          eval $FINAL_DOCKER_BUILD_COMMAND
 
       - name: Creating Trivy report PR comment template file
         run: |
-          cat <<EOF >> prcomment.tpl 
-          | Package | Vulnerability | Severity | Status | Installed Version | Fixed Version | Title | \n
+          cat <<EOF >> trivyreport.tpl 
+          | Package | Vulnerability | Severity | Status | Installed Version | Fixed Version | Title |
           | ------- | ------------- | -------- | ------ | ----------------- | ------------- | ----- |
           {{- range .}}
           {{- range .Vulnerabilities}}
-          \n | {{ .PkgName | html }} | {{ .VulnerabilityID | html }} | {{ .Severity | html }} | {{ .Status | html }} | {{ .InstalledVersion | html }} | {{ .FixedVersion | html }} | {{ .Title | html }} |
+          | {{ .PkgName | html }} | {{ .VulnerabilityID | html }} | {{ .Severity | html }} | {{ .Status | html }} | {{ .InstalledVersion | html }} | {{ .FixedVersion | html }} | {{ .Title | html }} |
           {{ end }}
           {{- end }}
           EOF
@@ -83,33 +94,29 @@ jobs:
         with:
           image-ref: ${{ inputs.docker_build_image_id }}
           format: "template"
-          template: "@prcomment.tpl"
+          template: "@trivyreport.tpl"
           output: "trivyreport.json"
           exit-code: "1"
           ignore-unfixed: true
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
-          scanners: ${{ inputs.CONTAINER_SCANNERS }}
-          skip-dirs: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
+          scanners: ${{ inputs.container_scanners }}
+          skip-dirs: ${{ inputs.container_scan_skip_dirs }}
 
       - name: Create container vulnerability report
-        if: ${{ always() && contains('success,failure', steps.container_scan.outcome) && github.event_name == 'pull_request' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          echo -n "# Trivy Container Scan\n" > container_scan_prcomment.json
+          echo "# Trivy Container Scan" > container_scan_prcomment.json
           if [ ${{ steps.container_scan.outcome }} == "failure" ]
           then
-            echo -n "### :warning: Vulnerabilities detected\nThe following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.\n\n" >> container_scan_prcomment.json
+            echo "### :warning: Vulnerabilities detected<br>The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.json
             cat trivyreport.json >> container_scan_prcomment.json
           elif [ ${{ steps.container_scan.outcome }} == "success" ]
           then
-            echo -n "### :rainbow: No vulnerabilities of HIGH or CRITICAL severity has been detected" >> container_scan_prcomment.json
+            echo "### :rainbow: No vulnerabilities of HIGH or CRITICAL severity detected" >> container_scan_prcomment.json
           fi
 
       - name: PR comment the container scan report
-        if: ${{ always() && contains('success,failure', steps.container_scan.outcome) && github.event_name == 'pull_request' }}
         uses: mshick/add-pr-comment@v2
         with:
           message-id: trivy_container_scan
