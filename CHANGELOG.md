@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.0](https://github.com/studiographene/github-action-workflows/compare/v1.6.3...v1.7.0) (2024-06-06)
+
+
+### Features
+
+* **container scan:** step to setup Docker Buildx ([8694b03](https://github.com/studiographene/github-action-workflows/commit/8694b034bb918f71e179f77b2249694d6ab3871c))
+
+
+### Bug Fixes
+
+* **container scan:** report format ([#26](https://github.com/studiographene/github-action-workflows/issues/26)) ([8694b03](https://github.com/studiographene/github-action-workflows/commit/8694b034bb918f71e179f77b2249694d6ab3871c))
+
 ## [1.6.3](https://github.com/studiographene/github-action-workflows/compare/v1.6.2...v1.6.3) (2024-06-06)
 
 
