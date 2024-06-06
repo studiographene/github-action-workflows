@@ -64,9 +64,10 @@ jobs:
       - name: Docker Build
         id: docker_build
         run: |
-          [[ -z ${{ secrets.NPM_TOKEN }} ]] && FINAL_NPM_TOKEN=${{ secrets.NPM_TOKEN }} || FINAL_NPM_TOKEN=${{ secrets.GITHUB_TOKEN }}
-          [[ -z ${{ inputs.docker_build_command }} ]] && FINAL_DOCKER_BUILD_COMMAND=${{ inputs.docker_build_command }} || FINAL_DOCKER_BUILD_COMMAND="docker build --build-arg NPM_TOKEN=$FINAL_NPM_TOKEN -t ${{ inputs.docker_build_image_id }} ."
-          echo $FINAL_NPM_TOKEN && echo $FINAL_DOCKER_BUILD_COMMAND
+          [ -z ${{ secrets.NPM_TOKEN }} ] && FINAL_NPM_TOKEN=${{ secrets.GITHUB_TOKEN }} || FINAL_NPM_TOKEN=${{ secrets.NPM_TOKEN }}
+          [ -z ${{ inputs.docker_build_command }} ] && FINAL_DOCKER_BUILD_COMMAND="docker build --build-arg NPM_TOKEN=$FINAL_NPM_TOKEN -t ${{ inputs.docker_build_image_id }} ." || FINAL_DOCKER_BUILD_COMMAND=${{ inputs.docker_build_command }}
+          echo $FINAL_NPM_TOKEN
+          echo $FINAL_DOCKER_BUILD_COMMAND
           eval $FINAL_DOCKER_BUILD_COMMAND
 
       - name: Creating Trivy report PR comment template file

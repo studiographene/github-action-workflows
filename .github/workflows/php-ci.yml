@@ -8,7 +8,8 @@ on:
         default: ""
       docker_build_command:
         type: string
-        default: "docker build -t local:latest ."
+        required: false
+        default: ""
       docker_build_image_id:
         description: "Docker image ID as mentioned in docker_build_command"
         type: string
