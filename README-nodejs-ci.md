@@ -7,7 +7,8 @@ CI scans workflow for NodeJS code.
 | Name                                       | Description                                                                 | Required | Default                          |
 | ------------------------------------------ | --------------------------------------------------------------------------- | -------- | -------------------------------- |
 | excluded_jobs                              | A string of comma separated jobs that you want to exculude.                 | no       |                                  |
-| package_manager                            |                                                                             | no       | npm                              |
+| run_test                              | A boolen value to enable test runs in technology based scans job.                 | yes       |           false                       |
+| package_manager                            | Package manager used in project.                                                                      | no       | npm                              |
 | npm_token                                  | NPM token                                                                   | no       |                                  |
 | build_command                              | build command for the project                                               | no       | `npm run build`                  |
 | docker_build_command                       | Docker build command                                                        | no       | `docker build -t local:latest .` |
@@ -66,6 +67,7 @@ jobs:
       package_manager: pnpm
       build_command: pnpm run build
       lint_command: pnpm run lint
+      run_test: true   # Only pass this argument if tests are configured in project.
     secrets: inherit
     permissions: write-all
 ```
@@ -86,4 +88,5 @@ jobs:
   - Docker Build
   - Trivy container vulnerability scan
   - Build project
+  - Test
 - Codium PR Agent

@@ -218,13 +218,13 @@ jobs:
         if: ${{always() && !contains( inputs.excluded_jobs, 'build' )  }}
         run: |
           ${{ inputs.build_command }}
-      - name: Unit Test
-        if: ${{ always() && !contains(inputs.excluded_jobs, 'unit_test') && inputs.run_test && github.event.pull_request.base.ref == 'qa' }}
+      - name: Test
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'test') && inputs.run_test && github.event.pull_request.base.ref == 'qa' }}
         run: |
           ${{ inputs.package_manager }} run test
       - name: Unit Test Coverage Report Comment 
         uses: MishaKav/jest-coverage-comment@main
-        if: ${{ always() && !contains(inputs.excluded_jobs, 'unit_test') && inputs.run_test && github.event.pull_request.base.ref == 'qa' }}
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'test') && inputs.run_test && github.event.pull_request.base.ref == 'qa' }}
         with:
           coverage-summary-path: ./coverage/coverage-summary.json
           title: Coverage Summary
