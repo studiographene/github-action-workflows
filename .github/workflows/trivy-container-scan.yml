@@ -65,7 +65,7 @@ jobs:
         id: docker_build
         run: |
           [[ -n ${{ secrets.NPM_TOKEN }} ]] && FINAL_NPM_TOKEN=${{ secrets.NPM_TOKEN }} || FINAL_NPM_TOKEN=${{ secrets.GITHUB_TOKEN }}
-          [[ -n ${{ inputs.docker_build_command }} ]] && FINAL_DOCKER_BUILD_COMMAND=${{ inputs.docker_build_command }} || FINAL_DOCKER_BUILD_COMMAND="docker build --build-arg NPM_TOKEN=${FINAL_NPM_TOKEN} -t localbuild:latest ."
+          [[ -n ${{ inputs.docker_build_command }} ]] && FINAL_DOCKER_BUILD_COMMAND=${{ inputs.docker_build_command }} || FINAL_DOCKER_BUILD_COMMAND="docker build --build-arg NPM_TOKEN=${FINAL_NPM_TOKEN} -t local:latest ."
           ${FINAL_DOCKER_BUILD_COMMAND}
 
       - name: Creating Trivy report PR comment template file
@@ -84,7 +84,7 @@ jobs:
         id: container_scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "localbuild:latest" # ${{ inputs.docker_build_image_id }}
+          image-ref: "local:latest" # ${{ inputs.docker_build_image_id }}
           format: "template"
           template: "@trivyreport.tpl"
           output: "trivyreport.json"
