@@ -99,6 +99,7 @@ jobs:
           ${{ inputs.caching_before_step_command}}
       - name: Install dependencies
         run: |
+          npm i -g pnpm
           ${{ inputs.package_manager }} install
         env:
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -174,7 +175,7 @@ jobs:
     needs: caching
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine-v1.0.4
+      image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -223,12 +224,12 @@ jobs:
           ${{ inputs.build_command }}
       - name: Developer Tests
         id: developer_tests
-        if: ${{ always() && inputs.run_test && github.event.pull_request.base.ref == 'qa' }}
+        if: ${{ always() && inputs.run_dev_test && github.event.pull_request.base.ref == 'qa' }}
         run: |
           ${{ inputs.package_manager }} run test
       - name: Developer Test Coverage Report 
         uses: MishaKav/jest-coverage-comment@main
-        if: ${{ contains('failure,success', steps.developer_tests.outcome) }}
+        if: ${{  always() && contains('failure,success', steps.developer_tests.outcome) }}
         with:
           coverage-summary-path: ./coverage/coverage-summary.json
           title: Coverage Summary
@@ -236,14 +237,13 @@ jobs:
           hide-comment: false
           create-new-comment: false
           hide-summary: false
-          unitxml-title: Junit Summary
-          junitxml-path: ./coverage/report.xml
-          coverage-title: Code coverage Report
-          coverage-path: coverage.txt          
+          junitxml-title: Junit Summary
+          junitxml-path: ./coverage/report.xml     
       - name: Technology based scans after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}
         run: |
           ${{ inputs.technology_based_scans_after_step_command}}
+
 
   container_scan:
     name: Container Scan
