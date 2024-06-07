@@ -7,7 +7,8 @@ CI scans workflow for NodeJS code.
 | Name                                       | Description                                                                 | Required | Default         |
 | ------------------------------------------ | --------------------------------------------------------------------------- | -------- | --------------- |
 | excluded_jobs                              | A string of comma separated jobs that you want to exculude.                 | no       |                 |
-| package_manager                            |                                                                             | no       | `npm`           |
+| package_manager                            |
+| run_dev_test | A boolen value to enable Developer tests (Unit/Integration/etc.,) are available in your repo code. | no | false |                                                                             | no       | `npm`           |
 | npm_token                                  | NPM token                                                                   | no       |                 |
 | build_command                              | build command for the project                                               | no       | `npm run build` |
 | docker_build_command                       | Docker build command                                                        | no       |                 |
@@ -67,7 +68,7 @@ jobs:
       package_manager: pnpm
       build_command: pnpm run build
       lint_command: pnpm run lint
-      excluded_jobs: dev_tests   # Set this argument with `dev_tests` in the value if the Developer tests (Unit/Integration/etc.,) are available for this your repo code
+      run_dev_test: true   # Set this input only if the Developer tests (Unit/Integration/etc.,) are available in your repo code
     secrets: inherit
     permissions: write-all
 ```
