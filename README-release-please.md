@@ -3,7 +3,7 @@
 To automatically create Git Tag + Release with
 
 - auto calculated [Semantic version](https://semver.org/#semantic-versioning-200) Tag name based on [Conventional commit](https://www.conventionalcommits.org/en/v1.0.0/)
-- auto generated Release not based on the Conventional commits made
+- auto generated CHANGELOG & Release not based on the Conventional commits made
 
 > To know how Release-Please works, ref to [Git Auto Release Trunk Tag Based CI/CD](https://studiographene.atlassian.net/wiki/spaces/SGKB/pages/2147615558/Git+Auto+Release+Trunk+Tag+Based+CI+CD)
 
