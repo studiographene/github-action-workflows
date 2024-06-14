@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.1](https://github.com/studiographene/github-action-workflows/compare/v1.8.0...v1.8.1) (2024-06-14)
+
+
+### Bug Fixes
+
+* **dependency scan:** report to display suppressed vulnerabilities when there are no vulnerabilities ([#30](https://github.com/studiographene/github-action-workflows/issues/30)) ([3481816](https://github.com/studiographene/github-action-workflows/commit/348181691de4e04ed760143bfa84b6a983c399c2))
+* **osv suppression:** config.toml file created at runtime, config file from Dockerfile is deprecated and has issue ([#32](https://github.com/studiographene/github-action-workflows/issues/32)) ([684bd9c](https://github.com/studiographene/github-action-workflows/commit/684bd9c6d4b134edd800632d04a908a1f26781db))
+
 ## [1.8.0](https://github.com/studiographene/github-action-workflows/compare/v1.7.0...v1.8.0) (2024-06-14)
 
 
