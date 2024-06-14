@@ -98,19 +98,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
       - name: Upload package-lock
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'npm'
         with:
           name: lockFile
           path: package-lock.json
       - name: Upload yarn-lock
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'yarn'
         with:
           name: lockFile
           path: yarn.lock
       - name: Upload pnpm-lock
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'pnpm'
         with:
           name: lockFile
@@ -118,7 +118,7 @@ jobs:
       - name: Eslint scan
         if: ${{ always() && !contains( inputs.excluded_jobs, 'lint' )  }}
         run: |
-          ${{ inputs.lint_command }}    
+          ${{ inputs.lint_command }}
       - name: after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}
         run: |
