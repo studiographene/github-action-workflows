@@ -161,6 +161,7 @@ jobs:
           else
             echo "## OSV Dependency Scan Report" >> osv_report.md
             echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
+            cat osv_raw_report.md >> osv_report.md
           fi
           exit $OSV_EXIT_CODE
 
