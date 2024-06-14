@@ -68,8 +68,9 @@ jobs:
             echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
           fi
           exit $SEMGREP_EXIT_CODE
-      - uses: mshick/add-pr-comment@v2
+      - name: Comment SAST report on PR
         if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
+        uses: mshick/add-pr-comment@v2
         with:
           message-id: sast-scan
           message-path: sast_report.md
