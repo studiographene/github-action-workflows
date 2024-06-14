@@ -151,10 +151,6 @@ jobs:
           OSV_EXIT_CODE=$?
           set -e
           echo "## OSV Dependency Scan Report" >> osv_report.md
-          if (grep -q "id" "dep_scan_suppression_config.toml" || grep -q "ID" "dep_scan_suppression_config.toml"); then
-            echo "### The following vulnerabilities have been suppressed using Action variable OSV_SUPPRESSIONS:" >> osv_report.md
-            grep -E 'id =|reason =' dep_scan_suppression_config.toml >> osv_report.md
-          fi
           if [ $OSV_EXIT_CODE -ne 0 ]; then
             echo "### The following vulnerabilities have been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
             cat osv_raw_report.md >> osv_report.md
