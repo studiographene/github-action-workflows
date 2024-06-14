@@ -92,7 +92,7 @@ jobs:
           fi
       - name: Download LockFile Artifact
         if: always() && steps.check_files.outputs.SKIP_DOWNLOAD_LOCKFILE != 'true'
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: lockFile
           path: .
@@ -152,6 +152,10 @@ jobs:
           set -e    
           if [ $OSV_EXIT_CODE -ne 0 ]; then
             echo "## OSV Dependency Scan Report" >> osv_report.md
+            if [ -s "/root/configs/osv/config.toml" ]; then
+              echo "### The following vulnerabilities have been suppressed using Action variable OSV_SUPPRESSIONS:" >> osv_report.md
+              grep -E 'id =|reason =' /root/configs/osv/config.toml >> osv_report.md
+            fi
             echo "### The following vulnerabilities have been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
             cat osv_raw_report.md >> osv_report.md
           else
@@ -160,8 +164,8 @@ jobs:
           fi
           exit $OSV_EXIT_CODE
 
-      - name: generate_osv_report
-        if: always()
+      - name: Comment Dependency scan report on PR
+        if: ${{ always() && contains('success,failure', steps.dependency_scan.outcome) }}
         uses: mshick/add-pr-comment@v2
         with:
           message-id: dependency_scan
