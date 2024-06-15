@@ -116,7 +116,7 @@ jobs:
           name: lockFile
           path: pnpm-lock.yaml
       - name: Eslint scan
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'lint' )  }}
+        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'lint' )  }}
         run: |
           ${{ inputs.lint_command }}
       - name: after step

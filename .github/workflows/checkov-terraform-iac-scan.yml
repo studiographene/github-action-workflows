@@ -61,7 +61,7 @@ jobs:
 
       - name: Format The Report
         id: format_checkov_results
-        if: always()
+        if: !cancelled()
         run: |
           report_data=$(node - << EOF
           const fs = require('fs');
@@ -117,7 +117,7 @@ jobs:
 
       - name: Add Report As PR comment
         uses: mshick/add-pr-comment@v2
-        if: always()
+        if: !cancelled()
         with:
           message-id: Checkov-scan
           message-path: |

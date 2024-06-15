@@ -35,7 +35,7 @@ jobs:
         run: |
           ${{ inputs.security_scan_before_step_command}}
       - name: SAST Scan using Semgrep
-        if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
+        if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'sast')  }}
 
         id: generate_sast_report
         run: |
@@ -69,19 +69,19 @@ jobs:
           fi
           exit $SEMGREP_EXIT_CODE
       - name: Comment SAST report on PR
-        if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
+        if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'sast')  }}
         uses: mshick/add-pr-comment@v2
         with:
           message-id: sast-scan
           message-path: sast_report.md
 
       - name: Gitleaks scan
-        if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }}
+        if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'gitleaks')  }}
         uses: gitleaks/gitleaks-action@v1.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Check for composer.lock or composer.json
-        if: ${{ always() && !(contains(fromJSON('["licenseScan", "dependency_scan"]'), inputs.excluded_jobs)) }}
+        if: ${{ !cancelled() && !(contains(fromJSON('["licenseScan", "dependency_scan"]'), inputs.excluded_jobs)) }}
         id: check_files
         run: |
           if [ -f composer.lock ] || [ -f composer.json ]; then
@@ -92,7 +92,7 @@ jobs:
             echo "SKIP_DOWNLOAD_LOCKFILE=false" >> $GITHUB_OUTPUT
           fi
       - name: Download LockFile Artifact
-        if: always() && steps.check_files.outputs.SKIP_DOWNLOAD_LOCKFILE != 'true'
+        if: !cancelled() && steps.check_files.outputs.SKIP_DOWNLOAD_LOCKFILE != 'true'
         uses: actions/download-artifact@v4
         with:
           name: lockFile
@@ -130,7 +130,7 @@ jobs:
             MPL-2.0
             CC-BY-4.0
             Unicode-DFS-2016
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
+        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
         run: |
           cat > allowedLicenses.txt <<EOF
               $DEFAULT_ALLOWED_LICENSES
@@ -142,7 +142,7 @@ jobs:
 
       - name: Dependency Scan using Google OSV
         id: dependency_scan
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
+        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
         run: |
           cat >> dep_scan_suppression_config.toml <<EOF
               ${{ vars.OSV_SUPPRESSIONS }}
@@ -162,7 +162,7 @@ jobs:
           exit $OSV_EXIT_CODE
 
       - name: Comment Dependency scan report on PR
-        if: ${{ always() && contains('success,failure', steps.dependency_scan.outcome) }}
+        if: ${{ !cancelled() && contains('success,failure', steps.dependency_scan.outcome) }}
         uses: mshick/add-pr-comment@v2
         with:
           message-id: dependency_scan

@@ -209,11 +209,11 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Eslint scan
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'lint' )  }}
+        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'lint' )  }}
         run: |
           ${{ inputs.lint_command }}
       - name: Build project
-        if: ${{always() && !contains( inputs.excluded_jobs, 'build' )  }}
+        if: ${{!cancelled() && !contains( inputs.excluded_jobs, 'build' )  }}
         run: |
           ${{ inputs.build_command }}
       - name: Technology based scans after step
