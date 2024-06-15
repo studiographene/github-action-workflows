@@ -213,7 +213,7 @@ jobs:
         run: |
           ${{ inputs.lint_command }}
       - name: Build project
-        if: ${{!cancelled() && !contains( inputs.excluded_jobs, 'build' )  }}
+        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'build' )  }}
         run: |
           ${{ inputs.build_command }}
       - name: Technology based scans after step

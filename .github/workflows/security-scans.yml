@@ -92,7 +92,7 @@ jobs:
             echo "SKIP_DOWNLOAD_LOCKFILE=false" >> $GITHUB_OUTPUT
           fi
       - name: Download LockFile Artifact
-        if: !cancelled() && steps.check_files.outputs.SKIP_DOWNLOAD_LOCKFILE != 'true'
+        if: ${{ !cancelled() && steps.check_files.outputs.SKIP_DOWNLOAD_LOCKFILE != 'true' }}
         uses: actions/download-artifact@v4
         with:
           name: lockFile
