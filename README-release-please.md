@@ -32,12 +32,19 @@ on:
 ```
 
 ```yaml
-name: release_please
+name: Release Please
+
 on:
+  pull_request:
+    branches:
+      - master
+      - main
+      - trunk
   push:
     branches:
       - master
       - main
+      - trunk
 
 jobs:
   call-worflow:
