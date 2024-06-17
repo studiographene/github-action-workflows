@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.9.0](https://github.com/studiographene/github-action-workflows/compare/v1.8.1...v1.9.0) (2024-06-15)
+
+
+### Features
+
+* **release-please:** Tag naming automated for HotFix release & regular realase post HF release ([#34](https://github.com/studiographene/github-action-workflows/issues/34)) ([0d76393](https://github.com/studiographene/github-action-workflows/commit/0d763939a9f692c4374f413f389eaef8f0f9b921))
+
+
+### Bug Fixes
+
+* status check always-&gt;!cancelled() ([7430fb0](https://github.com/studiographene/github-action-workflows/commit/7430fb0e3f677167ec3b6a1d67e73ca7ee39cd19))
+* status check always-&gt;!cancelled() ([94ac73b](https://github.com/studiographene/github-action-workflows/commit/94ac73bc81944501260c353d05058169e81d4b8f))
+
+## [1.8.1](https://github.com/studiographene/github-action-workflows/compare/v1.8.0...v1.8.1) (2024-06-14)
+
+
+### Bug Fixes
+
+* **dependency scan:** report to display suppressed vulnerabilities when there are no vulnerabilities ([#30](https://github.com/studiographene/github-action-workflows/issues/30)) ([3481816](https://github.com/studiographene/github-action-workflows/commit/348181691de4e04ed760143bfa84b6a983c399c2))
+* **osv suppression:** config.toml file created at runtime, config file from Dockerfile is deprecated and has issue ([#32](https://github.com/studiographene/github-action-workflows/issues/32)) ([684bd9c](https://github.com/studiographene/github-action-workflows/commit/684bd9c6d4b134edd800632d04a908a1f26781db))
+
+## [1.8.0](https://github.com/studiographene/github-action-workflows/compare/v1.7.0...v1.8.0) (2024-06-14)
+
+
+### Features
+
+* **Dependency scan:** Suppressed vulnerabilities are listed in the report ([5012c45](https://github.com/studiographene/github-action-workflows/commit/5012c451144e7468ac31974d3777cb6e21294cb9))
+* **Dependency scan:** Suppressed vulnerabilities are listed in the report ([4ca41a4](https://github.com/studiographene/github-action-workflows/commit/4ca41a4d274c2a4d1e4efdaf7b6397a92607e2a0))
+* **security scan:** OSV suppressions are added to Dependency scan report ([#28](https://github.com/studiographene/github-action-workflows/issues/28)) ([6e65e29](https://github.com/studiographene/github-action-workflows/commit/6e65e299223a1cb472480fe21af8b10431c9f2e2))
+
+
+### Bug Fixes
+
+* **dependency scan:** step condition ([87198e1](https://github.com/studiographene/github-action-workflows/commit/87198e18f82a98e793bc6307d6801a761dafaa93))
+* **download-artifact:** deprecated action updownload-artifact@v2 updated to -&gt;4 ([669b0ef](https://github.com/studiographene/github-action-workflows/commit/669b0ef1de7ae4be127bdeb286a80bfa6192af4d))
+* **upload-artifact:** deprecated action upload-artifact updated to -&gt;4 ([58c0a10](https://github.com/studiographene/github-action-workflows/commit/58c0a1009b7bc99361409e70aa728b22c98342f5))
+
 ## [1.7.0](https://github.com/studiographene/github-action-workflows/compare/v1.6.3...v1.7.0) (2024-06-06)
 
 
