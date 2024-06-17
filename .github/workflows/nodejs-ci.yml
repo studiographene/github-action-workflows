@@ -238,6 +238,7 @@ jobs:
           ${{ inputs.build_command }}
       - name: Check if current branch is a target branch
         id: check_branch_name
+        shell: bash
         run: |
           IFS=',' read -ra BRANCHES <<< "${{ inputs.developer_test_branch }}"
           IS_TARGET_BRANCH="false"
