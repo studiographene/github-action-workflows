@@ -16,10 +16,25 @@ on:
         type: string
         default: "npm run build"
       run_dev_test:
-        description: "A boolen value to enable Developer tests (Unit/Integration/etc.,) are available in your repo code"
+        description: "A boolen value to enable Developer tests (Unit/Integration/etc.,). Set value as `true` if tests are available in your repo code"
         type: boolean
         required: false
         default: false
+      developer_test_branch:
+        description: 'Target branch for running tests (defaults to qa)'
+        type: string
+        required: false
+        default: 'qa'   
+      coverage_summary_path:
+        description: 'Path to the coverage summary JSON file'
+        type: string
+        required: false
+        default: './coverage/coverage-summary.json'
+      junitxml_path:
+        description: 'Path to the JUnit XML report file'
+        type: string
+        required: false
+        default: './coverage/report.xml'        
       docker_build_command:
         type: string
         required: false
@@ -221,23 +236,35 @@ jobs:
         if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'build' )  }}
         run: |
           ${{ inputs.build_command }}
+      - name: Check if current branch is a target branch
+        id: check_branch_name
+        run: |
+          IFS=',' read -ra BRANCHES <<< "${{ inputs.developer_test_branch }}"
+          IS_TARGET_BRANCH="false"
+          for branch in "${BRANCHES[@]}"; do
+            if [[ "$branch" == "${{ github.ref_name }}" ]]; then
+              IS_TARGET_BRANCH="true"
+              break
+            fi
+          done
+          echo "is_target_branch=$IS_TARGET_BRANCH" >> $GITHUB_OUTPUT 
       - name: Developer Tests
         id: developer_tests
-        if: ${{ always() && inputs.run_dev_test && github.event.pull_request.base.ref == 'qa' }}
+        if: always() && steps.check_branch_name.outputs.is_target_branch == 'true'
         run: |
           ${{ inputs.package_manager }} run test
       - name: Developer Test Coverage Report 
         uses: MishaKav/jest-coverage-comment@main
-        if: ${{  always() && contains('failure,success', steps.developer_tests.outcome) }}
+        if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
         with:
-          coverage-summary-path: ./coverage/coverage-summary.json
+          coverage-summary-path: ${{ inputs.coverage_summary_path }}
           title: Coverage Summary
           badge-title: Coverage
           hide-comment: false
           create-new-comment: false
           hide-summary: false
           junitxml-title: Junit Summary
-          junitxml-path: ./coverage/report.xml     
+          junitxml-path: ${{ inputs.junitxml_path }}    
       - name: Technology based scans after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}
         run: |
