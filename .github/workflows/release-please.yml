@@ -1,4 +1,5 @@
-name: release-please
+name: Release Please
+
 on:
   workflow_call:
     inputs:
@@ -11,7 +12,105 @@ permissions:
   pull-requests: write
 
 jobs:
+  tagging-validation:
+    name: tagging_validation
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      # steps to reset tag name back to regular post HotFix release
+      # step is executed if the PR Source branch is not a hotfix branch
+      - name: is the latest release a HotFix?
+        if: ${{ !(startsWith(github.head_ref, 'hotfix/')) }}
+        id: is_lastest_release_hotfix
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo -e "\033[0;93mChecking if there are releases available in this repo..."
+          EXISTING_TAGS_JSON=$(gh release list --exclude-drafts --exclude-pre-releases --json tagName --jq '[.[].tagName]')
+          EXISTING_TAGS_COUNT=$(echo ${EXISTING_TAGS_JSON} | jq '. | length')
+          [[ ${EXISTING_TAGS_COUNT} -gt 0 ]] && REPO_HAS_RELEASES=true || REPO_HAS_RELEASES=false
+          echo "REPO_HAS_RELEASES=${REPO_HAS_RELEASES}" >> ${GITHUB_OUTPUT}
+          echo "REPO_HAS_RELEASES: ${REPO_HAS_RELEASES}"
+          if [[ ${REPO_HAS_RELEASES} == 'true' ]]; then
+            LASTEST_RELEAE_TAG=$(gh release view --json tagName --jq '.tagName')
+            echo "Existing latest release tag is: ${LASTEST_RELEAE_TAG}"
+            [[ $LASTEST_RELEAE_TAG == *-hf* || $LASTEST_RELEAE_TAG == *-hotfix* ]] && LATEST_RELEASE_TAG_WAS_HOTFIX=true || LATEST_RELEASE_TAG_WAS_HOTFIX=false
+            echo "LATEST_RELEASE_TAG_WAS_HOTFIX: ${LATEST_RELEASE_TAG_WAS_HOTFIX}"
+            echo "LATEST_RELEASE_TAG_WAS_HOTFIX=${LATEST_RELEASE_TAG_WAS_HOTFIX}" >> ${GITHUB_OUTPUT}
+            if [[ ${LATEST_RELEASE_TAG_WAS_HOTFIX} == 'false' ]]; then echo -e "\033[0;93mLast relase was NOT a HotFix release, so this execution ends here"; fi
+          elif [[ $REPO_HAS_RELEASES == 'false' ]]; then
+            echo -e "\033[0;31mNo release is available in this repo, so this execution ends here"
+          fi
+
+      - name: Reset tag name back to regular post HotFix release
+        # setting step dependency using step outcome
+        if: ${{ steps.is_lastest_release_hotfix.outcome == 'success' && steps.is_lastest_release_hotfix.outputs.LATEST_RELEASE_TAG_WAS_HOTFIX == 'true' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo -e "\033[0;32mLast relase was a HotFix release, resetting Tag name to regular for this regular release..."
+          echo -e "\033[0;34mIdentifying this PR type..."
+          echo "PR title is: ${{ github.event.pull_request.title }}"
+          IS_MAJOR=${{ contains(github.event.pull_request.title, '!:') }}
+          # Substring `feat` will cover both feat & feature
+          IS_MINOR=${{ startsWith(github.event.pull_request.title, 'feat') }}
+          IS_FIX=${{ startsWith(github.event.pull_request.title, 'fix') }}
+          ALL_TAGS_LIST=$(gh release list --exclude-drafts --exclude-pre-releases --json tagName --jq '.[].tagName')
+          LAST_REGULAR_TAG=$(echo $ALL_TAGS_LIST | tr ' ' '\n' | grep -vE "(hf|hotfix)" | grep -m1 .)
+          echo -e "\033[0;93mLast regular tag was: ${LAST_REGULAR_TAG}"
+          echo -e "\033[0;34mCalculating SemVer..."
+          # slicing last regular tag (major, minor, fix) to calculate new SemVer
+          MAJOR=$(echo "${LAST_REGULAR_TAG}" | cut -d '.' -f1 | cut -c2-)
+          MINOR=$(echo "${LAST_REGULAR_TAG}" | cut -d '.' -f2)
+          FIX=$(echo "${LAST_REGULAR_TAG}" | cut -d '.' -f3)
+          echo "IS_MAJOR: $IS_MAJOR, IS_MINOR: $IS_MINOR, IS_FIX: $IS_FIX"
+          echo "Version before incrementing. MAJOR: $MAJOR, MINOR: $MINOR, FIX: $FIX"
+          if [ $IS_MAJOR == "true" ]; then
+            MAJOR=$(expr $MAJOR + 1)
+            MINOR="0"
+            FIX="0"
+          elif [ $IS_MINOR == "true" ]; then
+            MINOR=$(expr $MINOR + 1)
+            FIX="0"
+          elif [ $IS_FIX == "true" ]; then
+            FIX=$(expr $FIX + 1)
+          else
+            echo -e "\033[0;93mPR title contain neither Fix nor Feature Conventional Commit format, so counting this as Fix release"
+            FIX=$(expr $FIX + 1)
+          fi
+          NEW_SEM_VER="v${MAJOR}.${MINOR}.${FIX}"
+          echo -e "\033[0;93mNew SemVer is: $NEW_SEM_VER"
+          echo -e "\033[0;32mCommitting Release-As Tag name..."
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit --allow-empty -m "chore: post HotFix, resetting tag name to regular ${NEW_SEM_VER}" -m "Release-As: ${NEW_SEM_VER}"
+          git push origin ${{ github.head_ref }}
+      - name: Generate HotFix tag name
+        if: ${{ startsWith(github.head_ref, 'hotfix/') && github.base_ref == github.event.repository.default_branch }}
+        id: generate_hotfix_tag_name
+        run: |
+          SLICED_TAG_NAME=$(echo ${{ github.head_ref }} | cut -d'/' -f2)
+          echo "HotFix tag name: ${HOTFIX_TAG_NAME}"
+          echo "HOTFIX_TAG_NAME=${SLICED_TAG_NAME}" >> ${GITHUB_OUTPUT}
+      - name: commit release-as hotfix tag
+        # setting step dependency using step outcome
+        if: ${{ steps.generate_hotfix_tag_name.outcome == 'success' }}
+        env:
+          HOTFIX_TAG_NAME: ${{ steps.generate_hotfix_tag_name.outputs.HOTFIX_TAG_NAME }}
+        run: |
+          echo -e "\033[0;32mCommitting Release-As HotFix Tag name..."
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit --allow-empty -m "chore: ${HOTFIX_TAG_NAME}" -m "Release-As: ${HOTFIX_TAG_NAME}"
+          git push origin ${{ github.head_ref }}
+
   release-please:
+    if: ${{ github.ref_name == github.event.repository.default_branch }}
     runs-on: ubuntu-latest
     steps:
       - name: auto-release

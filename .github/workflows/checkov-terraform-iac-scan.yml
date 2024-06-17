@@ -61,7 +61,7 @@ jobs:
 
       - name: Format The Report
         id: format_checkov_results
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           report_data=$(node - << EOF
           const fs = require('fs');
@@ -106,7 +106,7 @@ jobs:
           echo "# Checkov IaC Scan Report" >> final_checkov_report.md
           if [ ${{ steps.checkov.outcome }} == "success" ]
           then
-            echo "### No issues found :rainbow:" >> final_checkov_report.md
+            echo "### :rainbow: No issues found" >> final_checkov_report.md
           elif [ ${{ steps.checkov.outcome }} == "failure" ]
           then
             echo "### :warning: Below are the issues found:" >> final_checkov_report.md
@@ -117,7 +117,7 @@ jobs:
 
       - name: Add Report As PR comment
         uses: mshick/add-pr-comment@v2
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           message-id: Checkov-scan
           message-path: |
@@ -126,6 +126,6 @@ jobs:
 # Below `Upload SARIF file` can be only used if GitHub Enterprise feature Advanced Security is enabled
 #      - name: Upload SARIF file
 #        uses: github/codeql-action/upload-sarif@v3
-#        if: success() || failure()
+#        if: ${{ !cancelled() }}
 #        with:
 #          sarif_file: results.sarif
