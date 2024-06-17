@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.9.0](https://github.com/studiographene/github-action-workflows/compare/v1.8.1...v1.9.0) (2024-06-15)
+
+
+### Features
+
+* **release-please:** Tag naming automated for HotFix release & regular realase post HF release ([#34](https://github.com/studiographene/github-action-workflows/issues/34)) ([0d76393](https://github.com/studiographene/github-action-workflows/commit/0d763939a9f692c4374f413f389eaef8f0f9b921))
+
+
+### Bug Fixes
+
+* status check always-&gt;!cancelled() ([7430fb0](https://github.com/studiographene/github-action-workflows/commit/7430fb0e3f677167ec3b6a1d67e73ca7ee39cd19))
+* status check always-&gt;!cancelled() ([94ac73b](https://github.com/studiographene/github-action-workflows/commit/94ac73bc81944501260c353d05058169e81d4b8f))
+
 ## [1.8.1](https://github.com/studiographene/github-action-workflows/compare/v1.8.0...v1.8.1) (2024-06-14)
 
 
