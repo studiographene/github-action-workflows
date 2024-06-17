@@ -99,7 +99,6 @@ jobs:
           ${{ inputs.caching_before_step_command}}
       - name: Install dependencies
         run: |
-          npm i -g pnpm
           ${{ inputs.package_manager }} install
         env:
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -89,5 +89,5 @@ jobs:
   - Docker Build
   - Trivy container vulnerability scan
   - Build project
-  - Test
+  - Developer's Test
 - Codium PR Agent
