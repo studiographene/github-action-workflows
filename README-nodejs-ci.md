@@ -8,7 +8,10 @@ CI scans workflow for NodeJS code.
 | ------------------------------------------ | --------------------------------------------------------------------------- | -------- | --------------- |
 | excluded_jobs                              | A string of comma separated jobs that you want to exculude.                 | no       |                 |
 | package_manager                            |
-| run_dev_test | A boolen value to enable Developer tests (Unit/Integration/etc.,) are available in your repo code. | no | false |                                                                             | no       | `npm`           |
+| run_dev_test | A boolen value to enable Developer tests (Unit/Integration/etc.,) are available in your repo code. | no | false |
+| developer_test_branch | Target branchs for running developer's test (support list of branches `'dev,uat'`) | no | `'qa'` |
+| coverage_summary_path | Path to the coverage summary JSON file generated from developer's test | no | `./coverage/coverage-summary.json` |
+| junitxml_path  | Path to the JUnit XML report file generated from developer's test | no | `./coverage/report.xml`  |                                                                             | no       | `npm`           |
 | npm_token                                  | NPM token                                                                   | no       |                 |
 | build_command                              | build command for the project                                               | no       | `npm run build` |
 | docker_build_command                       | Docker build command                                                        | no       |                 |
