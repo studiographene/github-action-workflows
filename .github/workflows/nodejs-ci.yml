@@ -236,24 +236,10 @@ jobs:
         if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'build' )  }}
         run: |
           ${{ inputs.build_command }}
-      - name: Check if current branch is a target branch
-        id: check_branch_name
-        shell: bash
-        run: |
-          IFS=',' read -ra BRANCHES <<< "${{ inputs.developer_test_branch }}"
-          IS_TARGET_BRANCH="false"
-          for branch in "${BRANCHES[@]}"; do
-            if [[ "$branch" == "${{ github.ref_name }}" ]]; then
-              IS_TARGET_BRANCH="true"
-              break
-            fi
-          done
-          echo "is_target_branch=$IS_TARGET_BRANCH" >> $GITHUB_OUTPUT 
       - name: Developer Tests
-        id: developer_tests
-        if: always() && steps.check_branch_name.outputs.is_target_branch == 'true'
+        if: ${{ always() && inputs.run_dev_test && (github.event.pull_request.base.ref == 'qa' || contains(fromJson('["qa"] + split(inputs.user_input_branch, ",")), github.event.pull_request.base.ref)) }}
         run: |
-          ${{ inputs.package_manager }} run test
+          ${{ inputs.package_manager }} run test 
       - name: Developer Test Coverage Report 
         uses: MishaKav/jest-coverage-comment@main
         if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
