@@ -186,7 +186,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     needs: caching
-    if: ${{ always() && inputs.run_dev_test && (github.event.pull_request.base.ref == 'qa' || contains(fromJson(inputs.developer_test_branch), github.event.pull_request.base.ref)) }}
+    if:  ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v1
     steps:
