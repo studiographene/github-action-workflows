@@ -22,6 +22,7 @@ on:
         default: false
       developer_test_branch:
         description: 'JSON array of developer-provided branch names to run the tests'
+        type: string
         required: false
         default: '[]'   
       coverage_summary_path:
