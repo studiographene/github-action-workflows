@@ -238,7 +238,7 @@ jobs:
           ${{ inputs.build_command }}
       - name: Developer Tests
         id: developer_tests
-        if: ${{ always() && inputs.run_dev_test && (github.event.pull_request.base.ref == 'qa' || contains(fromJson(inputs.developer_test_branch), github.event.pull_request.base.ref)) }}
+        if: ${{ always() && inputs.run_dev_test && (github.event.pull_request.base.ref == '["qa"]' || contains(fromJson(inputs.developer_test_branch), github.event.pull_request.base.ref)) }}
         run: |
           ${{ inputs.package_manager }} run test 
       - name: Developer Test Coverage Report 
