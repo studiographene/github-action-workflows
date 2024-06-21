@@ -67,7 +67,12 @@ jobs:
             echo "## Semgrep SAST Scan Report" > sast_report.md
             echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
           fi
-          echo "::error::Vulnerabilities found! Find the scan report in PR if this scan was triggered by PR" && exit $SEMGREP_EXIT_CODE
+          if [ $SEMGREP_EXIT_CODE != 0 ]; then
+            echo "::error::Vulnerabilities found! Find the scan report in PR if this scan was triggered by PR"
+            exit 1
+          elif [ $SEMGREP_EXIT_CODE == 0 ]; then
+            exit 0
+          fi
       - name: Comment SAST report on PR
         if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'sast')  }}
         uses: mshick/add-pr-comment@v2
@@ -159,7 +164,12 @@ jobs:
             echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
             cat osv_raw_report.md >> osv_report.md
           fi
-          echo "::error::Vulnerabilities found! Find the scan report in PR if this scan was triggered by PR" && exit $OSV_EXIT_CODE
+          if [ $OSV_EXIT_CODE != 0 ]; then
+            echo "::error::Vulnerabilities found! Find the scan report in PR if this scan was triggered by PR"
+            exit 1
+          elif [ $OSV_EXIT_CODE == 0 ]; then
+            exit 0
+          fi
 
       - name: Comment Dependency scan report on PR
         if: ${{ !cancelled() && contains('success,failure', steps.dependency_scan.outcome) }}
