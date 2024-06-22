@@ -29,6 +29,35 @@ on:
         default: "WARNING"
 
 jobs:
+  tf_fmt:
+    name: tf_fmt
+    permissions:
+      contents: write # for making commit
+    runs-on: ubuntu-latest
+    env:
+      HEAD_BRANCH: ${{ github.head_ref }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Terraform fmt
+        run: |
+          DIRECTORIES="$(find . -type f -name "*.tf" -exec dirname {} \; | sed 's|^\./||')"
+          # Iterate over each directory to do fmt
+          IFS=$'\n'   # Set the Internal Field Separator to newline
+          for dir in ${DIRECTORIES}; do
+              cd "${{ github.workspace }}/${dir}" && echo "in directory: ${dir}"
+              terraform fmt
+          done
+      - name: commit formatted code
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -am "chore: terraform fmt" || echo "No changes to commit"
+          git config pull.rebase true && git pull origin ${HEAD_BRANCH}
+          git push origin ${HEAD_BRANCH}
+
   iac_scan:
     permissions:
       contents: read # for actions/checkout to fetch code
