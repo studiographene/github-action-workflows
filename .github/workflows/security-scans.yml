@@ -20,7 +20,12 @@ jobs:
   security-scans:
     name: security scans
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
@@ -28,7 +33,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.REF }}
+          ref: ${{ github.ref }}
 
       - name: Security scans before step
         if: ${{ inputs.security_scan_before_step_command != '' }}
@@ -143,7 +148,15 @@ jobs:
           cat >> allowedLicenses.txt <<EOF
               ${{ vars.ALLOWED_LICENSES }}
           EOF
+          set +e
           /root/executables/ci-utility check --sbom bom.xml --allowedLicences allowedLicenses.txt
+          LICENSE_SCAN_EXIT_CODE=$?
+          set -e
+          if [ $LICENSE_SCAN_EXIT_CODE != 0 ]; then
+            echo "::error::Non-compliant license found! Find the scan report in PR if this scan was triggered by PR"
+            exit 1
+          elif [ $LICENSE_SCAN_EXIT_CODE == 0 ]; then
+            exit 0
 
       - name: Dependency Scan using Google OSV
         id: dependency_scan

@@ -21,7 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
-    permissions: write-all
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,13 +36,18 @@ jobs:
           semgrep --config "p/default" --config /root/configs/semgrep/rules/eslint.yml --sarif ${{ inputs.semgrep_options }} | tee semgrep.sarif
       - name: Display Errors
         id: display_errors
+        env:
+          BRANCH_NAME: ${GITHUB_REF_NAME}
+          REPO_NAME: ${{ github.repository }}
+          ORG_ID: ${{ github.event.organization.id }}
+          REPO_ID: ${{ github.repository_id }}
         run: |
           jq -n '[inputs | .runs[].results[] | {ruleId: .ruleId, message: .message.text, location: .locations[].physicalLocation.artifactLocation.uri, lineNo: .locations[].physicalLocation.region.startLine, snippet: .locations[].physicalLocation.region.snippet.text}]' semgrep.sarif > temp_errors.json
           date=$(date +%Y-%m-%d)
-          branch=${GITHUB_REF_NAME}
-          repo=${{ github.repository }}
-          orgId=${{ github.event.organization.id }}
-          repoId=${{ github.repository_id }}
+          branch=${BRANCH_NAME}
+          repo=${REPO_NAME}
+          orgId=${ORG_ID}
+          repoId=${REPO_ID}
           data=$(jq -n --arg date "$date" --arg branch "$branch" --arg orgId "$orgId" --arg repoId "$repoId" --arg repo "$repo" '{date: $date, branch: $branch, repo: $repo, orgId: $orgId, repoId: $repoId, errors: input}' temp_errors.json)
           # Write the data to a JSON file
           echo "No. of error findings: $data"
