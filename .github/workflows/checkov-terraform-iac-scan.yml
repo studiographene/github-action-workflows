@@ -44,9 +44,11 @@ jobs:
       - name: Terraform fmt
         run: |
           DIRECTORIES="$(find . -type d)"
+          echo $DIRECTORIES
           # Iterate over each directory to do fmt
           IFS=$'\n'   # Set the Internal Field Separator to newline
-          for line in ${DIRECTORIES}; do
+          for dir in ${DIRECTORIES}; do
+              echo "in directory: ${dir}"
               terraform fmt
           done
       - name: commit formatted code
