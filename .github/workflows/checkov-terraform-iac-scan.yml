@@ -48,7 +48,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git commit "chore: terraform fmt"
+          git commit -am "chore: terraform fmt"
           git push origin ${HEAD_BRANCH}
 
   iac_scan:
