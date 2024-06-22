@@ -43,7 +43,12 @@ jobs:
           ref: ${{ github.head_ref }}
       - name: Terraform fmt
         run: |
-          terraform fmt
+          DIRECTORIES="$(find . -type d)"
+          # Iterate over each directory to do fmt
+          IFS=$'\n'   # Set the Internal Field Separator to newline
+          for line in ${DIRECTORIES}; do
+              terraform fmt
+          done
       - name: commit formatted code
         run: |
           git config user.name 'github-actions[bot]'
