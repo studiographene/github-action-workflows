@@ -43,12 +43,12 @@ jobs:
           ref: ${{ github.head_ref }}
       - name: Terraform fmt
         run: |
-          DIRECTORIES="$(find . -type d)"
-          echo $DIRECTORIES
+          DIRECTORIES="$(find . -type f -name "*.tf" -exec dirname {} \;)"
           # Iterate over each directory to do fmt
           IFS=$'\n'   # Set the Internal Field Separator to newline
           for dir in ${DIRECTORIES}; do
               echo "in directory: ${dir}"
+              cd ${dir}
               terraform fmt
           done
       - name: commit formatted code
