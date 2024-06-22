@@ -41,7 +41,10 @@ jobs:
         directory: ${{ fromJson(inputs.directories) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Checkov GitHub Action
         id: checkov
