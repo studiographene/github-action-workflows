@@ -68,7 +68,6 @@ jobs:
       build_command: pnpm run build
       lint_command: pnpm run lint
     secrets: inherit
-    permissions: write-all
 ```
 
 ---

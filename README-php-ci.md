@@ -52,7 +52,6 @@ jobs:
   call-workflow:
     uses: studiographene/github-action-workflows/.github/workflows/php-ci.yml@master # if you want alternatively pin to tag version version
     secrets: inherit
-    permissions: write-all
 ```
 
 ---
