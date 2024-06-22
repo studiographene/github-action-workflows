@@ -29,6 +29,28 @@ on:
         default: "WARNING"
 
 jobs:
+  tf_fmt:
+    name: tf_fmt
+    permissions:
+      contents: read # for actions/checkout to fetch code
+    runs-on: ubuntu-latest
+    env:
+      HEAD_BRANCH: ${{ github.head_ref }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Terraform fmt
+        run: |
+          terraform fmt
+      - name: commit formatted code
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit "chore: terraform fmt"
+          git push origin ${HEAD_BRANCH}
+
   iac_scan:
     permissions:
       contents: read # for actions/checkout to fetch code
