@@ -24,7 +24,7 @@ on:
         description: 'JSON array of developer-provided branch names to run the tests'
         type: string
         required: false
-        default: '["qa"]'   
+        default: qa  
       coverage_summary_path:
         description: 'Path to the coverage summary JSON file'
         type: string
@@ -194,7 +194,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.REF }}
+          ref: ${{ github.head_ref }}
       - name: Technology based scans before step
         if: ${{ inputs.technology_based_scans_before_step_command != '' }}
         run: |
@@ -238,7 +238,7 @@ jobs:
           ${{ inputs.build_command }}
       - name: Developer Tests
         id: developer_tests
-        if: ${{ always() && inputs.run_dev_test && contains(fromJson(inputs.developer_test_branch), github.event.pull_request.base.ref) }}
+        if: ${{ always() && inputs.run_dev_test && contains(inputs.developer_test_branch), github.event.pull_request.base.ref) }}
         run: |
           ${{ inputs.package_manager }} run test 
       - name: Developer Test Coverage Report 
