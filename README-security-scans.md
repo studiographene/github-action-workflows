@@ -6,7 +6,7 @@ Security scans workflow for CI checks for codes such as NodeJS, NodeJs Mobile, P
 
 | name                              | description                                                        | type   | required | default |
 | --------------------------------- | ------------------------------------------------------------------ | ------ | -------- | ------- |
-| excluded_jobs                     | Comma-separated list of jobs to be excluded from execution         | string | no       |         |
+| excluded_jobs                     | A string of comma separated job IDs to excluded from execution.    | string | no       |         |
 | semgrep_options                   | SEMGREP command options                                            | string | no       |         |
 | security_scan_before_step_command | Optional commands to pass before security scan job steps execution | string | no       |         |
 | security_scan_after_step_command  | Optional commands to pass after security scan job steps execution  | string | no       |         |

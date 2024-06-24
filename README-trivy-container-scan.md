@@ -7,15 +7,15 @@ To perform container scan and report vulnerabilities on PR
 
 # Workflow Inputs
 
-| name                            | description                                                                 | type   | required | default                                           |
-| ------------------------------- | --------------------------------------------------------------------------- | ------ | -------- | ------------------------------------------------- |
-| `action_runner_container_image` | Action runner container image                                               | string | no       | `public.ecr.aws/studiographene/ci:node-20-alpine` |
-| `before_step_command`           | Command to execute at the start of the job                                  | string | no       |                                                   |
-| `after_step_command`            | Command to execute at the end of the job                                    | string | no       |                                                   |
-| `docker_build_command`          | Docker Build command                                                        | string | no       | `docker build -t local:latest .`                  |
-| `docker_build_image_id`         | Docker image ID as mentioned in docker_build_command                        | string | no       | `local:latest`                                    |
-| `container_scanners`            | comma-separated list of what security issues to detect (vuln,secret,config) | string | no       | `vuln`                                            |
-| `container_scan_skip_dirs`      | Comma separated list of directories to skip scanning                        | string | no       |
+| name                            | description                                                                | type   | required | default                                           |
+| ------------------------------- | -------------------------------------------------------------------------- | ------ | -------- | ------------------------------------------------- |
+| `action_runner_container_image` | Action runner container image                                              | string | no       | `public.ecr.aws/studiographene/ci:node-20-alpine` |
+| `before_step_command`           | Command to execute at the start of the job                                 | string | no       |                                                   |
+| `after_step_command`            | Command to execute at the end of the job                                   | string | no       |                                                   |
+| `docker_build_command`          | Docker Build command                                                       | string | no       | `docker build -t local:latest .`                  |
+| `docker_build_image_id`         | Docker image ID as mentioned in docker_build_command                       | string | no       | `local:latest`                                    |
+| `container_scanners`            | A string of comma-separated security issues to detect (vuln,secret,config) | string | no       | `vuln`                                            |
+| `container_scan_skip_dirs`      | A string of comma separated directories to skip scanning                   | string | no       |
 
 # Action variables
 

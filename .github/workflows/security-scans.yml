@@ -91,7 +91,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Check for composer.lock or composer.json
-        if: ${{ !cancelled() && !(contains(fromJSON('["licenseScan", "dependency_scan"]'), inputs.excluded_jobs)) }}
+        if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'license_scan') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
         id: check_files
         run: |
           if [ -f composer.lock ] || [ -f composer.json ]; then
@@ -140,7 +140,7 @@ jobs:
             MPL-2.0
             CC-BY-4.0
             Unicode-DFS-2016
-        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
+        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'license_scan' ) }}
         run: |
           cat > allowedLicenses.txt <<EOF
               $DEFAULT_ALLOWED_LICENSES
