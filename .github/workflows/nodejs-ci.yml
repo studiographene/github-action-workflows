@@ -252,7 +252,9 @@ jobs:
           create-new-comment: false
           hide-summary: false
           junitxml-title: Junit Summary
-          junitxml-path: ${{ inputs.junitxml_path }}    
+          junitxml-path: ${{ inputs.junitxml_path }}   
+   
+
       - name: Technology based scans after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}
         run: |
