@@ -73,7 +73,7 @@ jobs:
             echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
           fi
           if [ $SEMGREP_EXIT_CODE != 0 ]; then
-            echo "::error::Vulnerabilities found! Find the scan report in PR if this scan was triggered by PR"
+            echo "::error::Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
             exit 1
           elif [ $SEMGREP_EXIT_CODE == 0 ]; then
             exit 0
@@ -170,7 +170,7 @@ jobs:
             cat osv_raw_report.md >> osv_report.md
           fi
           if [ $OSV_EXIT_CODE != 0 ]; then
-            echo "::error::Vulnerabilities found! Find the scan report in PR if this scan was triggered by PR"
+            echo "::error::Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
             exit 1
           elif [ $OSV_EXIT_CODE == 0 ]; then
             exit 0
