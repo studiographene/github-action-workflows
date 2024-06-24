@@ -21,20 +21,20 @@ on:
         required: false
         default: false
       dev_test_branch:
-        description: 'Developer-provided branch names to run the tests'
+        description: "Developer-provided branch names to run the tests"
         type: string
         required: false
-        default: qa  
+        default: qa
       coverage_summary_path:
-        description: 'Path to the coverage summary JSON file'
+        description: "Path to the coverage summary JSON file"
         type: string
         required: false
-        default: './coverage/coverage-summary.json'
+        default: "./coverage/coverage-summary.json"
       junitxml_path:
-        description: 'Path to the JUnit XML report file'
+        description: "Path to the JUnit XML report file"
         type: string
         required: false
-        default: './coverage/report.xml'        
+        default: "./coverage/report.xml"
       docker_build_command:
         type: string
         required: false
@@ -97,7 +97,7 @@ on:
 
 jobs:
   caching:
-    name: Cache node modules
+    name: cache_module
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -171,8 +171,8 @@ jobs:
         run: |
           ${{ inputs.caching_after_step_command}}
 
-  security-scans:
-    name: security scans
+  security_scans:
+    name: security_scans
     needs: caching
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     uses: studiographene/github-action-workflows/.github/workflows/security-scans.yml@master
@@ -183,8 +183,8 @@ jobs:
       excluded_jobs: ${{ inputs.excluded_jobs }}
       semgrep_options: ${{ inputs.semgrep_options }}
 
-  Technology_based_scans:
-    name: Technology based scans
+  technology_based_scans:
+    name: technology_based_scans
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -193,7 +193,7 @@ jobs:
       pull-requests: write
       security-events: write
     needs: caching
-    if:  ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v1
     steps:
@@ -246,8 +246,8 @@ jobs:
         id: developer_tests
         if: ${{ always() && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
         run: |
-          ${{ inputs.package_manager }} run test 
-      - name: Developer Test Coverage Report 
+          ${{ inputs.package_manager }} run test
+      - name: Developer Test Coverage Report
         uses: MishaKav/jest-coverage-comment@main
         if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
         with:
@@ -258,16 +258,15 @@ jobs:
           create-new-comment: false
           hide-summary: false
           junitxml-title: Junit Summary
-          junitxml-path: ${{ inputs.junitxml_path }}    
+          junitxml-path: ${{ inputs.junitxml_path }}
 
       - name: Technology based scans after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}
         run: |
           ${{ inputs.technology_based_scans_after_step_command}}
 
-
   container_scan:
-    name: Container Scan
+    name: container_scan
     if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && !contains( inputs.excluded_jobs, 'container_scan' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) }}
     uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master
     secrets: inherit
@@ -280,7 +279,7 @@ jobs:
       after_step_command: ${{ inputs.container_scan_after_step_command}}
 
   pr_agent:
-    name: Codium PR Agent
+    name: pr_agent
     if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) }}
     uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@master
     secrets: inherit

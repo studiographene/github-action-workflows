@@ -1,4 +1,4 @@
-name: release-please
+name: Git Release
 on:
   push:
     branches:
@@ -7,6 +7,6 @@ on:
       - hotfix/**
 
 jobs:
-  release-please:
+  call_workflow:
     uses: ./.github/workflows/release-please.yml
     secrets: inherit
