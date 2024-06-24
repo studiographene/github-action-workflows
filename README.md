@@ -3,3 +3,8 @@
 # Should contain only the Workflows that can be public
 
 # README for each workflow can be found separately, they are named as README-<< the-workflow-name >>.md
+
+# Contributors Attention:
+
+- Follow conventional commit with scope set to the workflow file. For example, if you are adding feature to `nodejs-ci`
+  set the scope to `nodejs-ci`, `feature(nodejs-ci): ...message...`
