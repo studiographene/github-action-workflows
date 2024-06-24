@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.1](https://github.com/studiographene/github-action-workflows/compare/v1.10.0...v1.10.1) (2024-06-24)
+
+
+### Bug Fixes
+
+* **all workflows:** Job ID and job name are matched to facilitate automation in GitHub checks mandate config ([#38](https://github.com/studiographene/github-action-workflows/issues/38)) ([ab85afa](https://github.com/studiographene/github-action-workflows/commit/ab85afa7bb56b8c7013240094fd26ed391482c58))
+
 ## [1.10.0](https://github.com/studiographene/github-action-workflows/compare/v1.9.0...v1.10.0) (2024-06-24)
 
 
