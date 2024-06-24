@@ -15,6 +15,26 @@ on:
       build_command:
         type: string
         default: "npm run build"
+      run_dev_test:
+        description: "A boolen value to enable Developer tests (Unit/Integration/etc.,). Set value as `true` if tests are available in your repo code"
+        type: boolean
+        required: false
+        default: false
+      dev_test_branch:
+        description: 'Developer-provided branch names to run the tests'
+        type: string
+        required: false
+        default: qa  
+      coverage_summary_path:
+        description: 'Path to the coverage summary JSON file'
+        type: string
+        required: false
+        default: './coverage/coverage-summary.json'
+      junitxml_path:
+        description: 'Path to the JUnit XML report file'
+        type: string
+        required: false
+        default: './coverage/report.xml'        
       docker_build_command:
         type: string
         required: false
@@ -173,9 +193,9 @@ jobs:
       pull-requests: write
       security-events: write
     needs: caching
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    if:  ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine-v1.0.4
+      image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -222,10 +242,29 @@ jobs:
         if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'build' )  }}
         run: |
           ${{ inputs.build_command }}
+      - name: Developer Tests
+        id: developer_tests
+        if: ${{ always() && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
+        run: |
+          ${{ inputs.package_manager }} run test 
+      - name: Developer Test Coverage Report 
+        uses: MishaKav/jest-coverage-comment@main
+        if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
+        with:
+          coverage-summary-path: ${{ inputs.coverage_summary_path }}
+          title: Coverage Summary
+          badge-title: Coverage
+          hide-comment: false
+          create-new-comment: false
+          hide-summary: false
+          junitxml-title: Junit Summary
+          junitxml-path: ${{ inputs.junitxml_path }}    
+
       - name: Technology based scans after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}
         run: |
           ${{ inputs.technology_based_scans_after_step_command}}
+
 
   container_scan:
     name: Container Scan
