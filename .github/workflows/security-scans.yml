@@ -20,7 +20,12 @@ jobs:
   security-scans:
     name: security scans
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
@@ -28,7 +33,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.REF }}
+          ref: ${{ github.ref }}
 
       - name: Security scans before step
         if: ${{ inputs.security_scan_before_step_command != '' }}
@@ -67,7 +72,12 @@ jobs:
             echo "## Semgrep SAST Scan Report" > sast_report.md
             echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
           fi
-          echo "::error::Vulnerabilities found! Find the scan report in PR if this scan was triggered by PR" && exit $SEMGREP_EXIT_CODE
+          if [ $SEMGREP_EXIT_CODE != 0 ]; then
+            echo "::error::Vulnerabilities found! Find the scan report in PR if this scan was triggered by PR"
+            exit 1
+          elif [ $SEMGREP_EXIT_CODE == 0 ]; then
+            exit 0
+          fi
       - name: Comment SAST report on PR
         if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'sast')  }}
         uses: mshick/add-pr-comment@v2
@@ -81,7 +91,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Check for composer.lock or composer.json
-        if: ${{ !cancelled() && !(contains(fromJSON('["licenseScan", "dependency_scan"]'), inputs.excluded_jobs)) }}
+        if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'license_scan') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
         id: check_files
         run: |
           if [ -f composer.lock ] || [ -f composer.json ]; then
@@ -130,7 +140,7 @@ jobs:
             MPL-2.0
             CC-BY-4.0
             Unicode-DFS-2016
-        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
+        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'license_scan' ) }}
         run: |
           cat > allowedLicenses.txt <<EOF
               $DEFAULT_ALLOWED_LICENSES
@@ -138,7 +148,16 @@ jobs:
           cat >> allowedLicenses.txt <<EOF
               ${{ vars.ALLOWED_LICENSES }}
           EOF
+          set +e
           /root/executables/ci-utility check --sbom bom.xml --allowedLicences allowedLicenses.txt
+          LICENSE_SCAN_EXIT_CODE=$?
+          set -e
+          if [ $LICENSE_SCAN_EXIT_CODE != 0 ]; then
+            echo "::error::Non-compliant license found! Find the scan report in PR if this scan was triggered by PR"
+            exit 1
+          elif [ $LICENSE_SCAN_EXIT_CODE == 0 ]; then
+            exit 0
+          fi
 
       - name: Dependency Scan using Google OSV
         id: dependency_scan
@@ -159,7 +178,12 @@ jobs:
             echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
             cat osv_raw_report.md >> osv_report.md
           fi
-          echo "::error::Vulnerabilities found! Find the scan report in PR if this scan was triggered by PR" && exit $OSV_EXIT_CODE
+          if [ $OSV_EXIT_CODE != 0 ]; then
+            echo "::error::Vulnerabilities found! Find the scan report in PR if this scan was triggered by PR"
+            exit 1
+          elif [ $OSV_EXIT_CODE == 0 ]; then
+            exit 0
+          fi
 
       - name: Comment Dependency scan report on PR
         if: ${{ !cancelled() && contains('success,failure', steps.dependency_scan.outcome) }}

@@ -99,7 +99,8 @@ jobs:
   caching:
     name: Cache node modules
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: read
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
@@ -107,7 +108,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.REF }}
+          ref: ${{ github.ref }}
       - name: before step
         if: ${{ inputs.caching_before_step_command != '' }}
         run: |
@@ -185,7 +186,12 @@ jobs:
   Technology_based_scans:
     name: Technology based scans
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
     needs: caching
     if:  ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
@@ -194,7 +200,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.ref }}
       - name: Technology based scans before step
         if: ${{ inputs.technology_based_scans_before_step_command != '' }}
         run: |
@@ -252,8 +258,7 @@ jobs:
           create-new-comment: false
           hide-summary: false
           junitxml-title: Junit Summary
-          junitxml-path: ${{ inputs.junitxml_path }}   
-   
+          junitxml-path: ${{ inputs.junitxml_path }}    
 
       - name: Technology based scans after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}

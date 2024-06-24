@@ -2,11 +2,13 @@
 
 CI scans workflow for NodeJS code.
 
+> This workflow has **pr_agent** job, an automated PR review using [Codium AI PR Agent](https://www.codium.ai/products/git-plugin/). It required OpenAI key defined as GitHub action secret `OPENAI_KEY`. If you prefer not to use `pr_agent` because you do not have OpenAI license or any for other reasons, you can exclude the `pr_agent` job from execution by setting this workflow input `excluded_jobs: "pr_agent"`
+
 # Workflow Inputs
 
 | Name                                       | Description                                                                 | Required | Default         |
 | ------------------------------------------ | --------------------------------------------------------------------------- | -------- | --------------- |
-| excluded_jobs                              | A string of comma separated jobs that you want to exculude.                 | no       |                 |
+| excluded_jobs <a name="inputs_EXCLUDED_JOBS"></a> | A string of comma separated job IDs that you want to exclude from execution. Job IDs that can be used to exclude `lint,sast,gitleaks,license_scan,dependency_scan,build,docker,pr_agent`. | no       |                 |
 | package_manager                            |
 | run_dev_test | A boolen value to enable Developer tests (Unit/Integration/etc.,) are available in your repo code. | no | false |
 | dev_test_branch | A string of comma separated branches that you want to run developer tests on. (support list of branches. Ex  `dev,qa` or `uat`) | no | `'qa'` |
@@ -73,7 +75,6 @@ jobs:
       lint_command: pnpm run lint
       run_dev_test: true   # Set this input only if the Developer tests (Unit/Integration/etc.,) are available in your repo code
     secrets: inherit
-    permissions: write-all
 ```
 
 ---
@@ -82,15 +83,15 @@ jobs:
 
 #### Jobs have nested steps which are running the mentioned scans.
 
+- pr_agent (Automated PR review using [Codium AI PR Agent](https://www.codium.ai/products/git-plugin/) )
+- docker
+  - docker build
+  - container scan (using [Trivy](https://github.com/aquasecurity/trivy))
 - Security scans
-  - SAST Scan
-  - Gitleaks scan
-  - License Scan
-  - Dependency Scan using Google OSV
+  - sast (using [SEMGREP](https://semgrep.dev/))
+  - gitleaks
+  - license_scan
+  - dependency_scan (using [Google OSV scanner](https://github.com/google/osv-scanner))
 - Technology based scans
-  - Eslint scan
-  - Docker Build
-  - Trivy container vulnerability scan
-  - Build project
-  - Developer's Test
-- Codium PR Agent
+  - lint
+  - build (code build check)

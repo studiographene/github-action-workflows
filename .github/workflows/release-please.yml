@@ -51,15 +51,18 @@ jobs:
         if: ${{ steps.is_lastest_release_hotfix.outcome == 'success' && steps.is_lastest_release_hotfix.outputs.LATEST_RELEASE_TAG_WAS_HOTFIX == 'true' }}
         shell: bash
         env:
+          # Security practice, setting vulnerable context as ENV and then later using ENV in run
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          HEAD_BRANCH: ${{ github.head_ref }}
+          IS_MAJOR: ${{ contains(github.event.pull_request.title, '!:') }}
+          # Substring `feat` will cover both feat & feature
+          IS_MINOR: ${{ startsWith(github.event.pull_request.title, 'feat') }}
+          IS_FIX: ${{ startsWith(github.event.pull_request.title, 'fix') }}
         run: |
           echo -e "\033[0;32mLast relase was a HotFix release, resetting Tag name to regular for this regular release..."
           echo -e "\033[0;34mIdentifying this PR type..."
-          echo "PR title is: ${{ github.event.pull_request.title }}"
-          IS_MAJOR=${{ contains(github.event.pull_request.title, '!:') }}
-          # Substring `feat` will cover both feat & feature
-          IS_MINOR=${{ startsWith(github.event.pull_request.title, 'feat') }}
-          IS_FIX=${{ startsWith(github.event.pull_request.title, 'fix') }}
+          echo "PR title is: ${PR_TITLE}"
           ALL_TAGS_LIST=$(gh release list --exclude-drafts --exclude-pre-releases --json tagName --jq '.[].tagName')
           LAST_REGULAR_TAG=$(echo $ALL_TAGS_LIST | tr ' ' '\n' | grep -vE "(hf|hotfix)" | grep -m1 .)
           echo -e "\033[0;93mLast regular tag was: ${LAST_REGULAR_TAG}"
@@ -89,14 +92,14 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git commit --allow-empty -m "chore: post HotFix, resetting tag name to regular ${NEW_SEM_VER}" -m "Release-As: ${NEW_SEM_VER}"
-          git push origin ${{ github.head_ref }}
+          git push origin ${HEAD_BRANCH}
       - name: Generate HotFix tag name
         if: ${{ startsWith(github.head_ref, 'hotfix/') && github.base_ref == github.event.repository.default_branch }}
         id: generate_hotfix_tag_name
         run: |
-          SLICED_TAG_NAME=$(echo ${{ github.head_ref }} | cut -d'/' -f2)
+          SLICED_HOTFIX_TAG_NAME=$(basename ${HEAD_BRANCH})
           echo "HotFix tag name: ${HOTFIX_TAG_NAME}"
-          echo "HOTFIX_TAG_NAME=${SLICED_TAG_NAME}" >> ${GITHUB_OUTPUT}
+          echo "HOTFIX_TAG_NAME=${SLICED_HOTFIX_TAG_NAME}" >> ${GITHUB_OUTPUT}
       - name: commit release-as hotfix tag
         # setting step dependency using step outcome
         if: ${{ steps.generate_hotfix_tag_name.outcome == 'success' }}
@@ -107,7 +110,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git commit --allow-empty -m "chore: ${HOTFIX_TAG_NAME}" -m "Release-As: ${HOTFIX_TAG_NAME}"
-          git push origin ${{ github.head_ref }}
+          git push origin ${HEAD_BRANCH}
 
   release-please:
     if: ${{ github.ref_name == github.event.repository.default_branch }}

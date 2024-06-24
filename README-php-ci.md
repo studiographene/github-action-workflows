@@ -2,22 +2,24 @@
 
 CI scans workflow for PhP code.
 
+> This workflow has **pr_agent** job, an automated PR review using [Codium AI PR Agent](https://www.codium.ai/products/git-plugin/). It required OpenAI key defined as GitHub action secret `OPENAI_KEY`. If you prefer not to use `pr_agent` because you do not have OpenAI license or any for other reasons, you can exclude the `pr_agent` job from execution by setting this workflow input `excluded_jobs: "pr_agent"`
+
 # Workflow Inputs
 
-| Name                               | Description                                                                  | Required | Default        |
-| ---------------------------------- | ---------------------------------------------------------------------------- | -------- | -------------- |
-| excluded_jobs                      | A string of comma separated jobs that you want to exculude.                  | no       |                |
-| docker_build_command               | Docker build command                                                         | no       |                |
-| docker_build_image_id              | Docker image ID as mentioned in docker_build_command                         | no       | `local:latest` |
-| container_scanners:                | comma-separated list of what security issues to detect (vuln,secret,config)  | no       | `vuln`         |
-| container_scan_skip_dirs           | Comma separated list of directories to skip scanning                         | no       |                |
-| semgrep_options                    | SEMGREP command options                                                      | no       |                |
-| security_scan_before_step_command  | Optional command to execute before secuirty scan job                         | no       |                |
-| security_scan_after_step_command   | Optional command to execute after secuirty scan job steps execution          | no       |                |
-| container_scan_before_step_command | Optional command to execute before techology based scans job steps execution | no       |                |
-| container_scan_after_step_command  | Optional command to execute after techology based scans job steps execution  | no       |                |
-| pr_agent_before_step_command       | Optional command to execute before Codium PR agent job steps execution       | no       |                |
-| pr_agent_after_step_command        | Optional command to execute after Codium PR agent job steps execution        | no       |                |
+| Name                                              | Description                                                                                                                                                                         | Required | Default        |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------------- |
+| excluded_jobs <a name="inputs_EXCLUDED_JOBS"></a> | A string of comma separated job IDs that you want to exclude from execution. Job IDs that can be used to exclude `lint,sast,gitleaks,license_scan,dependency_scan,docker,pr_agent`. | no       |                |
+| docker_build_command                              | Docker build command                                                                                                                                                                | no       |                |
+| docker_build_image_id                             | Docker image ID as mentioned in docker_build_command                                                                                                                                | no       | `local:latest` |
+| container_scanners:                               | comma-separated list of what security issues to detect (vuln,secret,config)                                                                                                         | no       | `vuln`         |
+| container_scan_skip_dirs                          | Comma separated list of directories to skip scanning                                                                                                                                | no       |                |
+| semgrep_options                                   | SEMGREP command options                                                                                                                                                             | no       |                |
+| security_scan_before_step_command                 | Optional command to execute before secuirty scan job                                                                                                                                | no       |                |
+| security_scan_after_step_command                  | Optional command to execute after secuirty scan job steps execution                                                                                                                 | no       |                |
+| container_scan_before_step_command                | Optional command to execute before techology based scans job steps execution                                                                                                        | no       |                |
+| container_scan_after_step_command                 | Optional command to execute after techology based scans job steps execution                                                                                                         | no       |                |
+| pr_agent_before_step_command                      | Optional command to execute before Codium PR agent job steps execution                                                                                                              | no       |                |
+| pr_agent_after_step_command                       | Optional command to execute after Codium PR agent job steps execution                                                                                                               | no       |                |
 
 # Action variables
 
@@ -52,7 +54,6 @@ jobs:
   call-workflow:
     uses: studiographene/github-action-workflows/.github/workflows/php-ci.yml@master # if you want alternatively pin to tag version version
     secrets: inherit
-    permissions: write-all
 ```
 
 ---
@@ -61,12 +62,12 @@ jobs:
 
 Jobs & its steps:
 
-- Codium PR Agent
-- Container Scan
-- Docker Build Check
-- Trivy Container Scans
+- pr_agent (Automated PR review using [Codium AI PR Agent](https://www.codium.ai/products/git-plugin/) )
+- docker
+  - docker build
+  - container scan (using [Trivy](https://github.com/aquasecurity/trivy))
 - Security scans
-  - SAST Scan
-  - Gitleaks scan
-  - License Scan
-  - Dependency Scan using Google OSV
+  - sast (using [SEMGREP](https://semgrep.dev/))
+  - gitleaks
+  - license_scan
+  - dependency_scan (using [Google OSV scanner](https://github.com/google/osv-scanner))

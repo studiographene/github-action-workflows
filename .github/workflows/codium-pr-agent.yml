@@ -4,11 +4,11 @@ on:
   workflow_call:
     inputs:
       before_step_command:
-        description: "Command to execute at the start of the job" 
+        description: "Command to execute at the start of the job"
         type: string
         default: ""
       after_step_command:
-        description: "Command to execute at the end of the job" 
+        description: "Command to execute at the end of the job"
         type: string
         default: ""
 
@@ -19,7 +19,7 @@ jobs:
     permissions:
       issues: write
       pull-requests: write
-      contents: write
+      contents: read
     steps:
       - name: before step
         if: ${{ inputs.before_step_command != '' }}
