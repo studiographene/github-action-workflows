@@ -14,7 +14,7 @@ on:
 
 jobs:
   pr_agent:
-    name: Codium PR Agent Scan
+    name: pr_agent
     runs-on: ubuntu-latest
     permissions:
       issues: write

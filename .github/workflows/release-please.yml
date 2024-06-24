@@ -12,7 +12,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  tagging-validation:
+  tagging_validation:
     name: tagging_validation
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request' }}
@@ -112,7 +112,7 @@ jobs:
           git commit --allow-empty -m "chore: ${HOTFIX_TAG_NAME}" -m "Release-As: ${HOTFIX_TAG_NAME}"
           git push origin ${HEAD_BRANCH}
 
-  release-please:
+  release_please:
     if: ${{ github.ref_name == github.event.repository.default_branch }}
     runs-on: ubuntu-latest
     steps:

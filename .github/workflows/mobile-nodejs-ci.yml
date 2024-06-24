@@ -46,8 +46,8 @@ on:
         default: ""
 
 jobs:
-  technology-based-scans:
-    name: Cache node modules & Lint check
+  technology_based_scans:
+    name: technology_based_scans
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -129,9 +129,9 @@ jobs:
         run: |
           ${{ inputs.technology_based_scans_after_step_command}}
 
-  security-scans:
-    name: security scans
-    needs: technology-based-scans
+  security_scans:
+    name: security_scans
+    needs: technology_based_scans
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     uses: studiographene/github-action-workflows/.github/workflows/security-scans.yml@master
     secrets: inherit
@@ -142,7 +142,7 @@ jobs:
       semgrep_options: ${{ inputs.semgrep_options }}
 
   pr_agent:
-    name: Codium PR Agent
+    name: pr_agent
     if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) }}
     uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@master
     secrets: inherit

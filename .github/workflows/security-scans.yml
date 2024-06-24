@@ -17,8 +17,8 @@ on:
         default: ""
 
 jobs:
-  security-scans:
-    name: security scans
+  security_scans:
+    name: security_scans
     runs-on: ubuntu-latest
     permissions:
       contents: read
