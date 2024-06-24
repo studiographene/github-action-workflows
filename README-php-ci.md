@@ -62,8 +62,6 @@ jobs:
 
 Jobs & its steps:
 
-,,,,,,
-
 - pr_agent (Automated PR review using [Codium AI PR Agent](https://www.codium.ai/products/git-plugin/) )
 - docker
   - docker build

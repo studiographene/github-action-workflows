@@ -78,14 +78,15 @@ jobs:
 
 #### Jobs have nested steps which are running the mentioned scans.
 
+- pr_agent (Automated PR review using [Codium AI PR Agent](https://www.codium.ai/products/git-plugin/) )
+- docker
+  - docker build
+  - container scan (using [Trivy](https://github.com/aquasecurity/trivy))
 - Security scans
-  - SAST Scan
-  - Gitleaks scan
-  - License Scan
-  - Dependency Scan using Google OSV
+  - sast (using [SEMGREP](https://semgrep.dev/))
+  - gitleaks
+  - license_scan
+  - dependency_scan (using [Google OSV scanner](https://github.com/google/osv-scanner))
 - Technology based scans
-  - Eslint scan
-  - Docker Build
-  - Trivy container vulnerability scan
-  - Build project
-- Codium PR Agent
+  - lint
+  - build (code build check)
