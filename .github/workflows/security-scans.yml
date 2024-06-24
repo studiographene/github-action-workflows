@@ -148,16 +148,7 @@ jobs:
           cat >> allowedLicenses.txt <<EOF
               ${{ vars.ALLOWED_LICENSES }}
           EOF
-          set +e
           /root/executables/ci-utility check --sbom bom.xml --allowedLicences allowedLicenses.txt
-          LICENSE_SCAN_EXIT_CODE=$?
-          set -e
-          if [ $LICENSE_SCAN_EXIT_CODE != 0 ]; then
-            echo "::error::Non-compliant license found! Find the scan report in PR if this scan was triggered by PR"
-            exit 1
-          elif [ $LICENSE_SCAN_EXIT_CODE == 0 ]; then
-            exit 0
-          fi
 
       - name: Dependency Scan using Google OSV
         id: dependency_scan
