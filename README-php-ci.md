@@ -6,20 +6,20 @@ CI scans workflow for PhP code.
 
 # Workflow Inputs
 
-| Name                                              | Description                                                                                                                                                                          | Required | Default        |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | -------------- |
-| excluded_jobs <a name="inputs_EXCLUDED_JOBS"></a> | A string of comma separated job IDs that you want to exculude from execution. Job IDs that can be used to exclude `lint,sast,gitleaks,license_scan,dependency_scan,docker,pr_agent`. | no       |                |
-| docker_build_command                              | Docker build command                                                                                                                                                                 | no       |                |
-| docker_build_image_id                             | Docker image ID as mentioned in docker_build_command                                                                                                                                 | no       | `local:latest` |
-| container_scanners:                               | comma-separated list of what security issues to detect (vuln,secret,config)                                                                                                          | no       | `vuln`         |
-| container_scan_skip_dirs                          | Comma separated list of directories to skip scanning                                                                                                                                 | no       |                |
-| semgrep_options                                   | SEMGREP command options                                                                                                                                                              | no       |                |
-| security_scan_before_step_command                 | Optional command to execute before secuirty scan job                                                                                                                                 | no       |                |
-| security_scan_after_step_command                  | Optional command to execute after secuirty scan job steps execution                                                                                                                  | no       |                |
-| container_scan_before_step_command                | Optional command to execute before techology based scans job steps execution                                                                                                         | no       |                |
-| container_scan_after_step_command                 | Optional command to execute after techology based scans job steps execution                                                                                                          | no       |                |
-| pr_agent_before_step_command                      | Optional command to execute before Codium PR agent job steps execution                                                                                                               | no       |                |
-| pr_agent_after_step_command                       | Optional command to execute after Codium PR agent job steps execution                                                                                                                | no       |                |
+| Name                                              | Description                                                                                                                                                                         | Required | Default        |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------------- |
+| excluded_jobs <a name="inputs_EXCLUDED_JOBS"></a> | A string of comma separated job IDs that you want to exclude from execution. Job IDs that can be used to exclude `lint,sast,gitleaks,license_scan,dependency_scan,docker,pr_agent`. | no       |                |
+| docker_build_command                              | Docker build command                                                                                                                                                                | no       |                |
+| docker_build_image_id                             | Docker image ID as mentioned in docker_build_command                                                                                                                                | no       | `local:latest` |
+| container_scanners:                               | comma-separated list of what security issues to detect (vuln,secret,config)                                                                                                         | no       | `vuln`         |
+| container_scan_skip_dirs                          | Comma separated list of directories to skip scanning                                                                                                                                | no       |                |
+| semgrep_options                                   | SEMGREP command options                                                                                                                                                             | no       |                |
+| security_scan_before_step_command                 | Optional command to execute before secuirty scan job                                                                                                                                | no       |                |
+| security_scan_after_step_command                  | Optional command to execute after secuirty scan job steps execution                                                                                                                 | no       |                |
+| container_scan_before_step_command                | Optional command to execute before techology based scans job steps execution                                                                                                        | no       |                |
+| container_scan_after_step_command                 | Optional command to execute after techology based scans job steps execution                                                                                                         | no       |                |
+| pr_agent_before_step_command                      | Optional command to execute before Codium PR agent job steps execution                                                                                                              | no       |                |
+| pr_agent_after_step_command                       | Optional command to execute after Codium PR agent job steps execution                                                                                                               | no       |                |
 
 # Action variables
 
@@ -67,7 +67,6 @@ Jobs & its steps:
   - docker build
   - container scan (using [Trivy](https://github.com/aquasecurity/trivy))
 - Security scans
-  - lint
   - sast (using [SEMGREP](https://semgrep.dev/))
   - gitleaks
   - license_scan
