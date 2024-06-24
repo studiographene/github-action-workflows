@@ -157,6 +157,7 @@ jobs:
             exit 1
           elif [ $LICENSE_SCAN_EXIT_CODE == 0 ]; then
             exit 0
+          fi
 
       - name: Dependency Scan using Google OSV
         id: dependency_scan
