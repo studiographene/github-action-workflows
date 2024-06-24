@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.10.0](https://github.com/studiographene/github-action-workflows/compare/v1.9.0...v1.10.0) (2024-06-24)
+
+
+### Features
+
+* Depn. scan, SAST custom exit error message ([d74a5b6](https://github.com/studiographene/github-action-workflows/commit/d74a5b69f9ff616f21d85928fda88805d282fc1e))
+* **iac scan:** terraform fmt run on all dir and commits the change to source branch in PR ([#37](https://github.com/studiographene/github-action-workflows/issues/37)) ([9183b94](https://github.com/studiographene/github-action-workflows/commit/9183b9419caeed86228a3c71ce1941872b4908d6))
+* **release-please:** Security practice,setting vuln context as ENV ([5d9a4b1](https://github.com/studiographene/github-action-workflows/commit/5d9a4b1a9fd360dbb3a3d66c32b1ecb9997f4cd2))
+* **unit-test:** added unit test config ([#25](https://github.com/studiographene/github-action-workflows/issues/25)) ([614bd81](https://github.com/studiographene/github-action-workflows/commit/614bd81182a3392d2eaf188070b9f7a15b14c8e3))
+
+
+### Bug Fixes
+
+* All the workflow jobs permission revisited and set to minimum ([#36](https://github.com/studiographene/github-action-workflows/issues/36)) ([397b352](https://github.com/studiographene/github-action-workflows/commit/397b352a5945fe7d333b703505fe13a7026af61b))
+* **release-please:** HotFix branch name can follow hotfix/ticket/tag ([ba435b3](https://github.com/studiographene/github-action-workflows/commit/ba435b3325a92eee5d4bf2b0d569e81e0db38eda))
+* **security-scan:** custom error message on Dep. scan,SAST ([2799a7a](https://github.com/studiographene/github-action-workflows/commit/2799a7ab022d51944020f359977b1cab2494cd38))
+
 ## [1.9.0](https://github.com/studiographene/github-action-workflows/compare/v1.8.1...v1.9.0) (2024-06-15)
 
 
