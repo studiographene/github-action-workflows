@@ -104,7 +104,7 @@ jobs:
           skip-dirs: ${{ inputs.container_scan_skip_dirs }}
 
       - name: Create container vulnerability report
-        if: ${{ steps.container_scan.outcome != cancelled() }}
+        if: ${{ steps.container_scan.outcome != 'cancelled' }}
         shell: bash
         run: |
           echo "# Trivy Container Scan" > container_scan_prcomment.json
