@@ -113,41 +113,33 @@ jobs:
         if: ${{ inputs.caching_before_step_command != '' }}
         run: |
           ${{ inputs.caching_before_step_command}}
-      - name: Install dependencies
-        run: |
-          ${{ inputs.package_manager }} install
-        env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Convert lockfile version > 2 in case of npm
         if: inputs.package_manager == 'npm'
         run: |
           ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
         env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Cache npm modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'npm'
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}   
+      - name: Cache node modules
+        id: cache-modules
+        if: |
+          inputs.package_manager == 'npm' || 
+          inputs.package_manager == 'yarn' || 
+          inputs.package_manager == 'pnpm'  
+        uses: actions/cache@v4
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+          path: node_modules
+          key: ${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-npm-
-      - name: Cache yarn modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'yarn'
-        with:
-          path: /usr/local/share/.cache/yarn
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Cache pnpm modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'pnpm'
-        with:
-          path: /__w/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+            ${{ runner.os }}-${{ inputs.package_manager }}-
+      - name: Install dependencies
+        if: |
+          (inputs.package_manager == 'npm' && steps.cache-modules.outputs.cache-hit != 'true') ||
+          (inputs.package_manager == 'yarn' && steps.cache-modules.outputs.cache-hit != 'true') ||
+          (inputs.package_manager == 'pnpm' && steps.cache-modules.outputs.cache-hit != 'true')
+        run: |
+          ${{ inputs.package_manager }} install
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}           
       - name: Upload package-lock
         uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'npm'
