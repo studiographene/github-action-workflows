@@ -120,7 +120,7 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}   
       - name: Cache node modules
-        id: cache-modules
+        id: cache-node-modules
         if: |
           inputs.package_manager == 'npm' || 
           inputs.package_manager == 'yarn' || 
@@ -133,9 +133,9 @@ jobs:
             ${{ runner.os }}-${{ inputs.package_manager }}-
       - name: Install dependencies
         if: |
-          (inputs.package_manager == 'npm' && steps.cache-modules.outputs.cache-hit != 'true') ||
-          (inputs.package_manager == 'yarn' && steps.cache-modules.outputs.cache-hit != 'true') ||
-          (inputs.package_manager == 'pnpm' && steps.cache-modules.outputs.cache-hit != 'true')
+          (inputs.package_manager == 'npm' && steps.cache-node-modules.outputs.cache-hit != 'true') ||
+          (inputs.package_manager == 'yarn' && steps.cache-node-modules.outputs.cache-hit != 'true') ||
+          (inputs.package_manager == 'pnpm' && steps.cache-node-modules.outputs.cache-hit != 'true')
         run: |
           ${{ inputs.package_manager }} install
         env:
@@ -198,7 +198,7 @@ jobs:
         run: |
           ${{ inputs.technology_based_scans_before_step_command}}
       - name: Cache node modules
-        id: cache-modules
+        id: cache-node-modules
         if: |
           inputs.package_manager == 'npm' || 
           inputs.package_manager == 'yarn' || 
@@ -211,9 +211,9 @@ jobs:
             ${{ runner.os }}-${{ inputs.package_manager }}-
       - name: Install dependencies
         if: |
-          (inputs.package_manager == 'npm' && steps.cache-modules.outputs.cache-hit != 'true') ||
-          (inputs.package_manager == 'yarn' && steps.cache-modules.outputs.cache-hit != 'true') ||
-          (inputs.package_manager == 'pnpm' && steps.cache-modules.outputs.cache-hit != 'true')
+          (inputs.package_manager == 'npm' && steps.cache-node-modules.outputs.cache-hit != 'true') ||
+          (inputs.package_manager == 'yarn' && steps.cache-node-modules.outputs.cache-hit != 'true') ||
+          (inputs.package_manager == 'pnpm' && steps.cache-node-modules.outputs.cache-hit != 'true')
         run: |
           ${{ inputs.package_manager }} install
         env:
