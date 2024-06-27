@@ -130,12 +130,8 @@ jobs:
           path: node_modules
           key: ${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-${{ inputs.package_manager }}--${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+            ${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
       - name: Install dependencies
-        if: |
-          (inputs.package_manager == 'npm' && steps.cache-node-modules.outputs.cache-hit != 'true') ||
-          (inputs.package_manager == 'yarn' && steps.cache-node-modules.outputs.cache-hit != 'true') ||
-          (inputs.package_manager == 'pnpm' && steps.cache-node-modules.outputs.cache-hit != 'true')
         run: |
           ${{ inputs.package_manager }} install
         env:
@@ -208,12 +204,12 @@ jobs:
           path: node_modules
           key: ${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-${{ inputs.package_manager }}--${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+            ${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+      - name: List the state of node modules
+        if: ${{ steps.cache-node-modules.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        run: ${{ inputs.package_manager }} list 
       - name: Install dependencies
-        if: |
-          (inputs.package_manager == 'npm' && steps.cache-node-modules.outputs.cache-hit != 'true') ||
-          (inputs.package_manager == 'yarn' && steps.cache-node-modules.outputs.cache-hit != 'true') ||
-          (inputs.package_manager == 'pnpm' && steps.cache-node-modules.outputs.cache-hit != 'true')
         run: |
           ${{ inputs.package_manager }} install
         env:
