@@ -84,7 +84,7 @@ jobs:
           path: node_modules
           key: ${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-${{ inputs.package_manager }}-
+            ${{ runner.os }}-${{ inputs.package_manager }}--${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
       - name: Install dependencies
         if: |
           (inputs.package_manager == 'npm' && steps.cache-node-modules.outputs.cache-hit != 'true') ||
