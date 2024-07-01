@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.3](https://github.com/studiographene/github-action-workflows/compare/v1.10.2...v1.10.3) (2024-07-01)
+
+
+### Bug Fixes
+
+* **IaC scan:** deplicate input directories removed ([2e9c0e9](https://github.com/studiographene/github-action-workflows/commit/2e9c0e920886ef1b0ae68aab21a22c0b15c6e05f))
+
 ## [1.10.2](https://github.com/studiographene/github-action-workflows/compare/v1.10.1...v1.10.2) (2024-06-27)
 
 
