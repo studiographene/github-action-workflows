@@ -7,10 +7,6 @@ on:
         description: 'optional: .tf files located directories in JSON Array format to run scan, example "["path/1", "path/2"]". If not defined all the directories containing .tf files will be scanned.'
         type: string
         default: "['.']"
-      directories:
-        description: "comma separated list of .tf files located directories to run scan. Default = [`.`]"
-        type: string
-        default: "['.']"
       quiet:
         description: "optional: display only failed checks"
         type: boolean
