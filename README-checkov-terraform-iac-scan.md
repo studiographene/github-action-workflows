@@ -38,7 +38,7 @@ jobs:
     secrets: inherit
 ```
 
-> To scan multiple directories
+> To scan specific directories
 > This example finds all the top level directories in `./tf/layers` and scans all those directories
 
 ```yaml
@@ -51,7 +51,6 @@ jobs:
 call-worflow:
   uses: studiographene/github-action-workflows/.github/workflows/checkov-terraform-iac-scan.yml@master # if you want alternatively pin to tag version version
   secrets: inherit
-  needs: find_all_layers
   with:
     directories: ["path/1", "path/2"]
 ```
