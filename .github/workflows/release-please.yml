@@ -16,6 +16,9 @@ jobs:
     name: tagging_validation
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request' }}
+    env:
+      GIT_COMMIT_BOT_USER_NAME: "github-actions[bot]"
+      GIT_COMMIT_BOT_EMAIL_ID: "github-actions[bot]@users.noreply.github.com"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,8 +92,8 @@ jobs:
           NEW_SEM_VER="v${MAJOR}.${MINOR}.${FIX}"
           echo -e "\033[0;93mNew SemVer is: $NEW_SEM_VER"
           echo -e "\033[0;32mCommitting Release-As Tag name..."
-          git config user.name 'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git config user.name ${{ env.GIT_COMMIT_BOT_USER_NAME }}
+          git config user.email ${{ env.GIT_COMMIT_BOT_EMAIL_ID }}
           git commit --allow-empty -m "chore: post HotFix, resetting tag name to regular ${NEW_SEM_VER}" -m "Release-As: ${NEW_SEM_VER}"
           git push origin ${HEAD_BRANCH}
       - name: Generate HotFix tag name
@@ -106,9 +109,10 @@ jobs:
         env:
           HOTFIX_TAG_NAME: ${{ steps.generate_hotfix_tag_name.outputs.HOTFIX_TAG_NAME }}
         run: |
+
           echo -e "\033[0;32mCommitting Release-As HotFix Tag name..."
-          git config user.name 'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git config user.name ${{ env.GIT_COMMIT_BOT_USER_NAME }}
+          git config user.email ${{ env.GIT_COMMIT_BOT_EMAIL_ID }}
           git commit --allow-empty -m "chore: ${HOTFIX_TAG_NAME}" -m "Release-As: ${HOTFIX_TAG_NAME}"
           git push origin ${HEAD_BRANCH}
 
