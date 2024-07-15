@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.11.0](https://github.com/studiographene/github-action-workflows/compare/v1.10.3...v1.11.0) (2024-07-15)
+
+
+### Features
+
+* **release-please:** set RELEASE_TYPE default=node ([#46](https://github.com/studiographene/github-action-workflows/issues/46)) ([559d80e](https://github.com/studiographene/github-action-workflows/commit/559d80e072719758041602317cde28ba92130ebd))
+
+
+### Bug Fixes
+
+* this repo release-please relesse ([75715da](https://github.com/studiographene/github-action-workflows/commit/75715da2f12e5d24cb0a52b223add2975ac8760c))
+
 ## [1.10.3](https://github.com/studiographene/github-action-workflows/compare/v1.10.2...v1.10.3) (2024-07-15)
 
 
