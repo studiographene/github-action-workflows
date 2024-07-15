@@ -5,7 +5,7 @@ on:
     inputs:
       RELEASE_TYPE:
         type: string
-        default: "simple"
+        default: "node"
 
 permissions:
   contents: write
