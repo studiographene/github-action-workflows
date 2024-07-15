@@ -37,7 +37,7 @@ jobs:
       - name: Display Errors
         id: display_errors
         env:
-          BRANCH_NAME: ${GITHUB_REF_NAME}
+          BRANCH_NAME: ${{ github.ref_name }}
           REPO_NAME: ${{ github.repository }}
           ORG_ID: ${{ github.event.organization.id }}
           REPO_ID: ${{ github.repository_id }}
