@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.11.0](https://github.com/studiographene/github-action-workflows/compare/v1.10.3...v1.11.0) (2024-07-15)
+
+
+### Features
+
+* **release-please:** set RELEASE_TYPE default=node ([#46](https://github.com/studiographene/github-action-workflows/issues/46)) ([559d80e](https://github.com/studiographene/github-action-workflows/commit/559d80e072719758041602317cde28ba92130ebd))
+
+
+### Bug Fixes
+
+* this repo release-please relesse ([75715da](https://github.com/studiographene/github-action-workflows/commit/75715da2f12e5d24cb0a52b223add2975ac8760c))
+
+## [1.10.3](https://github.com/studiographene/github-action-workflows/compare/v1.10.2...v1.10.3) (2024-07-15)
+
+
+### Bug Fixes
+
+* **IaC scan:** deplicate input directories removed ([2e9c0e9](https://github.com/studiographene/github-action-workflows/commit/2e9c0e920886ef1b0ae68aab21a22c0b15c6e05f))
+* **PX-1602:** Pulse SAST branch env arg value ref ([#45](https://github.com/studiographene/github-action-workflows/issues/45)) ([808127b](https://github.com/studiographene/github-action-workflows/commit/808127b4d21a03900849ba87efaab3eaad33b61f))
+
+## [1.10.2](https://github.com/studiographene/github-action-workflows/compare/v1.10.1...v1.10.2) (2024-06-27)
+
+
+### Bug Fixes
+
+* **iac-scan:** vulnerability report step getting skipped on vuln. findings in container scan step is now fixed  ([#41](https://github.com/studiographene/github-action-workflows/issues/41)) ([b7bce21](https://github.com/studiographene/github-action-workflows/commit/b7bce213747ac5f833e353d4b473d66de22a6c12))
+
 ## [1.10.1](https://github.com/studiographene/github-action-workflows/compare/v1.10.0...v1.10.1) (2024-06-24)
 
 

@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       directories:
-        description: "comma separated list of .tf files located directories to run scan. Default = [`.`]"
+        description: 'optional: .tf files located directories in JSON Array format to run scan, example "["path/1", "path/2"]". If not defined all the directories containing .tf files will be scanned.'
         type: string
         default: "['.']"
       quiet:

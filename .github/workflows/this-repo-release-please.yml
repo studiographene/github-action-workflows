@@ -10,3 +10,5 @@ jobs:
   call_workflow:
     uses: ./.github/workflows/release-please.yml
     secrets: inherit
+    with:
+      RELEASE_TYPE: "simple"
