@@ -9,9 +9,9 @@ To automatically create Git Tag + Release with
 
 # Workflow Inputs
 
-| name           | description                                                                                                                            | type   | required | default  |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------- | -------- |
-| `RELEASE_TYPE` | Release type based on the code. Supported values: https://github.com/marketplace/actions/release-please-action#release-types-supported | string | no       | `simple` |
+| name           | description                                                                                                                                                                                                              | type   | required | default |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | -------- | ------- |
+| `RELEASE_TYPE` | Release type based on the code. Set this to `simple` if your code release type does not match with any mention in supported values: https://github.com/marketplace/actions/release-please-action#release-types-supported | string | no       | `node`  |
 
 # How to setup
 
@@ -50,4 +50,6 @@ jobs:
   call-worflow:
     uses: studiographene/github-action-workflows/.github/workflows/release-please.yml@master # if you want alternatively pin to tag version version
     secrets: inherit
+    # with:
+    #   RELEASE_TYPE: "node" # Release type based on the code. Default = `node`. Set this to `simple` if your code release type does not match with any mention in supported values: https://github.com/marketplace/actions/release-please-action#release-types-supported
 ```
