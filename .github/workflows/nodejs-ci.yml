@@ -131,7 +131,6 @@ jobs:
           inputs.package_manager == 'pnpm'  
         run: |
           echo "cache-key=${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> "$GITHUB_OUTPUT"  
-          echo "cache-key=${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> "$GITHUB_ENV"
       - name: Set cache restore key
         id: set-cache-restore-key
         if: |
@@ -140,7 +139,6 @@ jobs:
           inputs.package_manager == 'pnpm'  
         run: |
           echo "cache-restore-key=${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> "$GITHUB_OUTPUT"  
-          echo "cache-restore-key=${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> "$GITHUB_ENV"          
       - name: Cache node modules
         id: cache-node-modules
         if: |
@@ -150,8 +148,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: ${{ env.cache-key }}
-          restore-keys: ${{ env.cache-restore-key }}
+          key: ${{ steps.set-cache-key.outputs.cache-key }} 
+          restore-keys: ${{ steps.set-cache-restore-key.outputs.cache-restore-key }}
       - name: List the state of node modules
         if: ${{ steps.cache-node-modules.outputs.cache-hit != 'true' }}
         continue-on-error: true
@@ -225,13 +223,10 @@ jobs:
           inputs.package_manager == 'yarn' || 
           inputs.package_manager == 'pnpm'  
         uses: actions/cache@v4
-        env:
-          cache-key: ${{ needs.caching.outputs.cache-key }}
-          cache-resotre-key: ${{ needs.caching.outputs.cache-restore-key }}
         with:
           path: node_modules
-          key: ${{ env.cache-key }}
-          restore-keys: ${{ env.cache-restore-key }}
+          key: ${{ needs.caching.outputs.cache-restore-key }}
+          restore-keys: ${{ needs.caching.outputs.cache-restore-key }}
       - name: Install dependencies
         run: |
           ${{ inputs.package_manager }} install
