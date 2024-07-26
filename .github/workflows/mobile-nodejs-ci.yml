@@ -89,6 +89,8 @@ jobs:
       - name: List the state of node modules
         if: ${{ steps.cache-node-modules.outputs.cache-hit != 'true' }}
         continue-on-error: true
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN && secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
         run: ${{ inputs.package_manager }} list            
       - name: Install dependencies
         run: |
