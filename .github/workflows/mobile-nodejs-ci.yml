@@ -2,6 +2,10 @@ name: Studiographene Mobile NodeJs CI
 
 on:
   workflow_call:
+    secrets:
+      NPM_TOKEN:
+        description: "A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used."
+        required: false
     inputs:
       excluded_jobs:
         type: string
@@ -9,9 +13,6 @@ on:
       package_manager:
         type: string
         default: "npm"
-      npm_token:
-        type: string
-        default: ""
       lint_command:
         type: string
         default: "npm run lint"
@@ -72,7 +73,7 @@ jobs:
         run: |
           ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
         env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}   
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN && secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }} 
       - name: Cache node modules
         id: cache-node-modules
         if: |
@@ -93,7 +94,7 @@ jobs:
         run: |
           ${{ inputs.package_manager }} install
         env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN && secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Upload package-lock
         uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'npm'
