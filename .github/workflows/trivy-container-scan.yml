@@ -3,7 +3,7 @@ on:
   workflow_call:
     secrets:
       NPM_TOKEN:
-        description:"A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used."
+        description: "A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used."
         required: false
 
     inputs:
