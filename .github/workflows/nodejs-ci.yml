@@ -239,9 +239,13 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN && secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Eslint scan
         if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'lint' )  }}
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN && secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           ${{ inputs.lint_command }}
       - name: Build project
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN && secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
         if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'build' )  }}
         run: |
           ${{ inputs.build_command }}
