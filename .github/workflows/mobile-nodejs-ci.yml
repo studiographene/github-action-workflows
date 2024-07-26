@@ -73,7 +73,7 @@ jobs:
         run: |
           ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN && secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }} 
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }} 
       - name: Cache node modules
         id: cache-node-modules
         if: |
@@ -90,13 +90,13 @@ jobs:
         if: ${{ steps.cache-node-modules.outputs.cache-hit != 'true' }}
         continue-on-error: true
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN && secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
         run: ${{ inputs.package_manager }} list            
       - name: Install dependencies
         run: |
           ${{ inputs.package_manager }} install
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN && secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Upload package-lock
         uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'npm'

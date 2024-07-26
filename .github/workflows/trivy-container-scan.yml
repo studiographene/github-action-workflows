@@ -51,7 +51,7 @@ jobs:
     container:
       image: ${{ inputs.action_runner_container_image }}
     env:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN && secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
       - name: Before Step
         if: ${{ inputs.before_step_command != '' }}
