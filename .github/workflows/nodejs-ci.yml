@@ -2,6 +2,10 @@ name: Studiographene NodeJs CI
 
 on:
   workflow_call:
+    secrets:
+      NPM_TOKEN:
+        description: "A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used."
+        required: false
     inputs:
       excluded_jobs:
         type: string
@@ -9,9 +13,6 @@ on:
       package_manager:
         type: string
         default: "npm"
-      npm_token:
-        type: string
-        default: ""
       build_command:
         type: string
         default: "npm run build"
@@ -104,6 +105,9 @@ jobs:
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
+    outputs:
+      cache-key: ${{ steps.set-cache-key.outputs.cache-key }}  
+      cache-restore-key: ${{ steps.set-cache-restore-key.outputs.cache-restore-key }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -113,41 +117,50 @@ jobs:
         if: ${{ inputs.caching_before_step_command != '' }}
         run: |
           ${{ inputs.caching_before_step_command}}
-      - name: Install dependencies
-        run: |
-          ${{ inputs.package_manager }} install
-        env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Convert lockfile version > 2 in case of npm
         if: inputs.package_manager == 'npm'
         run: |
           ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
         env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Cache npm modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'npm'
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Set cache key
+        id: set-cache-key
+        if: |
+          inputs.package_manager == 'npm' || 
+          inputs.package_manager == 'yarn' || 
+          inputs.package_manager == 'pnpm'  
+        run: |
+          echo "cache-key=${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> "$GITHUB_OUTPUT"  
+      - name: Set cache restore key
+        id: set-cache-restore-key
+        if: |
+          inputs.package_manager == 'npm' || 
+          inputs.package_manager == 'yarn' || 
+          inputs.package_manager == 'pnpm'  
+        run: |
+          echo "cache-restore-key=${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> "$GITHUB_OUTPUT"  
+      - name: Cache node modules
+        id: cache-node-modules
+        if: |
+          inputs.package_manager == 'npm' || 
+          inputs.package_manager == 'yarn' || 
+          inputs.package_manager == 'pnpm'  
+        uses: actions/cache@v4
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-      - name: Cache yarn modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'yarn'
-        with:
-          path: /usr/local/share/.cache/yarn
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Cache pnpm modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'pnpm'
-        with:
-          path: /__w/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+          path: node_modules
+          key: ${{ steps.set-cache-key.outputs.cache-key }} 
+          restore-keys: ${{ steps.set-cache-restore-key.outputs.cache-restore-key }}
+      - name: List the state of node modules
+        if: ${{ steps.cache-node-modules.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+        run: ${{ inputs.package_manager }} list 
+      - name: Install dependencies
+        run: |
+          ${{ inputs.package_manager }} install
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Upload package-lock
         uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'npm'
@@ -184,6 +197,7 @@ jobs:
       semgrep_options: ${{ inputs.semgrep_options }}
 
   technology_based_scans:
+    needs: caching
     name: technology_based_scans
     runs-on: ubuntu-latest
     permissions:
@@ -192,7 +206,6 @@ jobs:
       discussions: write
       pull-requests: write
       security-events: write
-    needs: caching
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v1
@@ -205,40 +218,31 @@ jobs:
         if: ${{ inputs.technology_based_scans_before_step_command != '' }}
         run: |
           ${{ inputs.technology_based_scans_before_step_command}}
-      - name: Cache npm modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'npm'
+      - name: Cache node modules
+        id: cache-node-modules
+        if: |
+          inputs.package_manager == 'npm' || 
+          inputs.package_manager == 'yarn' || 
+          inputs.package_manager == 'pnpm'  
+        uses: actions/cache@v4
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-      - name: Cache yarn modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'yarn'
-        with:
-          path: /usr/local/share/.cache/yarn
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Cache pnpm modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'pnpm'
-        with:
-          path: /__w/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+          path: node_modules
+          key: ${{ needs.caching.outputs.cache-restore-key }}
+          restore-keys: ${{ needs.caching.outputs.cache-restore-key }}
       - name: Install dependencies
         run: |
           ${{ inputs.package_manager }} install
         env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Eslint scan
         if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'lint' )  }}
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           ${{ inputs.lint_command }}
       - name: Build project
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
         if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'build' )  }}
         run: |
           ${{ inputs.build_command }}

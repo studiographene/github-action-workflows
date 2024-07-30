@@ -14,7 +14,6 @@ CI scans workflow for NodeJS code.
 | dev_test_branch | A string of comma separated branches that you want to run developer tests on. (support list of branches. Ex  `dev,qa` or `uat`) | no | `'qa'` |
 | coverage_summary_path | Path to the coverage summary JSON file generated from developer's test | no | `./coverage/coverage-summary.json` |
 | junitxml_path  | Path to the JUnit XML report file generated from developer's test | no | `./coverage/report.xml`  |                                                                             | no       | `npm`           |
-| npm_token                                  | NPM token                                                                   | no       |                 |
 | build_command                              | build command for the project                                               | no       | `npm run build` |
 | docker_build_command                       | Docker build command                                                        | no       |                 |
 | docker_build_image_id                      | Docker image ID as mentioned in docker_build_command                        | no       | `local:latest`  |
@@ -32,6 +31,12 @@ CI scans workflow for NodeJS code.
 | pr_agent_after_step_command                | Optional commands to pass after Codium PR agent job steps execution         | no       |                 |
 | container_scan_before_step_command         | Command to execute at the start of the container scan                       | no       |                 |
 | container_scan_after_step_command          | Command to execute at the end of the container scan                         | no       |                 |
+
+# Workflow Secrets
+
+| Name                                       | Description                                                                 | Required | Default         |
+| ------------------------------------------ | --------------------------------------------------------------------------- | -------- | --------------- |
+| NPM_TOKEN                                  | A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used. `Set this key and GitHub PAT with read:packages permission in GitHub Actions Secrets.`                                                                    | To authenicate SG's private NPM packages hosted on Github Package Registry     | GITHUB_TOKEN |
 
 # Action variables
 
