@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.1](https://github.com/studiographene/github-action-workflows/compare/v1.11.0...v1.11.1) (2024-07-31)
+
+
+### Bug Fixes
+
+* **NodeJs-CI:** NPM_TOKEN now takes inputs from GitHub secrets ([4ff9854](https://github.com/studiographene/github-action-workflows/commit/4ff98540e0c14a4848de63e1ee0b8afe92342ab8))
+
 ## [1.11.0](https://github.com/studiographene/github-action-workflows/compare/v1.10.3...v1.11.0) (2024-07-15)
 
 
