@@ -246,7 +246,7 @@ jobs:
           COVERAGE_THRESHOLD: ${{ vars.COVERAGE_THRESHOLD }}
         run:  node github-action-workflows/.scripts/generate-coverage-report.cjs
       - name: Developer Test Coverage Report
-        if: always()
+        if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
         uses: mshick/add-pr-comment@v2
         with:
           message-id: test-coverage-report
