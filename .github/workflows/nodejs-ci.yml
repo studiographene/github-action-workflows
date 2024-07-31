@@ -26,16 +26,6 @@ on:
         type: string
         required: false
         default: qa
-      coverage_summary_path:
-        description: "Path to the coverage summary JSON file"
-        type: string
-        required: false
-        default: "./coverage/coverage-summary.json"
-      junitxml_path:
-        description: "Path to the JUnit XML report file"
-        type: string
-        required: false
-        default: "./coverage/report.xml"
       docker_build_command:
         type: string
         required: false
@@ -251,19 +241,16 @@ jobs:
         if: ${{ always() && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
         run: |
           ${{ inputs.package_manager }} run test
+      - name: Developer Test Coverage Threshold Check
+        env:
+          COVERAGE_THRESHOLD: ${{ vars.COVERAGE_THRESHOLD }}
+        run:  node github-action-workflows/.scripts/generate-coverage-report.cjs
       - name: Developer Test Coverage Report
-        uses: MishaKav/jest-coverage-comment@main
-        if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
+        if: always()
+        uses: mshick/add-pr-comment@v2
         with:
-          coverage-summary-path: ${{ inputs.coverage_summary_path }}
-          title: Coverage Summary
-          badge-title: Coverage
-          hide-comment: false
-          create-new-comment: false
-          hide-summary: false
-          junitxml-title: Junit Summary
-          junitxml-path: ${{ inputs.junitxml_path }}
-
+          message-id: test-coverage-report
+          message-path: test-coverage-report.md
       - name: Technology based scans after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}
         run: |
