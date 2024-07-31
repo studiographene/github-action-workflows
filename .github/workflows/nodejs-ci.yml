@@ -26,16 +26,6 @@ on:
         type: string
         required: false
         default: qa
-      coverage_summary_path:
-        description: "Path to the coverage summary JSON file"
-        type: string
-        required: false
-        default: "./coverage/coverage-summary.json"
-      junitxml_path:
-        description: "Path to the JUnit XML report file"
-        type: string
-        required: false
-        default: "./coverage/report.xml"
       docker_build_command:
         type: string
         required: false
@@ -122,7 +112,7 @@ jobs:
         run: |
           ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}          
       - name: Set cache key
         id: set-cache-key
         if: |
@@ -155,7 +145,7 @@ jobs:
         continue-on-error: true
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
-        run: ${{ inputs.package_manager }} list 
+        run: ${{ inputs.package_manager }} list         
       - name: Install dependencies
         run: |
           ${{ inputs.package_manager }} install
@@ -208,12 +198,12 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v1
+      image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v4.0.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ github.ref }}                
       - name: Technology based scans before step
         if: ${{ inputs.technology_based_scans_before_step_command != '' }}
         run: |
@@ -251,19 +241,19 @@ jobs:
         if: ${{ always() && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
         run: |
           ${{ inputs.package_manager }} run test
-      - name: Developer Test Coverage Report
-        uses: MishaKav/jest-coverage-comment@main
+      - name: Developer Test Coverage Threshold Check
+        working-directory: ${{ github.workspace }}
         if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
+        env:
+          COVERAGE_THRESHOLD: ${{ vars.COVERAGE_THRESHOLD }}
+        run: |
+          node /root/generate-dev-test-coverage-report.cjs
+      - name: Developer Test Coverage Report
+        if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
+        uses: studiographene/add-pr-comment@main
         with:
-          coverage-summary-path: ${{ inputs.coverage_summary_path }}
-          title: Coverage Summary
-          badge-title: Coverage
-          hide-comment: false
-          create-new-comment: false
-          hide-summary: false
-          junitxml-title: Junit Summary
-          junitxml-path: ${{ inputs.junitxml_path }}
-
+          message-id: test-coverage-report
+          message-path: test-coverage-report.md
       - name: Technology based scans after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}
         run: |
