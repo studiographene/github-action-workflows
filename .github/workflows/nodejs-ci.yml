@@ -198,7 +198,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v1
+      image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v4
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -245,7 +245,7 @@ jobs:
         if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
         env:
           COVERAGE_THRESHOLD: ${{ vars.COVERAGE_THRESHOLD }}
-        run:  node generate-coverage-report.cjs
+        run:  node generate-dev-test-coverage-report.cjs
       - name: Developer Test Coverage Report
         if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
         uses: mshick/add-pr-comment@v2
