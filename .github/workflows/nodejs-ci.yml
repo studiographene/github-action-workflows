@@ -107,12 +107,6 @@ jobs:
         if: ${{ inputs.caching_before_step_command != '' }}
         run: |
           ${{ inputs.caching_before_step_command}}
-      - name: Convert lockfile version > 2 in case of npm
-        if: inputs.package_manager == 'npm'
-        run: |
-          ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Set cache key
         id: set-cache-key
         if: |
@@ -146,6 +140,12 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
         run: ${{ inputs.package_manager }} list 
+      - name: Convert lockfile version > 2 in case of npm
+        if: inputs.package_manager == 'npm'
+        run: |
+          ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}        
       - name: Install dependencies
         run: |
           ${{ inputs.package_manager }} install
@@ -245,7 +245,7 @@ jobs:
         if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
         env:
           COVERAGE_THRESHOLD: ${{ vars.COVERAGE_THRESHOLD }}
-        run:  node generate-dev-test-coverage-report.cjs
+        run:  node /root/generate-dev-test-coverage-report.cjs
       - name: Developer Test Coverage Report
         if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
         uses: mshick/add-pr-comment@v2
