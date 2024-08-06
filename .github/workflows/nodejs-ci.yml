@@ -209,9 +209,9 @@ jobs:
         with:
           repository: studiographene/github-action-workflows
           path: .github/scripts
-          # sparse-checkout: |
-          #   .github/.scripts/generate-dev-test-coverage-report.cjs
-          # sparse-checkout-cone-mode: true                 
+          sparse-checkout: |
+            scripts/generate-dev-test-coverage-report.cjs
+          sparse-checkout-cone-mode: true                 
       - name: Technology based scans before step
         if: ${{ inputs.technology_based_scans_before_step_command != '' }}
         run: |
@@ -254,7 +254,7 @@ jobs:
         env:
           COVERAGE_THRESHOLD: ${{ vars.COVERAGE_THRESHOLD }}
         run: |
-          node .github/.scripts/generate-dev-test-coverage-report.cjs
+          node .github/scripts/scripts/generate-dev-test-coverage-report.cjs
       - name: Developer Test Coverage Report
         if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
         uses: mshick/add-pr-comment@v2
