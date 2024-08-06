@@ -204,11 +204,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
-          path: /
+          path: code
       - name: Checkout reusable workflow repository
         uses: actions/checkout@v4
         with:
-          path: /
+          path: code
           sparse-checkout: |
             github-action-workflows/.scripts/generate-coverage-report.cjs
           sparse-checkout-cone-mode: false         
