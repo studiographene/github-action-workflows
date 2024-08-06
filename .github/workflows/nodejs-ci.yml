@@ -204,6 +204,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
+      - name: Checkout reusable workflow repository
+        uses: actions/checkout@v4
+        with:
+          repository: studiographene/github-action-workflows
+          path: github-action-workflows/.scripts/generate-coverage-report.cjs          
       - name: Technology based scans before step
         if: ${{ inputs.technology_based_scans_before_step_command != '' }}
         run: |
@@ -245,7 +250,8 @@ jobs:
         if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
         env:
           COVERAGE_THRESHOLD: ${{ vars.COVERAGE_THRESHOLD }}
-        run:  node /root/generate-dev-test-coverage-report.cjs
+        run: |
+          node /root/generate-dev-test-coverage-report.cjs
       - name: Developer Test Coverage Report
         if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
         uses: mshick/add-pr-comment@v2
