@@ -211,7 +211,7 @@ jobs:
           path: .github/scripts
           sparse-checkout: |
             .github/.scripts/generate-dev-test-coverage-report.cjs
-          sparse-checkout-cone-mode: false                 
+          sparse-checkout-cone-mode: true                 
       - name: Technology based scans before step
         if: ${{ inputs.technology_based_scans_before_step_command != '' }}
         run: |
