@@ -208,7 +208,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: studiographene/github-action-workflows
-          # path: .github/workflows
+          path: .github/scripts
           sparse-checkout: |
             .github/.scripts/generate-dev-test-coverage-report.cjs
           sparse-checkout-cone-mode: false                 
