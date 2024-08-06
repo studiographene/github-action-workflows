@@ -211,9 +211,7 @@ jobs:
           path: ${{ github.workspace }}
           sparse-checkout: |
             github-action-workflows/.scripts/generate-coverage-report.cjs
-          sparse-checkout-cone-mode: false    
-      - name: List files in workspace
-        run: ls -R ${{ github.workspace }}               
+          sparse-checkout-cone-mode: false                 
       - name: Technology based scans before step
         if: ${{ inputs.technology_based_scans_before_step_command != '' }}
         run: |
