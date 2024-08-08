@@ -251,7 +251,7 @@ jobs:
         run: |
           ${{ inputs.package_manager }} run test
       - name: Developer Test Coverage Threshold Check
-        working-directory: /
+        working-directory: ${{ github.workspace }}
         if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
         env:
           COVERAGE_THRESHOLD: ${{ vars.COVERAGE_THRESHOLD }}

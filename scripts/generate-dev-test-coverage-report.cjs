@@ -3,7 +3,6 @@ const path = require('path');
 const { parseString } = require('xml2js');
 
 // Paths
-const rootDir = path.resolve(__dirname, '../../');
 const coverageSummaryPath = path.resolve(__dirname, 'coverage/coverage-summary.json');
 const junitReportPath = path.resolve(__dirname, 'coverage/report.xml');
 
