@@ -207,7 +207,7 @@ jobs:
       - name: Checkout reusable workflow repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: feature/unit-test
           repository: studiographene/github-action-workflows
           path: github-action-workflows
           sparse-checkout: |
