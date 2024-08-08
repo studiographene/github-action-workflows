@@ -207,10 +207,11 @@ jobs:
       - name: Checkout reusable workflow repository
         uses: actions/checkout@v4
         with:
-            repository: studiographene/github-action-workflows
-            path: github-action-workflows
-            sparse-checkout: |
-              ./scripts/generate-dev-test-coverage-report.cjs  
+          ref: ${{ github.ref }}
+          repository: studiographene/github-action-workflows
+          path: github-action-workflows
+          sparse-checkout: |
+            ./scripts/generate-dev-test-coverage-report.cjs          
           sparse-checkout-cone-mode: true                 
       - name: Technology based scans before step
         if: ${{ inputs.technology_based_scans_before_step_command != '' }}
