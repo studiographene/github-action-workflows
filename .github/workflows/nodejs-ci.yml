@@ -198,7 +198,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v4.0.1
+      image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v4.0.2
     steps:
       - name: Checkout
         uses: actions/checkout@v4
