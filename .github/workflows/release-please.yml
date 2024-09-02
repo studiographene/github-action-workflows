@@ -100,6 +100,7 @@ jobs:
         if: ${{ startsWith(github.head_ref, 'hotfix/') && github.base_ref == github.event.repository.default_branch }}
         id: generate_hotfix_tag_name
         run: |
+          echo ${HEAD_BRANCH}
           SLICED_HOTFIX_TAG_NAME=$(basename ${HEAD_BRANCH})
           echo "HotFix tag name: ${SLICED_HOTFIX_TAG_NAME}"
           echo "HOTFIX_TAG_NAME=${SLICED_HOTFIX_TAG_NAME}" >> ${GITHUB_OUTPUT}
