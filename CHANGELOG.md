@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.12.1](https://github.com/studiographene/github-action-workflows/compare/v1.12.0...v1.12.1) (2024-09-02)
+
+
+### Bug Fixes
+
+* **release-please:** tagging validation step, hotfix tag name slice: error basename: missing operand ([#51](https://github.com/studiographene/github-action-workflows/issues/51)) ([f759e36](https://github.com/studiographene/github-action-workflows/commit/f759e36f603cfca37304b20a436e1fcca0e04515))
+* **release-please:** tagging validation variable name SLICED_HOTFIX_TAG_NAME ([cbbdc3c](https://github.com/studiographene/github-action-workflows/commit/cbbdc3ce0abd531a5c8920e856ef6f6a9dd46c2f))
+* **release-please:** tagging validation variable name SLICED_HOTFIX_TAG_NAME ([86a4651](https://github.com/studiographene/github-action-workflows/commit/86a4651451778d5dc7345eb8c3efccbae799c668))
+* **release-please:** tagging validation variable name SLICED_HOTFIX_TAG_NAME ([121a9bc](https://github.com/studiographene/github-action-workflows/commit/121a9bc4ef411a1701980f50da1782427cbbb7be))
+
 ## [1.12.0](https://github.com/studiographene/github-action-workflows/compare/v1.11.1...v1.12.0) (2024-08-20)
 
 
