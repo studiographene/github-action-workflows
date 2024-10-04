@@ -254,6 +254,23 @@ jobs:
         with:
           message-id: test-coverage-report
           message-path: test-coverage-report.md
+
+      - name: Composing and Sending Test Coverage Report to Pulse
+        id: compose_pulse_report
+        if: ${{ always() && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
+        working-directory: ${{ github.workspace }}
+        run: |
+          current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          json_payload=$(jq -n \
+          --arg organisationId ${{ github.repository_owner_id }} \
+          --arg repoId ${{ github.repository_id }} \
+          --arg createdAt $current_date \
+          --argjson coverage $(jq -c . coverage/coverage-summary.json) \
+          '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: $coverage}')
+          hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac "supersecretkey" | awk '{print $2}')
+          echo "GENERATED HMAC: " $hmac
+          curl -X POST https://whole-ducks-clean.loca.lt/data -H "Content-Type: application/json" -H "X-Signature: $hmac" -d "$json_payload"
+
       - name: Technology based scans after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}
         run: |
