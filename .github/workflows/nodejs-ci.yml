@@ -6,6 +6,9 @@ on:
       NPM_TOKEN:
         description: "A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used."
         required: false
+      PULSE_HAMC_SECRET:
+        description: "A secret key to generate HMAC for Pulse API. This is used to send test coverage report to Pulse."
+        required: false
     inputs:
       excluded_jobs:
         type: string
@@ -85,6 +88,11 @@ on:
         description: "Command to execute at the end of the container scan"
         type: string
         default: ""
+      send_test_coverage_report_to_pulse:
+        description: "A boolean value to enable sending test coverage report to Pulse"
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   caching:
@@ -257,8 +265,11 @@ jobs:
 
       - name: Composing and Sending Test Coverage Report to Pulse
         id: compose_pulse_report
-        if: ${{ always() && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
+        if: ${{ always() && inputs.send_test_coverage_report_to_pulse && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
         working-directory: ${{ github.workspace }}
+        env:
+          secret: ${{ secrets.PULSE_HAMC_SECRET }}
+          url: ${{ vars.PULSE_URL}}/github/test-coverage
         run: |
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           json_payload=$(jq -n \
@@ -267,9 +278,9 @@ jobs:
           --arg createdAt $current_date \
           --argjson coverage $(jq -c . coverage/coverage-summary.json) \
           '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: $coverage}')
-          hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac "supersecretkey" | awk '{print $2}')
+          hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac $secret | awk '{print $2}')
           echo "GENERATED HMAC: " $hmac
-          curl -X POST https://whole-ducks-clean.loca.lt/data -H "Content-Type: application/json" -H "X-Signature: $hmac" -d "$json_payload"
+          curl -X POST $url -H "Content-Type: application/json" -H "X-Signature: $hmac" -d "$json_payload"
 
       - name: Technology based scans after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}
