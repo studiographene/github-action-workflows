@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.12.2](https://github.com/studiographene/github-action-workflows/compare/v1.12.1...v1.12.2) (2024-10-04)
+
+
+### Bug Fixes
+
+* **lock-file:** fixed the convert lockfile step ([36e7eb8](https://github.com/studiographene/github-action-workflows/commit/36e7eb863a5dcb573e445c27857b44c76ada828b))
+* **lock-file:** fixed the convert lockfile step ([#54](https://github.com/studiographene/github-action-workflows/issues/54)) ([78a84eb](https://github.com/studiographene/github-action-workflows/commit/78a84eb4c1509ec18d7568f8067b452137fbd657))
+
 ## [1.12.1](https://github.com/studiographene/github-action-workflows/compare/v1.12.0...v1.12.1) (2024-09-02)
 
 
