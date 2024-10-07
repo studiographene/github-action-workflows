@@ -39,8 +39,7 @@ false    |
 | Name                                       | Description                                                                 | Required | Default         |
 | ------------------------------------------ | --------------------------------------------------------------------------- | -------- | --------------- |
 | `NPM_TOKEN`                                | A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used. `Set this key and GitHub PAT with read:packages permission in GitHub Actions Secrets.`                                                                    | To authenicate SG's private NPM packages hosted on Github Package Registry     | GITHUB_TOKEN |
-| `PULSE_HMAC_SECRET`                        | A secret used to generate HMAC(Hash-based Message Authentication Code) in order for Pulse to verify it the source is a known source or not.                                                                                       | no       |
-                |
+| `PULSE_HMAC_SECRET`                        | A secret used to generate HMAC(Hash-based Message Authentication Code) in order for Pulse to verify it the source is a known source or not.                                                                                       | no       | - |
 
 # Action variables
 
