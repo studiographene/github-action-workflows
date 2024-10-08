@@ -293,7 +293,7 @@ jobs:
           --arg repoId ${{ github.repository_id }} \
           --arg createdAt $current_date \
           --argjson coverage $coverage \
-          '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: $coverage}')
+          '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: $coverage }')
 
           hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac $secret | awk '{print $2}')
 
