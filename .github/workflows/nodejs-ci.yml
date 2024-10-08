@@ -301,7 +301,7 @@ jobs:
       after_step_command: ${{ inputs.pr_agent_after_step_command}}
 
   test_coverage_report_pulse:
-    needs: caching
+    # needs: caching
     name: test_coverage_report_pulse
     runs-on: ubuntu-latest
     permissions:
