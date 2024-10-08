@@ -282,7 +282,7 @@ jobs:
           url: ${{ inputs.PULSE_URL}}/github/test-coverage
           coverage_file_path: ${{inputs.test_coverage_report_directory}}/coverage-summary.json
         run: |
-          dir
+          dir cypress
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
           total_coverage=$(jq -n --argjson content "$(jq '.total' $coverage_file_path)" '{"total": $content}')
