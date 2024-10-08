@@ -285,16 +285,16 @@ jobs:
           cat $coverage_file_path
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          total_coverage=$(jq -n --argjson content "$(jq '.total' $coverage_file_path)" '{"total": $content}')
+          coverage=$(jq -n --argjson content "$(jq '.total' $coverage_file_path)" '{"total": $content}')
           
           echo "Coverage file: " $coverage_file_path
-          echo "Total Coverage: " $total_coverage
+          echo "Total Coverage: " $coverage
 
           json_payload=$(jq -n \
           --arg organisationId ${{ github.repository_owner_id }} \
           --arg repoId ${{ github.repository_id }} \
           --arg createdAt $current_date \
-          --argjson coverage $total_coverage \
+          --argjson coverage $coverage \
           '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: $coverage}')
 
           hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac $secret | awk '{print $2}')
