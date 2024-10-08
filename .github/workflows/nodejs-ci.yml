@@ -278,7 +278,7 @@ jobs:
         env:
           secret: ${{ secrets.PULSE_HAMC_SECRET }}
           url: ${{ inputs.PULSE_URL}}/github/test-coverage
-          coverage_location: $${{inputs.test_coverage_report_location}}
+          coverage_location: ${{inputs.test_coverage_report_location}}
         run: |
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           json_payload=$(jq -n \
