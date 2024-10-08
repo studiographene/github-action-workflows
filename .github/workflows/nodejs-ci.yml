@@ -284,7 +284,9 @@ jobs:
         run: |
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          coverage=$(jq -n --argjson content "$(jq '.total' $coverage_file_path)" '{"total": $content}')
+          total_coverage=$(jq '.total' "$coverage_file_path")
+
+          coverage=$(jq -n --argjson total "$total_coverage" '{"total": $total}')
 
           json_payload=$(jq -n \
           --arg organisationId ${{ github.repository_owner_id }} \
