@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && !((github.event_name == 'issue_comment') || (github.event_name == 'push')) }}
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
     outputs:
@@ -193,7 +193,7 @@ jobs:
   security_scans:
     name: security_scans
     needs: caching
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && !((github.event_name == 'issue_comment') || (github.event_name == 'push')) }}
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     uses: studiographene/github-action-workflows/.github/workflows/security-scans.yml@master
     secrets: inherit
     with:
@@ -212,7 +212,7 @@ jobs:
       discussions: write
       pull-requests: write
       security-events: write
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && !((github.event_name == 'issue_comment') || (github.event_name == 'push')) }}
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v5
     steps:
@@ -273,6 +273,31 @@ jobs:
           message-id: test-coverage-report
           message-path: test-coverage-report.md
 
+      - name: Composing and Sending Test Coverage Report to Pulse
+        id: compose_pulse_report
+        if: ${{ always() && inputs.send_test_coverage_report_to_pulse && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
+        working-directory: ${{ github.workspace }}
+        env:
+          secret: ${{ secrets.PULSE_HAMC_SECRET }}
+          url: ${{ inputs.PULSE_URL}}/github/test-coverage
+          coverage_file_path: ${{inputs.test_coverage_report_directory}}/coverage-summary.json
+        run: |
+          current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          coverage=$(jq -c '.total' "$coverage_file_path")
+
+          json_payload=$(jq -n \
+          --arg organisationId ${{ github.repository_owner_id }} \
+          --arg repoId ${{ github.repository_id }} \
+          --arg createdAt $current_date \
+          --argjson coverage $coverage \
+          '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: { "total": $coverage } }')
+
+          hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac $secret | awk '{print $2}')
+
+          echo "GENERATED HMAC: " $hmac
+          curl -X POST $url -H "Content-Type: application/json" -H "X-Signature: $hmac" -d "$json_payload"
+
       - name: Technology based scans after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}
         run: |
@@ -300,78 +325,78 @@ jobs:
       before_step_command: ${{ inputs.pr_agent_before_step_command }}
       after_step_command: ${{ inputs.pr_agent_after_step_command}}
 
-  test_coverage_report_pulse:
-    # needs: caching
-    name: test_coverage_report_pulse
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      issues: write
-      discussions: write
-      pull-requests: write
-      security-events: write
-    if: ${{ (github.event_name == 'push') && (github.ref_name == inputs.dev_test_branch) }}
-    container:
-      image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v5
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}                
+  # test_coverage_report_pulse:
+  #   # needs: caching
+  #   name: test_coverage_report_pulse
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     issues: write
+  #     discussions: write
+  #     pull-requests: write
+  #     security-events: write
+  #   if: ${{ (github.event_name == 'push') && (github.ref_name == inputs.dev_test_branch) }}
+  #   container:
+  #     image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v5
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         ref: ${{ github.ref }}                
       
-      - name: Cache node modules
-        id: cache-node-modules
-        if: |
-          inputs.package_manager == 'npm' || 
-          inputs.package_manager == 'yarn' || 
-          inputs.package_manager == 'pnpm'  
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ needs.caching.outputs.cache-restore-key }}
-          restore-keys: ${{ needs.caching.outputs.cache-restore-key }}
+  #     - name: Cache node modules
+  #       id: cache-node-modules
+  #       if: |
+  #         inputs.package_manager == 'npm' || 
+  #         inputs.package_manager == 'yarn' || 
+  #         inputs.package_manager == 'pnpm'  
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: node_modules
+  #         key: ${{ needs.caching.outputs.cache-restore-key }}
+  #         restore-keys: ${{ needs.caching.outputs.cache-restore-key }}
 
-      - name: Install dependencies
-        run: |
-          ${{ inputs.package_manager }} install
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+  #     - name: Install dependencies
+  #       run: |
+  #         ${{ inputs.package_manager }} install
+  #       env:
+  #         NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       
-      - name: Build project
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
-        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'build' )  }}
-        run: |
-          ${{ inputs.build_command }}
+  #     - name: Build project
+  #       env:
+  #         NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+  #       if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'build' )  }}
+  #       run: |
+  #         ${{ inputs.build_command }}
       
-      - name: Developer Tests
-        id: developer_tests
-        if: ${{ always() && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
-        run: |
-          ${{ inputs.package_manager }} run test
+  #     - name: Developer Tests
+  #       id: developer_tests
+  #       if: ${{ always() && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
+  #       run: |
+  #         ${{ inputs.package_manager }} run test
 
-      - name: Composing and Sending Test Coverage Report to Pulse
-        id: compose_pulse_report
-        if: ${{ always() && inputs.send_test_coverage_report_to_pulse && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
-        working-directory: ${{ github.workspace }}
-        env:
-          secret: ${{ secrets.PULSE_HAMC_SECRET }}
-          url: ${{ inputs.PULSE_URL}}/github/test-coverage
-          coverage_file_path: ${{inputs.test_coverage_report_directory}}/coverage-summary.json
-        run: |
-          current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  #     - name: Composing and Sending Test Coverage Report to Pulse
+  #       id: compose_pulse_report
+  #       if: ${{ always() && inputs.send_test_coverage_report_to_pulse && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
+  #       working-directory: ${{ github.workspace }}
+  #       env:
+  #         secret: ${{ secrets.PULSE_HAMC_SECRET }}
+  #         url: ${{ inputs.PULSE_URL}}/github/test-coverage
+  #         coverage_file_path: ${{inputs.test_coverage_report_directory}}/coverage-summary.json
+  #       run: |
+  #         current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          coverage=$(jq -c '.total' "$coverage_file_path")
+  #         coverage=$(jq -c '.total' "$coverage_file_path")
 
-          json_payload=$(jq -n \
-          --arg organisationId ${{ github.repository_owner_id }} \
-          --arg repoId ${{ github.repository_id }} \
-          --arg createdAt $current_date \
-          --argjson coverage $coverage \
-          '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: { "total": $coverage } }')
+  #         json_payload=$(jq -n \
+  #         --arg organisationId ${{ github.repository_owner_id }} \
+  #         --arg repoId ${{ github.repository_id }} \
+  #         --arg createdAt $current_date \
+  #         --argjson coverage $coverage \
+  #         '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: { "total": $coverage } }')
 
-          hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac $secret | awk '{print $2}')
+  #         hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac $secret | awk '{print $2}')
 
-          echo "GENERATED HMAC: " $hmac
-          curl -X POST $url -H "Content-Type: application/json" -H "X-Signature: $hmac" -d "$json_payload"
+  #         echo "GENERATED HMAC: " $hmac
+  #         curl -X POST $url -H "Content-Type: application/json" -H "X-Signature: $hmac" -d "$json_payload"
 
