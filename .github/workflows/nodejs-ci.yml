@@ -96,6 +96,11 @@ on:
         type: boolean
         required: false
         default: false
+      test_coverage_report_location:
+        description: "Location of the test coverage report"
+        type: string
+        required: false
+        default: "coverage/coverage-summary.json"
 
 jobs:
   caching:
@@ -273,13 +278,14 @@ jobs:
         env:
           secret: ${{ secrets.PULSE_HAMC_SECRET }}
           url: ${{ inputs.PULSE_URL}}/github/test-coverage
+          coverage_location: $${{inputs.test_coverage_report_location}}
         run: |
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           json_payload=$(jq -n \
           --arg organisationId ${{ github.repository_owner_id }} \
           --arg repoId ${{ github.repository_id }} \
           --arg createdAt $current_date \
-          --argjson coverage $(jq -c . coverage/coverage-summary.json) \
+          --argjson coverage $(jq -c . $coverage_location) \
           '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: $coverage}')
           hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac $secret | awk '{print $2}')
           echo "GENERATED HMAC: " $hmac
