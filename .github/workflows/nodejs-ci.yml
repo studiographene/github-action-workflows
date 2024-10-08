@@ -265,7 +265,7 @@ jobs:
           COVERAGE_DIRECTORY: ${{ inputs.test_coverage_report_directory }}
 
         run: |
-          node /root/generate-dev-test-coverage-report.cjs $COVERAGE_DIRECTORY
+          node /root/generate-dev-test-coverage-report.cjs
       - name: Developer Test Coverage Report
         if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
         uses: studiographene/add-pr-comment@main
@@ -282,6 +282,7 @@ jobs:
           url: ${{ inputs.PULSE_URL}}/github/test-coverage
           coverage_file_path: ${{inputs.test_coverage_report_directory}}/coverage-summary.json
         run: |
+          tree
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
           total_coverage=$(jq -n --argjson content "$(jq '.total' $coverage_file_path)" '{"total": $content}')
