@@ -10,6 +10,9 @@ on:
         description: "A secret key to generate HMAC for Pulse API. This is used to send test coverage report to Pulse."
         required: false
     inputs:
+      PULSE_URL:
+        type: string
+        default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com"
       excluded_jobs:
         type: string
         default: ""
@@ -269,7 +272,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         env:
           secret: ${{ secrets.PULSE_HAMC_SECRET }}
-          url: ${{ vars.PULSE_URL}}/github/test-coverage
+          url: ${{ inputs.PULSE_URL}}/github/test-coverage
         run: |
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           json_payload=$(jq -n \
