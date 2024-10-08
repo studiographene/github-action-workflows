@@ -282,10 +282,13 @@ jobs:
           url: ${{ inputs.PULSE_URL}}/github/test-coverage
           coverage_file_path: ${{inputs.test_coverage_report_directory}}/coverage-summary.json
         run: |
-          ls -R cypress
+          cat $coverage_file_path
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
           total_coverage=$(jq -n --argjson content "$(jq '.total' $coverage_file_path)" '{"total": $content}')
+          
+          echo "Coverage file: " $coverage_file_path
+          echo "Total Coverage: " $total_coverage
 
           json_payload=$(jq -n \
           --arg organisationId ${{ github.repository_owner_id }} \
