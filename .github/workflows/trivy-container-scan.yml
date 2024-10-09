@@ -10,7 +10,7 @@ on:
       action_runner_container_image:
         description: "Action runner container image. Default = public.ecr.aws/studiographene/ci:node-20-alpine"
         type: string
-        default: public.ecr.aws/studiographene/ci:node-20-alpine
+        default: public.ecr.aws/studiographene/ci:node-20-buster-slim-v5
       docker_build_command:
         type: string
         required: false
