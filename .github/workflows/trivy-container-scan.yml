@@ -92,7 +92,7 @@ jobs:
 
       - name: Trivy container vulnerability scan
         id: container_scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.25.0
         with:
           image-ref: ${{ inputs.docker_build_image_id }}
           format: "template"
