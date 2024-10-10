@@ -115,6 +115,13 @@ jobs:
       cache-key: ${{ steps.set-cache-key.outputs.cache-key }}  
       cache-restore-key: ${{ steps.set-cache-restore-key.outputs.cache-restore-key }}
     steps:
+      - name: Testing
+        run: |
+          echo "inputs.send_test_coverage_report_to_pulse=${{ inputs.send_test_coverage_report_to_pulse }} "
+          echo "inputs.run_dev_test : ${{ inputs.run_dev_test }} "
+          echo "github.event.pull_request.base.ref : ${{ github.event.pull_request.base.ref }} "
+          echo "github.event.pull_request.merged : ${{ github.event.pull_request.merged }} "
+          
       - name: Checkout
         uses: actions/checkout@v4
         with:
