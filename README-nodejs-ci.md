@@ -31,7 +31,8 @@ CI scans workflow for NodeJS code.
 | pr_agent_after_step_command                | Optional commands to pass after Codium PR agent job steps execution         | no       |                 |
 | container_scan_before_step_command         | Command to execute at the start of the container scan                       | no       |                 |
 | container_scan_after_step_command          | Command to execute at the end of the container scan                         | no       |                 |
-| send_test_coverage_report_to_pulse         | Switch deciding to send the Test Coverage Report to Pulse                   | no        | false    |  
+| send_test_coverage_report_to_pulse         | Switch deciding to send the Test Coverage Report to Pulse                   | no       | false           |
+| test_coverage_report_directory             | The Directory path from project root where `coverage-summary.json` is generated after running test | false  | `coverage`  |
 
 # Workflow Secrets
 

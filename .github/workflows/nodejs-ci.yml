@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
     outputs:
@@ -193,7 +193,7 @@ jobs:
   security_scans:
     name: security_scans
     needs: caching
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
     uses: studiographene/github-action-workflows/.github/workflows/security-scans.yml@master
     secrets: inherit
     with:
@@ -249,7 +249,7 @@ jobs:
       - name: Build project
         env:
           NPM_TOKEN: ${{ (secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN) && !(github.event.pull_request.merged == true ) }}
-        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'build' )  }}
+        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'build' ) && !(github.event.pull_request.merged == true )  }}
         run: |
           ${{ inputs.build_command }}
       - name: Developer Tests
@@ -305,7 +305,7 @@ jobs:
 
   container_scan:
     name: container_scan
-    if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && !contains( inputs.excluded_jobs, 'container_scan' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) && !(github.event.pull_request.merged == true) }}
+    if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && !contains( inputs.excluded_jobs, 'container_scan' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
     uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master
     secrets: inherit
     with:
