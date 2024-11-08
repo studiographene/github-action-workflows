@@ -26,7 +26,7 @@ on:
         required: false
         type: boolean
         default: false
-      SKIP_GITHUB_PULL_REQUESTt:
+      SKIP_GITHUB_PULL_REQUEST:
         description: "if set to true, then do not try to open pull requests"
         required: false
         type: boolean
