@@ -278,12 +278,12 @@ jobs:
         if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
         working-directory: ${{ github.workspace }}
         env:
-          secret: ${{ secrets.PULSE_HAMC_SECRET }}
+          # secret: ${{  }}
           url: ${{ inputs.PULSE_URL}}/github/test-coverage
           coverage_file_path: ${{inputs.dev_test_coverage_report_directory}}/coverage-summary.json
         run: |
 
-          echo "HMAC SECRET ${env.secret}"
+          echo "HMAC SECRET ${{secrets.PULSE_HAMC_SECRET}}"
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
           coverage=$(jq -c '.total' "$coverage_file_path")
