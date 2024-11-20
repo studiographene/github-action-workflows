@@ -91,12 +91,12 @@ on:
         description: "Command to execute at the end of the container scan"
         type: string
         default: ""
-      send_test_coverage_report_to_pulse:
+      send_dev_test_coverage_report_to_pulse:
         description: "A boolean value to enable sending test coverage report to Pulse"
         type: boolean
         required: false
         default: false
-      test_coverage_report_directory:
+      dev_test_coverage_report_directory:
         description: "Location of the test coverage report"
         type: string
         required: false
@@ -262,7 +262,7 @@ jobs:
         if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
         env:
           COVERAGE_THRESHOLD: ${{ vars.COVERAGE_THRESHOLD }}
-          COVERAGE_DIRECTORY: ${{ inputs.test_coverage_report_directory }}
+          COVERAGE_DIRECTORY: ${{ inputs.dev_test_coverage_report_directory }}
 
         run: |
           node /root/generate-dev-test-coverage-report.cjs
@@ -275,12 +275,12 @@ jobs:
 
       - name: Composing and Sending Test Coverage Report to Pulse
         id: compose_pulse_report
-        if: ${{ always() && inputs.send_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
+        if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
         working-directory: ${{ github.workspace }}
         env:
           secret: ${{ secrets.PULSE_HAMC_SECRET }}
           url: ${{ inputs.PULSE_URL}}/github/test-coverage
-          coverage_file_path: ${{inputs.test_coverage_report_directory}}/coverage-summary.json
+          coverage_file_path: ${{inputs.dev_test_coverage_report_directory}}/coverage-summary.json
         run: |
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
