@@ -282,6 +282,8 @@ jobs:
           url: ${{ inputs.PULSE_URL}}/github/test-coverage
           coverage_file_path: ${{inputs.dev_test_coverage_report_directory}}/coverage-summary.json
         run: |
+
+          echo "PULSE_HMAC_SECRET: $secret"
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
           coverage=$(jq -c '.total' "$coverage_file_path")
