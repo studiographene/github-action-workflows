@@ -283,6 +283,8 @@ jobs:
           coverage_file_path: ${{inputs.dev_test_coverage_report_directory}}/coverage-summary.json
         run: |
 
+          echo "Secret: $secret"
+          echo "HMAC_SECRET: " ${{ secrets.PULSE_HAMC_SECRET }}
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
           coverage=$(jq -c '.total' "$coverage_file_path")
@@ -294,7 +296,7 @@ jobs:
           --argjson coverage $coverage \
           '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: { "total": $coverage } }')
 
-          hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac $secret | awk '{print $2}')
+          hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac ${{ secrets.PULSE_HAMC_SECRET }} | awk '{print $2}')
 
           echo "GENERATED HMAC: " $hmac
           curl -X POST $url -H "Content-Type: application/json" -H "X-Signature: $hmac" -d "$json_payload"
