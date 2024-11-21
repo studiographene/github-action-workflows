@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.13.0](https://github.com/studiographene/github-action-workflows/compare/v1.12.2...v1.13.0) (2024-11-21)
+
+
+### Features
+
+* **PX-1850:** Composing and Sending test coverage report to Pulse ([#53](https://github.com/studiographene/github-action-workflows/issues/53)) ([9a50a18](https://github.com/studiographene/github-action-workflows/commit/9a50a181880a8d1ccd5942f90ceb43766bd7d135))
+* **PX-1850:** finalized ([8b5d383](https://github.com/studiographene/github-action-workflows/commit/8b5d38383a007dcd504e0843c6770a1960be4696))
+* **PX-1850:** fis ([675190c](https://github.com/studiographene/github-action-workflows/commit/675190c3df96bb7a8256d644d0336060b26826e8))
+* **PX-1850:** fix ([44e030d](https://github.com/studiographene/github-action-workflows/commit/44e030d058a19fefbd6dcd82553138b6e8e97180))
+* **PX-1850:** fix ([7c47f5c](https://github.com/studiographene/github-action-workflows/commit/7c47f5cf50f208a45e904f958546150e3289a820))
+* **PX-1850:** fix ([3ee2f30](https://github.com/studiographene/github-action-workflows/commit/3ee2f30ed98f5559e583066bb337a5e9a2034f7e))
+* **PX-1850:** fix ([58f159b](https://github.com/studiographene/github-action-workflows/commit/58f159b2fe49588e0dfd7ab187e69e048b01ad37))
+* **PX-1850:** fix ([4b14a73](https://github.com/studiographene/github-action-workflows/commit/4b14a73a0c5b7a72a932796645566343d5628cdf))
+* **PX-1850:** fix ([10e347e](https://github.com/studiographene/github-action-workflows/commit/10e347ecead47fe830166c0dfdd614e094f11112))
+* **PX-1850:** fix ([a2b0dd6](https://github.com/studiographene/github-action-workflows/commit/a2b0dd66f8db1cac1332b4b330ac5e72572d2ca5))
+* **PX-1850:** fix ([d5e8481](https://github.com/studiographene/github-action-workflows/commit/d5e8481f0a5609efc86cdcd709d6eadc7e84a7d4))
+* **PX-1850:** fix ([ef42ce4](https://github.com/studiographene/github-action-workflows/commit/ef42ce435c4168676964575acf2f591d3e4388bc))
+* **PX-1850:** fix ([e024ebf](https://github.com/studiographene/github-action-workflows/commit/e024ebf9b93100d566a7df4f39dbe120d9c789fa))
+* **PX-1850:** fix ([bba6f0f](https://github.com/studiographene/github-action-workflows/commit/bba6f0f738af099a28f0d994b936c10afc742742))
+* **PX-1850:** fix ([8806540](https://github.com/studiographene/github-action-workflows/commit/8806540a5f474aeb14229a7881de9254b82d91ff))
+* **PX-1850:** fix ([b2e0537](https://github.com/studiographene/github-action-workflows/commit/b2e0537a1f6d95a0789a7baa3e69f514e230f594))
+* **PX-1850:** fix ([3140022](https://github.com/studiographene/github-action-workflows/commit/314002288e450eab720260b2c5e3b3bd46b7beb9))
+* **PX-1850:** fix ([e01f2f9](https://github.com/studiographene/github-action-workflows/commit/e01f2f96744435415f2a7f10c67cc42ab223890d))
+* **PX-1850:** fix ([4f52ae4](https://github.com/studiographene/github-action-workflows/commit/4f52ae4ef1ce9268a250f4ef4032a94041115752))
+* **PX-1850:** fixed type ([7a6c5a6](https://github.com/studiographene/github-action-workflows/commit/7a6c5a63265c4a698b06a22a0f1b51c0bdd0ca4c))
+* **PX-1850:** small fix ([1cd24a4](https://github.com/studiographene/github-action-workflows/commit/1cd24a44e64185710d3c57a7c6002a0a5d8bf424))
+* **PX-1850:** test coverage report input from caller ([b844c48](https://github.com/studiographene/github-action-workflows/commit/b844c4890fa15af3c1686527ff3dfcf6662aef99))
+* **PX-1850:** updated readme ([dd8a820](https://github.com/studiographene/github-action-workflows/commit/dd8a82078b22533bfd6da289b83b04a76fe8b11a))
+* **PX-1850:** updated readme ([702f030](https://github.com/studiographene/github-action-workflows/commit/702f030c3e0a005db6f4e41168046b81f88c2b30))
+* **PX-1850:** updated readme ([eb60b19](https://github.com/studiographene/github-action-workflows/commit/eb60b193db4a1e35e2e617d856478f5810b02aef))
+* **PX-1850:** updated readme for nodejs-ci.yml ([f695871](https://github.com/studiographene/github-action-workflows/commit/f695871b262381720c1b401e9a5cd68b468e7746))
+* **PX-1850:** updated variable names and container image ([18a6869](https://github.com/studiographene/github-action-workflows/commit/18a686976794989025e7330122e6fde6f1f6f0d0))
+* **PX-1850:** used input instead of variable for Pulse URL ([9380cb3](https://github.com/studiographene/github-action-workflows/commit/9380cb32435ebe90381e5f0fa45a92409b2e4386))
+* **PX-1850:** using secrest and variables ([9b92434](https://github.com/studiographene/github-action-workflows/commit/9b92434e25f66841682a93a285660bebbc9894be))
+
 ## [1.12.2](https://github.com/studiographene/github-action-workflows/compare/v1.12.1...v1.12.2) (2024-10-04)
 
 
