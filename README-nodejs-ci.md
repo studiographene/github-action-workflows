@@ -31,12 +31,15 @@ CI scans workflow for NodeJS code.
 | pr_agent_after_step_command                | Optional commands to pass after Codium PR agent job steps execution         | no       |                 |
 | container_scan_before_step_command         | Command to execute at the start of the container scan                       | no       |                 |
 | container_scan_after_step_command          | Command to execute at the end of the container scan                         | no       |                 |
+| send_dev_test_coverage_report_to_pulse     | Switch deciding to send the Test Coverage Report to Pulse                   | no       | false           |
+| dev_test_coverage_report_directory         | The Directory path from project root where `coverage-summary.json` is generated after running test | false  | `coverage`  |
 
 # Workflow Secrets
 
 | Name                                       | Description                                                                 | Required | Default         |
 | ------------------------------------------ | --------------------------------------------------------------------------- | -------- | --------------- |
-| NPM_TOKEN                                  | A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used. `Set this key and GitHub PAT with read:packages permission in GitHub Actions Secrets.`                                                                    | To authenicate SG's private NPM packages hosted on Github Package Registry     | GITHUB_TOKEN |
+| `NPM_TOKEN`                                | A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used. `Set this key and GitHub PAT with read:packages permission in GitHub Actions Secrets.`                                                                    | To authenicate SG's private NPM packages hosted on Github Package Registry     | GITHUB_TOKEN |
+| `PULSE_HMAC_SECRET`                        | A secret used to generate HMAC(Hash-based Message Authentication Code) in order for Pulse to verify it the source is a known source or not.                                                                                       | no       | - |
 
 # Action variables
 
@@ -47,6 +50,7 @@ CI scans workflow for NodeJS code.
 | `OSV_SUPPRESSIONS` <a name="action_variable_OSV_SUPPRESSIONS"></a> | <ul><li>OSV Dependency IDs to suppress from the scan</li><li>Set this in Repository Action variable.</li><li>To define multiple suppression, define them with empty line between each.</ul> | [[IgnoredVulns]]<br>id = "GHSA-fx4w-v43j-vc45"<br>reason = "No fix is currently available for this vulnerability."<br><br>[[IgnoredVulns]]<br>id = "GHSA-fx4w-v43j-vc45"<br>reason = "No fix is currently available for this vulnerability."<br><br><ul><li>`id` is OSV Dependency ID you would want to suppress (values can be taken from OSV Report in PR comment)</li><li>In addition to the above mandatory value, date until which to apply suppression can be set using `ignoreUntil = 2022-11-09` (optional)</li></ul> | no       |
 | `ALLOWED_LICENSES` <a name="action_variable_ALLOWED_LICENSES"></a> | List of allowed package licenses. Enter each license in new line                                                                                                                            | Apache-2.0<br>MIT<br>BSD-2-Clause<br>No-Licence<br>Unlicense<br>LGPL-2.1
 | `COVERAGE_THRESHOLD` <a name="action_variable_COVERAGE_THRESHOLD"></a> | Specifies the minimum acceptable percentage for test coverage. If the test coverage falls below this threshold, the scan will fail.                                                                                                                     |     `70` | no       |
+| `PULSE_URL`                                                            | Base URL of Pulse that will be used to send various generated reports to Pulse      | `https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com`    | yes                                                                  |
 
 ## How To Suppress Vulnerability Findings
 
