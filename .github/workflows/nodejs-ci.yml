@@ -8,7 +8,7 @@ on:
         required: false
       PULSE_HAMC_SECRET:
         description: "A secret key to generate HMAC for Pulse API. This is used to send test coverage report to Pulse."
-        required: true
+        required: false
     inputs:
       PULSE_URL:
         type: string
