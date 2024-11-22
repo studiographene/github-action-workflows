@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.1](https://github.com/studiographene/github-action-workflows/compare/v1.13.0...v1.13.1) (2024-11-22)
+
+
+### Bug Fixes
+
+* **nodejs-ci:** made PULSE_HMAC_SECRET as non required secret ([#58](https://github.com/studiographene/github-action-workflows/issues/58)) ([66c748f](https://github.com/studiographene/github-action-workflows/commit/66c748faeea2fc3753fa40541c96fd274bfab3e2))
+
 ## [1.13.0](https://github.com/studiographene/github-action-workflows/compare/v1.12.2...v1.13.0) (2024-11-21)
 
 
