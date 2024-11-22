@@ -106,6 +106,7 @@ jobs:
           skip-dirs: ${{ inputs.container_scan_skip_dirs }}
 
       - name: Create container vulnerability report
+        continue-on-error: true
         if: ${{ steps.container_scan.outcome != 'cancelled' }}
         shell: bash
         run: |
