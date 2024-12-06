@@ -1,4 +1,4 @@
-# Purpose
+̉̉̉̉̉̉̉̉̉̉̉# Purpose
 
 To automatically create Git Tag + Release with
 
@@ -9,9 +9,14 @@ To automatically create Git Tag + Release with
 
 # Workflow Inputs
 
-| name           | description                                                                                                                                                                                                              | type   | required | default |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | -------- | ------- |
-| `RELEASE_TYPE` | Release type based on the code. Set this to `simple` if your code release type does not match with any mention in supported values: https://github.com/marketplace/actions/release-please-action#release-types-supported | string | no       | `node`  |
+| name                       | description                                                                                                                                                                                                              | type    | required | default |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | -------- | ------- |
+| `RELEASE_TYPE`             | Release type based on the code. Set this to `simple` if your code release type does not match with any mention in supported values: https://github.com/marketplace/actions/release-please-action#release-types-supported | string  | no       | `node`  |
+| `PATH`                     | create a release from a path other than the repository's root                                                                                                                                                            | string  | no       | ""      |
+| `TARGET_BRANCH`            | branch to open pull release PR against (detected by default)                                                                                                                                                             | string  | no       | ""      |
+| `INCLUDE_COMPONENT_IN_TAG` | If true, add prefix to tags and branches, allowing multiple libraries to be released from the same repository                                                                                                            | boolean | no       | false   |
+| `SKIP_GITHUB_RELEASE`      | if set to true, then do not try to tag releases                                                                                                                                                                          | boolean | no       | false   |
+| `SKIP_GITHUB_PULL_REQUEST` | if set to true, then do not try to open pull requests                                                                                                                                                                    | boolean | no       | false   |
 
 # How to setup
 
@@ -38,13 +43,9 @@ on:
   pull_request:
     branches:
       - master
-      - main
-      - trunk
   push:
     branches:
       - master
-      - main
-      - trunk
 
 jobs:
   call-worflow:

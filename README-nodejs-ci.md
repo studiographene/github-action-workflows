@@ -83,7 +83,7 @@ jobs:
       package_manager: pnpm
       build_command: pnpm run build
       lint_command: pnpm run lint
-      run_dev_test: true   # Set this input only if the Developer tests (Unit/Integration/etc.,) are available in your repo code
+      run_dev_test: true # Set this input only if the Developer tests (Unit/Integration/etc.,) are available in your repo code
     secrets: inherit
 ```
 
