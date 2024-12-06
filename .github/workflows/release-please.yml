@@ -144,6 +144,7 @@ jobs:
 
   release_please:
     runs-on: ubuntu-latest
+    if: ${{ github.ref_name == (inputs.TARGET_BRANCH != '' && inputs.TARGET_BRANCH || github.ref_name == github.event.repository.default_branch) }}
     steps:
       - name: auto-release
         uses: googleapis/release-please-action@v4
