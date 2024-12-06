@@ -143,7 +143,6 @@ jobs:
           git push origin ${HEAD_BRANCH}
 
   release_please:
-    if: ${{ github.ref_name == github.event.repository.default_branch }}
     runs-on: ubuntu-latest
     steps:
       - name: auto-release
