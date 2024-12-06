@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.14.0](https://github.com/studiographene/github-action-workflows/compare/v1.13.1...v1.14.0) (2024-12-06)
+
+
+### Features
+
+* **release-please:** +target-group input addition to release_please ([5034c5a](https://github.com/studiographene/github-action-workflows/commit/5034c5a8f7f588e21c41f7426dc8dd07329deab0))
+* **release-please:** option to define target-branch for release creation ([#61](https://github.com/studiographene/github-action-workflows/issues/61)) ([456cd72](https://github.com/studiographene/github-action-workflows/commit/456cd7299c423f2998ad9740cc0f118b599f72af))
+* **release-please:** option to define target-branch for release creation ([#66](https://github.com/studiographene/github-action-workflows/issues/66)) ([7982c9a](https://github.com/studiographene/github-action-workflows/commit/7982c9afa4bdb98aeb60c80dde51c5b0151283fe))
+
+
+### Bug Fixes
+
+* **release-please:** release_please job condition statement ([16102e2](https://github.com/studiographene/github-action-workflows/commit/16102e2c8c50964e53dd4f23b71dfb2f9b775030))
+* **release-please:** release-please job condition removed ([244df71](https://github.com/studiographene/github-action-workflows/commit/244df714a20f133785401bb0a293a4e01518f0ec))
+* **release-please:** release-please job condition update ([df7ea12](https://github.com/studiographene/github-action-workflows/commit/df7ea129952df807c0cfa49d8509991426418435))
+
 ## [1.13.1](https://github.com/studiographene/github-action-workflows/compare/v1.13.0...v1.13.1) (2024-11-22)
 
 
