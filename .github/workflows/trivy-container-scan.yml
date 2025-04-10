@@ -115,6 +115,7 @@ jobs:
           then
             echo "### :warning: Vulnerabilities detected<br>The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.json
             cat trivyreport.json >> container_scan_prcomment.json
+            echo "::error::Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
             exit 1
           elif [ ${{ steps.container_scan.outcome }} == "success" ]
           then
