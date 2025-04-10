@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.14.1](https://github.com/studiographene/github-action-workflows/compare/v1.14.0...v1.14.1) (2025-04-10)
+
+
+### Bug Fixes
+
+* **SGEBLG-367:** container scan report template format ([2f86d16](https://github.com/studiographene/github-action-workflows/commit/2f86d16da2beb20073eb2eed2187b58b1661f1d3))
+* **SGEBLG-367:** Container scan report template format ([0e4a40a](https://github.com/studiographene/github-action-workflows/commit/0e4a40a74b315706240007e0a7a181edb30b7bb5))
+* **trivy-scans:** scan report is now commented in PR for vulnerabilities ([#60](https://github.com/studiographene/github-action-workflows/issues/60)) ([316f9bd](https://github.com/studiographene/github-action-workflows/commit/316f9bd0155414e1d8ab53d492b8ab882473ded1))
+
 ## [1.14.0](https://github.com/studiographene/github-action-workflows/compare/v1.13.1...v1.14.0) (2024-12-06)
 
 
