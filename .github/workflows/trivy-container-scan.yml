@@ -107,7 +107,7 @@ jobs:
           skip-dirs: ${{ inputs.container_scan_skip_dirs }}
 
       - name: Create container vulnerability report
-        if: ${{ !cancelled()  }} 
+        if: ${{ !cancelled()  }}
         shell: bash
         run: |
           echo "# Trivy Container Scan" > container_scan_prcomment.json
@@ -115,9 +115,12 @@ jobs:
           then
             echo "### :warning: Vulnerabilities detected<br>The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.json
             cat trivyreport.json >> container_scan_prcomment.json
+            echo "::error::Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
+            exit 1
           elif [ ${{ steps.container_scan.outcome }} == "success" ]
           then
             echo "### :rainbow: No vulnerabilities of HIGH or CRITICAL severity detected" >> container_scan_prcomment.json
+            exit 0
           fi
 
       - name: PR comment the container scan report
