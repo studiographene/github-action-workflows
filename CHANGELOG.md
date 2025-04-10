@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.14.2](https://github.com/studiographene/github-action-workflows/compare/v1.14.1...v1.14.2) (2025-04-10)
+
+
+### Bug Fixes
+
+* **sgeblg 367:** container scan fails on vuln detection post reporting them ([#69](https://github.com/studiographene/github-action-workflows/issues/69)) ([1c42680](https://github.com/studiographene/github-action-workflows/commit/1c42680c8de9b511cce6ad5b20a72194a14e7a45))
+* **SGEBLG-367:** container exit code is 1 if vuln found and step fails ([4367ca5](https://github.com/studiographene/github-action-workflows/commit/4367ca5340ebc2f53e5514298c4de7d1f6f1878d))
+* **SGEBLG-367:** container exit code is 1 if vuln found and step fails ([eddd633](https://github.com/studiographene/github-action-workflows/commit/eddd63367c690a1b0a5e7b52ed62b9b447cde383))
+
 ## [1.14.1](https://github.com/studiographene/github-action-workflows/compare/v1.14.0...v1.14.1) (2025-04-10)
 
 
