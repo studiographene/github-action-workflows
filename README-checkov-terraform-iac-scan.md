@@ -34,7 +34,7 @@ on:
 
 jobs:
   call-worflow:
-    uses: studiographene/github-action-workflows/.github/workflows/checkov-terraform-iac-scan.yml@master ddd
+    uses: studiographene/github-action-workflows/.github/workflows/checkov-terraform-iac-scan.yml@master
     secrets: inherit
 ```
 

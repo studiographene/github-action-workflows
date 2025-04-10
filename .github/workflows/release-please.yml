@@ -6,6 +6,31 @@ on:
       RELEASE_TYPE:
         type: string
         default: "node"
+      PATH:
+        description: "create a release from a path other than the repository's root"
+        required: false
+        type: string
+        default: ""
+      TARGET_BRANCH:
+        description: branch to open pull release PR against (detected by default)
+        required: false
+        type: string
+        default: ""
+      INCLUDE_COMPONENT_IN_TAG:
+        description: "If true, add prefix to tags and branches, allowing multiple libraries to be released from the same repository"
+        required: false
+        type: boolean
+        default: false
+      SKIP_GITHUB_RELEASE:
+        description: "if set to true, then do not try to tag releases"
+        required: false
+        type: boolean
+        default: false
+      SKIP_GITHUB_PULL_REQUEST:
+        description: "if set to true, then do not try to open pull requests"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -118,8 +143,9 @@ jobs:
           git push origin ${HEAD_BRANCH}
 
   release_please:
-    if: ${{ github.ref_name == github.event.repository.default_branch }}
     runs-on: ubuntu-latest
+    if: ${{ github.ref_name == (inputs.TARGET_BRANCH != '' && inputs.TARGET_BRANCH || github.event.repository.default_branch) }}
+
     steps:
       - name: auto-release
         uses: googleapis/release-please-action@v4
@@ -131,3 +157,8 @@ jobs:
           # this is a built-in strategy in release-please, see "Action Inputs"
           # for more options
           release-type: ${{ inputs.RELEASE_TYPE }}
+          path: ${{ inputs.PATH }}
+          target-branch: ${{ inputs.TARGET_BRANCH }}
+          include-component-in-tag: ${{ inputs.INCLUDE_COMPONENT_IN_TAG }}
+          skip-github-release: ${{ inputs.SKIP_GITHUB_RELEASE }}
+          skip-github-pull-request: ${{ inputs.SKIP_GITHUB_PULL_REQUEST }}
