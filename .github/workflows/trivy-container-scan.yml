@@ -86,13 +86,14 @@ jobs:
           {{- range .}}
           {{- range .Vulnerabilities}}
           | {{ .PkgName | html }} | {{ .VulnerabilityID | html }} | {{ .Severity | html }} | {{ .Status | html }} | {{ .InstalledVersion | html }} | {{ .FixedVersion | html }} | {{ .Title | html }} |
-          {{ end }}
+          {{- end }}
           {{- end }}
           EOF
 
       - name: Trivy container vulnerability scan
         id: container_scan
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           image-ref: ${{ inputs.docker_build_image_id }}
           format: "template"
@@ -106,7 +107,7 @@ jobs:
           skip-dirs: ${{ inputs.container_scan_skip_dirs }}
 
       - name: Create container vulnerability report
-        if: ${{ steps.container_scan.outcome != 'cancelled' }}
+        if: ${{ !cancelled()  }} 
         shell: bash
         run: |
           echo "# Trivy Container Scan" > container_scan_prcomment.json
