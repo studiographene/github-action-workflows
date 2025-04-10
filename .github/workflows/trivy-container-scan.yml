@@ -86,7 +86,6 @@ jobs:
           {{- range .}}
           {{- range .Vulnerabilities}}
           | {{ .PkgName | html }} | {{ .VulnerabilityID | html }} | {{ .Severity | html }} | {{ .Status | html }} | {{ .InstalledVersion | html }} | {{ .FixedVersion | html }} | {{ .Title | html }} |
-          {{ end }}
           {{- end }}
           EOF
 
