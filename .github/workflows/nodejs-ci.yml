@@ -6,7 +6,7 @@ on:
       NPM_TOKEN:
         description: "A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used."
         required: false
-      PULSE_HAMC_SECRET:
+      PULSE_HMAC_SECRET:
         description: "A secret key to generate HMAC for Pulse API. This is used to send test coverage report to Pulse."
         required: false
     inputs:
@@ -278,7 +278,7 @@ jobs:
         if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
         working-directory: ${{ github.workspace }}
         env:
-          secret: ${{ secrets.PULSE_HAMC_SECRET }}
+          secret: ${{ secrets.PULSE_HMAC_SECRET }}
           url: ${{ inputs.PULSE_URL}}/github/test-coverage
           coverage_file_path: ${{inputs.dev_test_coverage_report_directory}}/coverage-summary.json
         run: |
@@ -367,5 +367,5 @@ jobs:
           GITHUB_REPOSITORY_ID: ${{ github.event.repository.id }}
           GITHUB_ORGANIZATION_ID: ${{ github.event.repository.owner.id }}
           API_URL: 'https://smee.io/WM3TsYqgTQryj0Vu' #${{ inputs.PULSE_URL}}/
-          HMAC_SECRET: ${{ secrets.PULSE_HAMC_SECRET }}
+          HMAC_SECRET: ${{ secrets.PULSE_HMAC_SECRET }}
         run: python .github/scripts/commit_analysis_modified.py
