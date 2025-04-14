@@ -367,5 +367,5 @@ jobs:
           GITHUB_REPOSITORY_ID: ${{ github.event.repository.id }}
           GITHUB_ORGANIZATION_ID: ${{ github.event.repository.owner.id }}
           API_URL: 'https://smee.io/WM3TsYqgTQryj0Vu' #${{ inputs.PULSE_URL}}/
-          HMAC_SECRET: 'Qwerty@123' #${{ secrets.PULSE_HAMC_SECRET }}
+          HMAC_SECRET: ${{ secrets.PULSE_HAMC_SECRET }}
         run: python .github/scripts/commit_analysis_modified.py
