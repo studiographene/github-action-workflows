@@ -330,6 +330,7 @@ jobs:
     name: pulse-work-break-down
     if: ${{ github.event.pull_request.merged == true && inputs.run_dev_test && github.event.pull_request.base.ref == inputs.dev_test_branch }}
     runs-on: ubuntu-latest
+    secrets: inherit
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
