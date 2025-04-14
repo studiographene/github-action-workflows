@@ -328,7 +328,7 @@ jobs:
 
   pulse-work-break-down:
     name: pulse-work-break-down
-    if: github.event.pull_request.merged == true
+    if: ${{ github.event.pull_request.merged == true && inputs.run_dev_test && github.event.pull_request.base.ref == inputs.dev_test_branch }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
