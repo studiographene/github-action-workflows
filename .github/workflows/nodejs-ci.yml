@@ -366,6 +366,6 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           GITHUB_REPOSITORY_ID: ${{ github.event.repository.id }}
           GITHUB_ORGANIZATION_ID: ${{ github.event.repository.owner.id }}
-          API_URL: 'https://smee.io/WM3TsYqgTQryj0Vu' #${{ inputs.PULSE_URL}}/
+          API_URL: ${{ inputs.PULSE_URL}}/github/commit/workbreakdown
           HMAC_SECRET: ${{ secrets.PULSE_HMAC_SECRET }}
         run: python .github/scripts/commit_analysis_modified.py
