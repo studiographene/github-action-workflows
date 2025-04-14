@@ -273,7 +273,7 @@ jobs:
           message-id: test-coverage-report
           message-path: test-coverage-report.md
 
-      - name: Composing and Sending Test Coverage Report to Pulse
+      - name: Pulse - Composing and Sending Test Coverage Report to Pulse
         id: compose_pulse_report
         if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
         working-directory: ${{ github.workspace }}
@@ -326,3 +326,40 @@ jobs:
       before_step_command: ${{ inputs.pr_agent_before_step_command }}
       after_step_command: ${{ inputs.pr_agent_after_step_command}}
 
+  pulse-work-break-down:
+    name: pulse-work-break-down
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch full history for git blame to work correctly
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      
+      - name: Install Dependencies
+        run: |
+          pip install GitPython requests
+
+      - name: Download script from S3
+        run: |
+          # Create scripts directory if it doesn't exist
+          mkdir -p .github/scripts
+          # Download the file using curl
+          curl -o .github/scripts/commit_analysis_modified.py https://pulse-email-assets.s3.eu-west-1.amazonaws.com/commit_analysis_modified.py
+          # Make the script executable
+          chmod +x .github/scripts/commit_analysis_modified.py
+      
+      - name: Run commit analysis script
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_REPOSITORY_ID: ${{ github.event.repository.id }}
+          GITHUB_ORGANIZATION_ID: ${{ github.event.repository.owner.id }}
+          API_URL: 'https://smee.io/WM3TsYqgTQryj0Vu' #${{ inputs.PULSE_URL}}/
+          HMAC_SECRET: ${{ secrets.PULSE_HAMC_SECRET }}
+        run: python .github/scripts/commit_analysis_modified.py
