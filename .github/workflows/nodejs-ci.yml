@@ -15,7 +15,7 @@ on:
         default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com"
       WORKBREAKDOWN_SCRIPT_URL:
           type: string
-          default: "https://pulse-email-assets.s3.eu-west-1.amazonaws.com/commit_analysis_modified.py"
+          default: "https://sg-devops-scripts.s3.eu-west-1.amazonaws.com/pulse/pulse-github-work-break-down/pulse-github-work-break-down.py"
       excluded_jobs:
         type: string
         default: ""
@@ -359,9 +359,9 @@ jobs:
           # Create scripts directory if it doesn't exist
           mkdir -p .github/scripts
           # Download the file using curl
-          curl -o .github/scripts/commit_analysis.py ${{ inputs.WORKBREAKDOWN_SCRIPT_URL }}
+          curl -o .github/scripts/pulse-github-work-break-down.py ${{ inputs.WORKBREAKDOWN_SCRIPT_URL }}
           # Make the script executable
-          chmod +x .github/scripts/commit_analysis.py
+          chmod +x .github/scripts/pulse-github-work-break-down.py
       
       - name: Run commit analysis script
         env:
@@ -371,4 +371,4 @@ jobs:
           GITHUB_ORGANIZATION_ID: ${{ github.event.repository.owner.id }}
           API_URL: ${{ inputs.PULSE_URL}}/github/commit/workbreakdown
           HMAC_SECRET: ${{ secrets.PULSE_HMAC_SECRET }}
-        run: python .github/scripts/commit_analysis.py
+        run: python .github/scripts/pulse-github-work-break-down.py
