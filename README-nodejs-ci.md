@@ -11,7 +11,7 @@ CI scans workflow for NodeJS code.
 | excluded_jobs <a name="inputs_EXCLUDED_JOBS"></a> | A string of comma separated job IDs that you want to exclude from execution. Job IDs that can be used to exclude `lint,sast,gitleaks,license_scan,dependency_scan,build,docker,pr_agent`. | no       |                 |
 | package_manager                            |
 | run_dev_test | A boolen value to enable Developer tests (Unit/Integration/etc.,) are available in your repo code. | no | false |
-| dev_test_branch | A string of comma separated branches that you want to run developer tests on. (support list of branches. Ex  `dev,qa` or `uat`) | no | `'qa'` |
+| dev_test_branch | A string of comma separated branches that you want to run developer tests on. Also, when PR merged to this branch, each commits work breakdown will be computed and sent to Pulse (support list of branches. Ex  `dev,qa` or `uat`) | no | `'qa'` |
 | coverage_summary_path | Path to the coverage summary JSON file generated from developer's test | no | `./coverage/coverage-summary.json` |
 | junitxml_path  | Path to the JUnit XML report file generated from developer's test | no | `./coverage/report.xml`  |                                                                             | no       | `npm`           |
 | build_command                              | build command for the project                                               | no       | `npm run build` |

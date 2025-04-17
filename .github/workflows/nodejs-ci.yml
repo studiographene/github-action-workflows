@@ -331,7 +331,7 @@ jobs:
 
   pulse_work_break_down:
     name: pulse-work-break-down
-    if: ${{ github.event.pull_request.merged == true && inputs.run_dev_test && github.event.pull_request.base.ref == inputs.dev_test_branch }}
+    if: ${{ github.event.pull_request.merged == true && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
