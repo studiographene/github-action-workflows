@@ -332,7 +332,6 @@ jobs:
   pulse_work_break_down:
     name: pulse-work-break-down
     if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
-    runs-on: ubuntu-latest
     uses: studiographene/github-action-workflows/.github/workflows/pulse-work-break-down.yml@feature/PX-2418
     secrets: inherit
 
