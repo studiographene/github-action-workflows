@@ -3,9 +3,6 @@ name: Studiographene NodeJs CI
 on:
   workflow_call:
     secrets:
-      NPM_TOKEN:
-        description: "A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used."
-        required: false
       PULSE_HMAC_SECRET:
         description: "A secret key to generate HMAC for Pulse API. This is used to send test coverage report to Pulse."
         required: false
@@ -26,7 +23,6 @@ jobs:
 
   pulse_work_break_down:
     name: pulse-work-break-down
-    # if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
