@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.15.0](https://github.com/studiographene/github-action-workflows/compare/v1.14.2...v1.15.0) (2025-05-08)
+
+
+### Features
+
+* **PX-2418:** added script to Pulse: Workbreakdown ([c0fbe0a](https://github.com/studiographene/github-action-workflows/commit/c0fbe0abeaebf7090331def61d5d339e45b3aa4c))
+* **PX-2418:** added script to Pulse: Workbreakdown ([#71](https://github.com/studiographene/github-action-workflows/issues/71)) ([cde75a6](https://github.com/studiographene/github-action-workflows/commit/cde75a61f19c1f3608228ba13c9edaddeb20b3a3))
+* **PX-2418:** Changed branch ref to master for Work Breakdown action ([48bfcb8](https://github.com/studiographene/github-action-workflows/commit/48bfcb8367758765fa3e7f61db5bee5418393bf3))
+* **PX-2418:** Changed branch ref to master for Work Breakdown action ([#73](https://github.com/studiographene/github-action-workflows/issues/73)) ([986204e](https://github.com/studiographene/github-action-workflows/commit/986204e2fa3590321285d05d888f8c2db885e878))
+
 ## [1.14.2](https://github.com/studiographene/github-action-workflows/compare/v1.14.1...v1.14.2) (2025-04-10)
 
 
