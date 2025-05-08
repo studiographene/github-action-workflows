@@ -6,13 +6,16 @@ on:
       NPM_TOKEN:
         description: "A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used."
         required: false
-      PULSE_HAMC_SECRET:
+      PULSE_HMAC_SECRET:
         description: "A secret key to generate HMAC for Pulse API. This is used to send test coverage report to Pulse."
         required: false
     inputs:
       PULSE_URL:
         type: string
         default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com"
+      WORKBREAKDOWN_SCRIPT_URL:
+          type: string
+          default: "https://sg-devops-scripts.s3.eu-west-1.amazonaws.com/pulse/pulse-github-work-break-down/pulse-github-work-break-down.py"
       excluded_jobs:
         type: string
         default: ""
@@ -31,7 +34,7 @@ on:
         description: "Developer-provided branch names to run the tests"
         type: string
         required: false
-        default: qa
+        default: dev
       docker_build_command:
         type: string
         required: false
@@ -273,12 +276,12 @@ jobs:
           message-id: test-coverage-report
           message-path: test-coverage-report.md
 
-      - name: Composing and Sending Test Coverage Report to Pulse
+      - name: Pulse - Composing and Sending Test Coverage Report to Pulse
         id: compose_pulse_report
         if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
         working-directory: ${{ github.workspace }}
         env:
-          secret: ${{ secrets.PULSE_HAMC_SECRET }}
+          secret: ${{ secrets.PULSE_HMAC_SECRET }}
           url: ${{ inputs.PULSE_URL}}/github/test-coverage
           coverage_file_path: ${{inputs.dev_test_coverage_report_directory}}/coverage-summary.json
         run: |
@@ -325,4 +328,10 @@ jobs:
     with:
       before_step_command: ${{ inputs.pr_agent_before_step_command }}
       after_step_command: ${{ inputs.pr_agent_after_step_command}}
+
+  pulse_work_break_down:
+    name: pulse-work-break-down
+    if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-work-break-down.yml@feature/PX-2418
+    secrets: inherit
 

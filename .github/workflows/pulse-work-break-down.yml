@@ -1,0 +1,65 @@
+name: Studiographene NodeJs CI
+
+on:
+  workflow_call:
+    secrets:
+      PULSE_HMAC_SECRET:
+        description: "A secret key to generate HMAC for Pulse API. This is used to send test coverage report to Pulse."
+        required: false
+    inputs:
+      PULSE_URL:
+        type: string
+        default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com"
+      WORKBREAKDOWN_SCRIPT_URL:
+          type: string
+          default: "https://sg-devops-scripts.s3.eu-west-1.amazonaws.com/pulse/pulse-github-work-break-down/pulse-github-work-break-down.py"
+      dev_test_branch:
+        description: "Developer-provided branch names to run the tests"
+        type: string
+        required: false
+        default: qa
+
+jobs:
+
+  pulse_work_break_down:
+    name: pulse-work-break-down
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      
+      - name: Install Dependencies
+        run: |
+          pip install GitPython requests
+
+      - name: Download script from S3
+        run: |
+          # Create scripts directory if it doesn't exist
+          mkdir -p .github/scripts
+          # Download the file using curl
+          curl -o .github/scripts/pulse-github-work-break-down.py ${{ inputs.WORKBREAKDOWN_SCRIPT_URL }}
+          # Make the script executable
+          chmod +x .github/scripts/pulse-github-work-break-down.py
+      
+      - name: Run commit analysis script
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_REPOSITORY_ID: ${{ github.event.repository.id }}
+          GITHUB_ORGANIZATION_ID: ${{ github.event.repository.owner.id }}
+          API_URL: ${{ inputs.PULSE_URL}}/github/commit/workbreakdown
+          HMAC_SECRET: ${{ secrets.PULSE_HMAC_SECRET }}
+        run: python .github/scripts/pulse-github-work-break-down.py
