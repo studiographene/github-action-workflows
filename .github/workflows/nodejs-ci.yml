@@ -223,7 +223,7 @@ jobs:
       semgrep_options: ${{ inputs.semgrep_options }}
 
   eslint:
-    needs: caching
+    # needs: caching
     name: eslint_scan
     runs-on: ubuntu-latest
     permissions:
@@ -233,8 +233,8 @@ jobs:
       pull-requests: write
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
-    # container:
-    #   image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v5
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
