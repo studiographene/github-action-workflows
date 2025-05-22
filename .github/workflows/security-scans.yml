@@ -17,8 +17,8 @@ on:
         default: ""
 
 jobs:
-  security_scans:
-    name: security_scans
+  SAST:
+    name: sast
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -35,10 +35,10 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
-      - name: Security scans before step
-        if: ${{ inputs.security_scan_before_step_command != '' }}
-        run: |
-          ${{ inputs.security_scan_before_step_command}}
+      # - name: SAST before step
+      #   if: ${{ inputs.security_scan_before_step_command != '' }}
+      #   run: |
+      #     ${{ inputs.security_scan_before_step_command}}
       - name: SAST Scan using Semgrep
         if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'sast')  }}
 
@@ -84,12 +84,53 @@ jobs:
         with:
           message-id: sast-scan
           message-path: sast_report.md
+  
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      # - name: SAST before step
+      #   if: ${{ inputs.security_scan_before_step_command != '' }}
+      #   run: |
+      #     ${{ inputs.security_scan_before_step_command}}
 
       - name: Gitleaks scan
         if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'gitleaks')  }}
         uses: gitleaks/gitleaks-action@v1.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  license_scan:
+    name: license_scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       - name: Check for composer.lock or composer.json
         if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'license_scan') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
         id: check_files
@@ -150,6 +191,23 @@ jobs:
           EOF
           /root/executables/ci-utility check --sbom bom.xml --allowedLicences allowedLicenses.txt
 
+  dependency_scan:
+    name: dependency_scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       - name: Dependency Scan using Google OSV
         id: dependency_scan
         if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
@@ -182,6 +240,28 @@ jobs:
         with:
           message-id: dependency_scan
           message-path: osv_report.md
+
+  security_scans:
+    name: security_scans
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+        if: ${{ !cancelled() && contains('success,failure', steps.dependency_scan.outcome) }}
+        uses: mshick/add-pr-comment@v2
+        
       - name: Security scans after step
         if: ${{ inputs.security_scan_after_step_command != '' }}
         run: |
