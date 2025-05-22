@@ -223,7 +223,7 @@ jobs:
       semgrep_options: ${{ inputs.semgrep_options }}
 
   eslint:
-    # needs: caching
+    needs: caching
     name: eslint_scan
     runs-on: ubuntu-latest
     permissions:
@@ -240,6 +240,22 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
+      - name: Cache node modules
+        id: cache-node-modules
+        if: |
+          inputs.package_manager == 'npm' || 
+          inputs.package_manager == 'yarn' || 
+          inputs.package_manager == 'pnpm'
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ needs.caching.outputs.cache-restore-key }}
+          restore-keys: ${{ needs.caching.outputs.cache-restore-key }}
+      - name: Install dependencies
+        run: |
+          ${{ inputs.package_manager }} install
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       - name: lint scan before step
         if: ${{ inputs.technology_based_scans_before_step_command != '' || inputs.lint_scan_before_step_command != '' }}
         run: |
