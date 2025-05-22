@@ -84,7 +84,7 @@ jobs:
         with:
           message-id: sast-scan
           message-path: sast_report.md
-  
+
   gitleaks:
     name: gitleaks
     runs-on: ubuntu-latest
@@ -260,8 +260,7 @@ jobs:
           ref: ${{ github.ref }}
 
         if: ${{ !cancelled() && contains('success,failure', steps.dependency_scan.outcome) }}
-        uses: mshick/add-pr-comment@v2
-        
+
       - name: Security scans after step
         if: ${{ inputs.security_scan_after_step_command != '' }}
         run: |
