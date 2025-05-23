@@ -275,7 +275,7 @@ jobs:
 
   developer_tests:
     needs: caching
-    name: technology_based_scans
+    name: developer_tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
