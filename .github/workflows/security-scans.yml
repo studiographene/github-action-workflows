@@ -194,6 +194,7 @@ jobs:
           /root/executables/ci-utility check --sbom bom.xml --allowedLicences allowedLicenses.txt
 
   dependency_scan:
+    needs: license_scan
     name: dependency_scan
     runs-on: ubuntu-latest
     permissions:
