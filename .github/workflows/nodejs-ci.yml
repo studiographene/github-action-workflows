@@ -187,7 +187,7 @@ jobs:
           ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
-      - name: Upload package-lock
+      - name: Upload package-lock artifact
         uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'npm'
         with:
