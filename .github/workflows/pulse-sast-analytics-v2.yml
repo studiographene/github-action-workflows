@@ -1,0 +1,73 @@
+name: Pulse SAST Analytics
+
+on:
+  workflow_call:
+    inputs:
+      PULSE_URL:
+        type: string
+        default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com"
+      semgrep_options:
+        type: string
+        default: ""
+      before_step_command:
+        type: string
+        default: ""
+      after_step_command:
+        type: string
+        default: ""
+
+jobs:
+  pulse_sast_report:
+    runs-on: ubuntu-latest
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: before step
+        if: ${{ inputs.before_step_command != '' }}
+        run: |
+          ${{ inputs.before_step_command}}
+      - name: SAST Scan
+        id: generate_report
+        run: |
+          semgrep --config "p/default" --config /root/configs/semgrep/rules/eslint.yml --sarif ${{ inputs.semgrep_options }} | tee semgrep.sarif
+      - name: Display Errors
+        id: display_errors
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+          REPO_NAME: ${{ github.repository }}
+          ORG_ID: ${{ github.event.organization.id }}
+          REPO_ID: ${{ github.repository_id }}
+        run: |
+          jq -n '[inputs | .runs[].results[] | {ruleId: .ruleId, message: .message.text, location: .locations[].physicalLocation.artifactLocation.uri, lineNo: .locations[].physicalLocation.region.startLine, snippet: .locations[].physicalLocation.region.snippet.text}]' semgrep.sarif > temp_errors.json
+          date=$(date +%Y-%m-%d)
+          branch=${BRANCH_NAME}
+          repo=${REPO_NAME}
+          orgId=${ORG_ID}
+          repoId=${REPO_ID}
+          data=$(jq -n --arg date "$date" --arg branch "$branch" --arg orgId "$orgId" --arg repoId "$repoId" --arg repo "$repo" '{date: $date, branch: $branch, repo: $repo, orgId: $orgId, repoId: $repoId, errors: input}' temp_errors.json)
+          # Write the data to a JSON file
+          echo "No. of error findings: $data"
+          echo "$data" > pulse-security-errors-report.json
+          # url="${{ inputs.PULSE_URL }}/github/repo-sast-errors"
+          # content_type="application/json"  # Set your content type
+
+          # # Send the request
+          # curl -X POST \
+          #         -H "Content-Type: $content_type" \
+          #         --data-binary "@sast_errors.json" \
+          #         "$url"
+
+      - name: Upload SAST Errors Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-security-errors-report
+          path: pulse-security-errors-report.json
+
+      - name: after step
+        if: ${{ inputs.after_step_command != '' }}
+        run: |
+          ${{ inputs.after_step_command}}
