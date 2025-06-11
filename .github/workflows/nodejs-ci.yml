@@ -276,32 +276,6 @@ jobs:
           message-id: test-coverage-report
           message-path: test-coverage-report.md
 
-      # - name: Pulse - Composing and Sending Test Coverage Report to Pulse
-      #   id: compose_pulse_report
-      #   if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
-      #   working-directory: ${{ github.workspace }}
-      #   env:
-      #     secret: ${{ secrets.PULSE_HMAC_SECRET }}
-      #     url: ${{ inputs.PULSE_URL}}/github/test-coverage
-      #     coverage_file_path: ${{inputs.dev_test_coverage_report_directory}}/coverage-summary.json
-      #   run: |
-
-      #     current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-      #     coverage=$(jq -c '.total' "$coverage_file_path")
-
-      #     json_payload=$(jq -n \
-      #     --arg organisationId ${{ github.repository_owner_id }} \
-      #     --arg repoId ${{ github.repository_id }} \
-      #     --arg createdAt $current_date \
-      #     --argjson coverage $coverage \
-      #     '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: { "total": $coverage } }')
-
-      #     hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac $secret | awk '{print $2}')
-
-      #     echo "GENERATED HMAC: " $hmac
-      #     curl -X POST $url -H "Content-Type: application/json" -H "X-Signature: $hmac" -d "$json_payload"
-
 
       - name: Pulse - Composing Test Coverage Report for Pulse
         id: compose_pulse_report
@@ -331,6 +305,32 @@ jobs:
           name: pulse-test-coverage-report
           path: |
             pulse-test-coverage-report.json
+
+      # - name: Pulse - Composing and Sending Test Coverage Report to Pulse
+      #   id: compose_pulse_report
+      #   if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
+      #   working-directory: ${{ github.workspace }}
+      #   env:
+      #     secret: ${{ secrets.PULSE_HMAC_SECRET }}
+      #     url: ${{ inputs.PULSE_URL}}/github/test-coverage
+      #     coverage_file_path: ${{inputs.dev_test_coverage_report_directory}}/coverage-summary.json
+      #   run: |
+
+      #     current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+      #     coverage=$(jq -c '.total' "$coverage_file_path")
+
+      #     json_payload=$(jq -n \
+      #     --arg organisationId ${{ github.repository_owner_id }} \
+      #     --arg repoId ${{ github.repository_id }} \
+      #     --arg createdAt $current_date \
+      #     --argjson coverage $coverage \
+      #     '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: { "total": $coverage } }')
+
+      #     hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac $secret | awk '{print $2}')
+
+      #     echo "GENERATED HMAC: " $hmac
+      #     curl -X POST $url -H "Content-Type: application/json" -H "X-Signature: $hmac" -d "$json_payload"
 
       
       - name: Technology based scans after step
