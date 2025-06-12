@@ -256,20 +256,20 @@ jobs:
             echo "# Trivy Container Scan" > container_scan_prcomment.json
             if [ ${{ steps.container_scan.outcome }} == "failure" ]
             then
-              echo "### :warning: Vulnerabilities detected\n Dockerfile: ${{ matrix.changed_dockerfiles }}\nThe following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.json
+              echo "### :warning: Vulnerabilities detected Dockerfile: ${{ matrix.dockerfile_paths }} The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.json
               cat trivyreport.json >> container_scan_prcomment.json
               echo "::error::Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
               exit 1
             elif [ ${{ steps.container_scan.outcome }} == "success" ]
             then
-              echo "### :rainbow: \n Dockerfile: ${{ matrix.changed_dockerfiles }}\n No vulnerabilities of HIGH or CRITICAL severity detected" >> container_scan_prcomment.json
+              echo "### :rainbow: Dockerfile: ${{ matrix.dockerfile_paths }} No vulnerabilities of HIGH or CRITICAL severity detected" >> container_scan_prcomment.json
               exit 0
             fi
 
         - name: PR comment the container scan report
           uses: mshick/add-pr-comment@v2
           with:
-            message-id: trivy_container_scan
+            message-id: trivy_container_scan_${{ matrix.dockerfile_paths }}
             message-path: container_scan_prcomment.json
 
         - name: After Step
