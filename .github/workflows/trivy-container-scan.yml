@@ -150,7 +150,7 @@ jobs:
     if: ${{ inputs.is_monorepo_with_multi_dockerfile }}
     name: Detect Dockerfile Paths
     outputs:
-      matrix: ${{ inputs.dockerfile_paths =="" && steps.find_dockerfile_generate_matrix.outputs.all_dockerfile_paths_matrix || steps.generate_matrix.outputs.all_dockerfile_paths_matrix }}
+      matrix: ${{ inputs.dockerfile_paths == '' && steps.find_dockerfile_generate_matrix.outputs.all_dockerfile_paths_matrix || steps.generate_matrix.outputs.all_dockerfile_paths_matrix }}
     steps:
       - uses: actions/checkout@v4
         with:
