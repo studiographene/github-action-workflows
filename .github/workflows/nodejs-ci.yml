@@ -370,7 +370,7 @@ jobs:
 
   pulse_security_scans:
     name: pulse_security_scans
-    # if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
+    # if: ${{ github.event.pull_request.merged == true }}
     uses: studiographene/github-action-workflows/.github/workflows/pulse-sast-analytics-v2.yml@feature/PX-2965
     secrets: inherit
 
