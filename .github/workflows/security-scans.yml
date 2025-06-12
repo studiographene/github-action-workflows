@@ -28,7 +28,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'sast') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -94,7 +94,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'gitleaks') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -169,7 +169,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -227,7 +227,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -269,28 +269,3 @@ jobs:
         with:
           message-id: dependency_scan
           message-path: osv_report.md
-
-  security_scans:
-    name: security_scans
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      issues: write
-      discussions: write
-      pull-requests: write
-      security-events: write
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
-    container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-
-        if: ${{ !cancelled() && contains('success,failure', steps.dependency_scan.outcome) }}
-
-      - name: Security scans after step
-        if: ${{ inputs.security_scan_after_step_command != '' }}
-        run: |
-          ${{ inputs.security_scan_after_step_command }}
