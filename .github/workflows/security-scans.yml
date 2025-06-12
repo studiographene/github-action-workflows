@@ -169,7 +169,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
     steps:
       - name: Checkout
         uses: actions/checkout@v4

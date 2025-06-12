@@ -188,8 +188,7 @@ jobs:
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       strategy:
-        matrix:
-          dockerfile_paths: ${{ fromJson(needs.detect_dockerfile_paths.outputs.matrix) }}
+        matrix: ${{ fromJson(needs.detect_dockerfile_paths.outputs.matrix) }}
           
       steps:
         - name: Before Step
