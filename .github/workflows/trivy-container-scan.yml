@@ -157,7 +157,7 @@ jobs:
           fetch-depth: 0
 
       - name: Find Dockerfile paths and Generate matrix JSON
-        if: ${{ inputs.dockerfile_paths =="" }}
+        if: ${{ inputs.dockerfile_paths == '' }}
         id: find_dockerfile_generate_matrix
         run: |
           files=$(find . -type f -name 'Dockerfile' | sort | sed 's|^\./||')
@@ -166,7 +166,7 @@ jobs:
           echo $all_dockerfile_paths_matrix
       
       - name: Generate matrix JSON
-        if: ${{ inputs.dockerfile_paths !="" }}
+        if: ${{ inputs.dockerfile_paths != '' }}
         id: generate_matrix
         run: |
           echo "all_dockerfile_paths_matrix={
