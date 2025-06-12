@@ -122,7 +122,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
     steps:
       - name: Check for composer.lock or composer.json
         id: check_files
@@ -143,6 +143,8 @@ jobs:
       - name: Generate SBOM using CycloneDX
         if: always ()
         run: |
+          cdxgen --version
+          npm install -g @cyclonedx/cdxgen-plugins-bin
           cdxgen --no-recurse -o bom.xml -p
         env:
           FETCH_LICENSE: true
