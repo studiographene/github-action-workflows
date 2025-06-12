@@ -161,7 +161,8 @@ jobs:
         id: find_dockerfile_generate_matrix
         run: |
           paths=$(find . -type f -name 'Dockerfile' | sort | sed 's|^\./||')
-          matrix_json=toJSON("$(printf '%s' "$paths" | jq -R . | jq -s '{dockerfile_paths: .}'))
+          matrix="$(printf '%s' "$paths" | jq -R . | jq -s '{dockerfile_paths: .}')
+          matrix_json=toJSON($matrix)
           echo "all_dockerfile_paths_matrix=$matrix_json" >> $GITHUB_OUTPUT
           echo "all_dockerfile_paths_matrix=$json" >> "$GITHUB_OUTPUT"
           echo $matrix_json
