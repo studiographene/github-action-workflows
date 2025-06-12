@@ -56,7 +56,7 @@ permissions:
   contents: read
 
 jobs:
-  container_scan:
+  container_scan_single:
     runs-on: ubuntu-latest
     if: ${{ !inputs.is_monorepo_with_multi_dockerfile }}
     container:
