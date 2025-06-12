@@ -212,7 +212,7 @@ jobs:
         - name: Docker Build
           id: docker_build
           env:
-            FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker build --build-arg NPM_TOKEN={0} -t --file ${{ matrix.dockerfile_paths } {1} .', secrets.NPM_TOKEN, inputs.docker_build_image_id) }}
+            FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker build --build-arg NPM_TOKEN={0} -t --file ${{ matrix.dockerfile_paths }} {1} .', secrets.NPM_TOKEN, inputs.docker_build_image_id) }}
           run: |
             echo $FINAL_DOCKER_BUILD_COMMAND
             eval $FINAL_DOCKER_BUILD_COMMAND
