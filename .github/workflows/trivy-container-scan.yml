@@ -177,6 +177,7 @@ jobs:
           echo "$matrix_json" >> "$GITHUB_OUTPUT"
           echo "EOF" >> $GITHUB_OUTPUT
           echo $matrix_json
+          echo "$GITHUB_OUTPUT"
 
 
   containers_scan:
