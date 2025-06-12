@@ -12,7 +12,7 @@ on:
         default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com"
       WORKBREAKDOWN_SCRIPT_URL:
           type: string
-          default: "https://pulse-email-assets.s3.eu-west-1.amazonaws.com/commit_analysis_modified_v2.py"
+          default: "https://sg-devops-scripts.s3.eu-west-1.amazonaws.com/pulse/pulse-github-work-break-down/commit_analysis_modified_v2.py"
       dev_test_branch:
         description: "Developer-provided branch names to run the tests"
         type: string

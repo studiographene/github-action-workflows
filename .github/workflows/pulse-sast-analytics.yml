@@ -18,6 +18,7 @@ on:
 
 jobs:
   pulse_sast_report:
+    if: false  # Disabling it as it is integrated under nodejs-ci.yml
     runs-on: ubuntu-latest
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
