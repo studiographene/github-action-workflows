@@ -161,10 +161,10 @@ jobs:
         id: find_dockerfile_generate_matrix
         run: |
           paths=$(find . -type f -name 'Dockerfile' | sort | sed 's|^\./||')
-          matrix="$(printf '%s' "$paths" | jq -R . | jq -s '{dockerfile_paths: .}')
-          matrix_json=toJSON($matrix)
-          echo all_dockerfile_paths_matrix="$matrix_json"
-          echo all_dockerfile_paths_matrix="$matrix_json" >> $GITHUB_OUTPUT
+          matrix_json="$(printf '%s' "$paths" | jq -R . | jq -s '{dockerfile_paths: .}')
+          echo "all_dockerfile_paths_matrix<<EOF" >> $GITHUB_OUTPUT
+          echo "$matrix_json" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo $matrix_json
       
       - name: Generate matrix JSON
@@ -188,7 +188,7 @@ jobs:
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       strategy:
-        matrix: ${{ needs.detect_dockerfile_paths.outputs.matrix }}
+        matrix: ${{ fromJSON(needs.detect_dockerfile_paths.outputs.matrix) }}
           
       steps:
         - name: Before Step
