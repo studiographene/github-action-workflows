@@ -163,10 +163,9 @@ jobs:
           paths=$(find . -type f -name 'Dockerfile' | sort | sed 's|^\./||')
           matrix="$(printf '%s' "$paths" | jq -R . | jq -s '{dockerfile_paths: .}')
           matrix_json=toJSON($matrix)
-          echo "all_dockerfile_paths_matrix=$matrix_json" >> $GITHUB_OUTPUT
-          echo "all_dockerfile_paths_matrix=$json" >> "$GITHUB_OUTPUT"
+          echo all_dockerfile_paths_matrix="$matrix_json"
+          echo all_dockerfile_paths_matrix="$matrix_json" >> $GITHUB_OUTPUT
           echo $matrix_json
-          echo "all_dockerfile_paths_matrix=$matrix_json"
       
       - name: Generate matrix JSON
         if: ${{ inputs.dockerfile_paths != '' }}
