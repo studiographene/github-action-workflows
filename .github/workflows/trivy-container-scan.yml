@@ -161,18 +161,22 @@ jobs:
         id: find_dockerfile_generate_matrix
         run: |
           files=$(find . -type f -name 'Dockerfile' | sort | sed 's|^\./||')
-          json=$(printf '%s\n' "$files" | jq -R . | jq -s '{dockerfile_paths: .}')
+          matrix_json=$(printf '%s\n' "$files" | jq -R . | jq -s '{dockerfile_paths: .}')
+          echo "all_dockerfile_paths_matrix<<EOF" >> $GITHUB_OUTPUT
+          echo "$matrix_json" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "all_dockerfile_paths_matrix=$json" >> "$GITHUB_OUTPUT"
-          echo $all_dockerfile_paths_matrix
+          echo $matrix_json
       
       - name: Generate matrix JSON
         if: ${{ inputs.dockerfile_paths != '' }}
         id: generate_matrix
         run: |
-          echo "all_dockerfile_paths_matrix={
-                  "dockerfile_paths": ${{ inputs.dockerfile_paths }}
-                }" >> "$GITHUB_OUTPUT"
-          echo $all_dockerfile_paths_matrix
+          matrix_json=$(jq -n --argjson arr ${{ inputs.dockerfile_paths }} '{dockerfile_paths: $arr}')
+          echo "all_dockerfile_paths_matrix<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$matrix_json" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo $matrix_json
 
 
   containers_scan:
