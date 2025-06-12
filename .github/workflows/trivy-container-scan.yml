@@ -160,9 +160,9 @@ jobs:
         if: ${{ inputs.dockerfile_paths == '' }}
         id: find_dockerfile_generate_matrix
         run: |
-          files=$(find . -type f -name 'Dockerfile' | sort | sed 's|^\./||')
-          matrix_json=$(printf '%s\n' "$files" | jq -R . | jq -s '{dockerfile_paths: .}')
-          echo "all_dockerfile_paths_matrix=$matrix_json" >> $GITHUB_OUTPUT
+          paths=$(find . -type f -name 'Dockerfile' | sort | sed 's|^\./||')
+          matrix_json=$(printf '%s' "$paths" | jq -R . | jq -s '{dockerfile_paths: .}')
+          echo "all_dockerfile_paths_matrix=${{ toJSON(matrix_json) }}" >> $GITHUB_OUTPUT
           echo "all_dockerfile_paths_matrix=$json" >> "$GITHUB_OUTPUT"
           echo $matrix_json
           echo "all_dockerfile_paths_matrix=$matrix_json"
