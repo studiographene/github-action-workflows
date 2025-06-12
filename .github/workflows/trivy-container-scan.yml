@@ -188,7 +188,7 @@ jobs:
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       strategy:
-        matrix: ${{ fromJson({ "dockerfile_paths": [ "apps/api-gateway/Dockerfile", "apps/core-service/Dockerfile" ] }) }} #${{ fromJson(needs.detect_dockerfile_paths.outputs.matrix) }}
+        matrix: ${{ fromJson("{ "dockerfile_paths"\\: [ "apps/api-gateway/Dockerfile", "apps/core-service/Dockerfile" ] }") }} #${{ fromJson(needs.detect_dockerfile_paths.outputs.matrix) }}
           
       steps:
         - name: Before Step
