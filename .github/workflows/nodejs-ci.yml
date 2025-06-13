@@ -22,6 +22,11 @@ on:
       package_manager:
         type: string
         default: "npm"
+      package_install_command:
+        description: "Package install command to use instead of the default command."
+        type: string
+        required: false
+        default: "npm"
       build_command:
         type: string
         default: "npm run build"
@@ -188,32 +193,32 @@ jobs:
         run: ${{ inputs.package_manager }} list
       - name: Install dependencies
         run: |
-          ${{ inputs.package_manager }} install
+          ${{ inputs.package_manager != '' && inputs.package_install_command || inputs.package_manager install }}
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
-      - name: Convert lockfile version > 2 in case of npm
+      - name: Convert package_lockFile version > 2 in case of npm
         if: inputs.package_manager == 'npm'
         run: |
-          ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
+          ${{ inputs.package_manager }} install --package_lockFile-version 2 --package-lock-only
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Upload package-lock artifact
         uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'npm'
         with:
-          name: lockFile
+          name: package_lockFile
           path: package-lock.json
       - name: Upload yarn-lock
         uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'yarn'
         with:
-          name: lockFile
+          name: package_lockFile
           path: yarn.lock
       - name: Upload pnpm-lock
         uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'pnpm'
         with:
-          name: lockFile
+          name: package_lockFile
           path: pnpm-lock.yaml
       - name: after step
         if: ${{ inputs.caching_after_step_command != '' }}
