@@ -15,8 +15,11 @@ CI scans workflow for NodeJS code.
 | coverage_summary_path | Path to the coverage summary JSON file generated from developer's test | no | `./coverage/coverage-summary.json` |
 | junitxml_path  | Path to the JUnit XML report file generated from developer's test | no | `./coverage/report.xml`  |                                                                             | no       | `npm`           |
 | build_command                              | build command for the project                                               | no       | `npm run build` |
+| package_install_command                    | Package install command to use instead of the default command               | no       |                 |
 | docker_build_command                       | Docker build command                                                        | no       |                 |
 | docker_build_image_id                      | Docker image ID as mentioned in docker_build_command                        | no       | `local:latest`  |
+| is_monorepo_with_multi_dockerfile          | For container scan. Whether it is a monorepo with Dockerfile in differnet directories. If `true` repo will be searched for all the Dockerfile and scan performed on each. To scan only selected Docker file use input `dockerfile_paths` | no  | false  |
+|       dockerfile_paths:                    | For container scan. Set of separated Dockerfile paths. Useful when you want scan Dockerfile in selected directories. Example: [./apps/users/Dockerfile, ./apps/account/Dockerfile] | no  |   |
 | container_scanners:                        | comma-separated list of what security issues to detect (vuln,secret,config) | no       | `vuln`          |
 | container_scan_skip_dirs                   | Comma separated list of directories to skip scanning                        | no       |                 |
 | lint_command                               | lint command for the project                                                | no       | `npm run lint`  |
@@ -65,7 +68,7 @@ CI scans workflow for NodeJS code.
 
 ### CI workflow
 
-1. Create a file `ci.yml` with below content (change inputs as required).
+In your repo, create a file `ci.yml` under `.github/workflows` folder with below content _(change inputs as required)_.
 
 #### ci.yml
 
@@ -87,6 +90,28 @@ jobs:
     secrets: inherit
 ```
 
+
+#### ci.yml (for Monorepo with multiple Dockerfiles to scan every Dockerfile in the repo)
+
+```yaml
+name: CI
+
+on:
+  pull_request: {}
+  issue_comment:
+
+jobs:
+  call-workflow:
+    uses: studiographene/github-action-workflows/.github/workflows/nodejs-ci.yml@master # if you want alternatively pin to tag version
+    with:
+      package_manager: pnpm
+      build_command: pnpm run build
+      lint_command: pnpm run lint
+      run_dev_test: true   # Set this input only if the Developer tests (Unit/Integration/etc.,) are available in your repo code
+      is_monorepo_with_multi_dockerfile: true
+    secrets: inherit
+```
+
 ---
 
 ### Jobs list:
@@ -94,7 +119,7 @@ jobs:
 #### Jobs have nested steps which are running the mentioned scans.
 
 - pr_agent (Automated PR review using [Codium AI PR Agent](https://www.codium.ai/products/git-plugin/) )
-- docker
+- Container scan
   - docker build
   - container scan (using [Trivy](https://github.com/aquasecurity/trivy))
 - Security scans
@@ -105,3 +130,4 @@ jobs:
 - Technology based scans
   - lint
   - build (code build check)
+- Pulse Work Breakdown

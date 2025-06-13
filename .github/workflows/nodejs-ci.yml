@@ -26,7 +26,7 @@ on:
         description: "Package install command to use instead of the default command."
         type: string
         required: false
-        default: "npm"
+        default: ""
       build_command:
         type: string
         default: "npm run build"
@@ -381,10 +381,10 @@ jobs:
       docker_build_image_id: ${{ inputs.docker_build_image_id }}
       container_scanners: ${{ inputs.container_scanners }}
       container_scan_skip_dirs: ${{ inputs.container_scan_skip_dirs }}
-      before_step_command: ${{ inputs.container_scan_before_step_command }}
-      after_step_command: ${{ inputs.container_scan_after_step_command}}
       is_monorepo_with_multi_dockerfile: ${{ inputs.is_monorepo_with_multi_dockerfile}}
       dockerfile_paths: ${{ inputs.dockerfile_paths}}
+      before_step_command: ${{ inputs.container_scan_before_step_command }}
+      after_step_command: ${{ inputs.container_scan_after_step_command}}
 
   pr_agent:
     name: pr_agent
