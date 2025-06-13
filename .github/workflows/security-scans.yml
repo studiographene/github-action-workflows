@@ -145,7 +145,11 @@ jobs:
         run: |
           cdxgen --version
           npm install -g @cyclonedx/cdxgen-plugins-bin
-          cdxgen --no-recurse -o bom.xml -p
+          # cdxgen --no-recurse -o bom.xml -p
+          ls -al
+          ls package.json
+          cdxgen --no-recurse -o bom.xml -p --debug
+          ls -al
         env:
           FETCH_LICENSE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
