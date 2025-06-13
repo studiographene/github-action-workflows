@@ -193,7 +193,7 @@ jobs:
         run: ${{ inputs.package_manager }} list
       - name: Install dependencies
         run: |
-          ${{ inputs.package_manager != '' && inputs.package_install_command || inputs.package_manager install }}
+          ${{ inputs.package_manager }} != '' && ${{ inputs.package_install_command }} || ${{ inputs.package_manager }} install
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Convert package_lockFile version > 2 in case of npm
