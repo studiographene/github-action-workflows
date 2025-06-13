@@ -124,6 +124,10 @@ jobs:
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       - name: Check for composer.lock or composer.json
         id: check_files
         run: |
