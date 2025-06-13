@@ -28,14 +28,23 @@ CI scans workflow for NodeJS code.
 | security_scan_after_step_command           | Optional commands to pass after secuirty scan job steps execution           | no       |                 |
 | caching_before_step_command                | Optional commands to pass before caching job steps execution                | no       |                 |
 | caching_after_step_command                 | Optional commands to pass after caching job steps execution                 | no       |                 |
-| technology_based_scans_before_step_command | Optional commands to pass before techology based scans job steps execution  | no       |                 |
-| technology_based_scans_after_step_command  | Optional commands to pass after techology based scans job steps execution   | no       |                 |
 | pr_agent_before_step_command               | Optional commands to pass before Codium PR agent job steps execution        | no       |                 |
 | pr_agent_after_step_command                | Optional commands to pass after Codium PR agent job steps execution         | no       |                 |
 | container_scan_before_step_command         | Command to execute at the start of the container scan                       | no       |                 |
 | container_scan_after_step_command          | Command to execute at the end of the container scan                         | no       |                 |
+| developer_tests_before_step_command        | Command to execute at the start of the Developer tests                      | no       |                 |
+| developer_tests_after_step_command         | Command to execute at the end of the Developer tests                        | no       |                 |
+| lint_scan_before_step_command              | Command to execute at the start of the Lint scan                            | no       |                 |
+| lint_scan_after_step_command               | Command to execute at the end of the Lint scan                              | no       |                 |
 | send_dev_test_coverage_report_to_pulse     | Switch deciding to send the Test Coverage Report to Pulse                   | no       | false           |
 | dev_test_coverage_report_directory         | The Directory path from project root where `coverage-summary.json` is generated after running test | false  | `coverage`  |
+
+# Depreciated Inputs
+
+| Name                                       | Description                                                                                                       | Required | Default  |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | -------- | -------- |
+| technology_based_scans_before_step_command | *DEPRECIATED:* only kept to tackle the backwards compatibility to avoid error use the respective new job inputs   |    no    |          |
+| technology_based_scans_after_step_command  | *DEPRECIATED:* only kept to tackle the backwards compatibility to avoid error use the respective new job inputs   |    no    |          |
 
 # Workflow Secrets
 

@@ -125,7 +125,6 @@ on:
         description: "Command to execute at the end of the Lint scan"
         type: string
         default: ""
-
       send_dev_test_coverage_report_to_pulse:
         description: "A boolean value to enable sending test coverage report to Pulse"
         type: boolean
@@ -255,6 +254,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
+      - name: lint scan before step
+        if: ${{ inputs.technology_based_scans_before_step_command != '' || inputs.lint_scan_before_step_command != '' }}
+        run: |
+          ${{ inputs.technology_based_scans_before_step_command}}
+          ${{ inputs.lint_scan_before_step_command }}
       - name: Cache node modules
         id: cache-node-modules
         if: |
@@ -271,11 +275,6 @@ jobs:
           ${{ inputs.package_manager }} install
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
-      - name: lint scan before step
-        if: ${{ inputs.technology_based_scans_before_step_command != '' || inputs.lint_scan_before_step_command != '' }}
-        run: |
-          ${{ inputs.technology_based_scans_before_step_command}}
-          ${{ inputs.lint_scan_before_step_command }}
       - name: linting
         if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'lint' ) && !(github.event.pull_request.merged == true ) }}
         env:
@@ -311,13 +310,6 @@ jobs:
         run: |
           ${{ inputs.technology_based_scans_before_step_command}}
           ${{ inputs.developer_tests_before_step_command }}
-
-      # - name: Build project
-      #   env:
-      #     NPM_TOKEN: ${{ (secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN) && !(github.event.pull_request.merged == true ) }}
-      #   if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'build' ) && !(github.event.pull_request.merged == true )  }}
-      #   run: |
-      #     ${{ inputs.build_command }}
 
       - name: Tests
         id: developer_tests
