@@ -378,15 +378,6 @@ jobs:
       before_step_command: ${{ inputs.container_scan_before_step_command }}
       after_step_command: ${{ inputs.container_scan_after_step_command}}
 
-  pr_agent:
-    name: pr_agent
-    if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) && !(github.event.pull_request.merged == true  || github.event_name == 'issue_comment') }}
-    uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@master
-    secrets: inherit
-    with:
-      before_step_command: ${{ inputs.pr_agent_before_step_command }}
-      after_step_command: ${{ inputs.pr_agent_after_step_command}}
-
   pulse_work_break_down:
     name: pulse-work-break-down
     if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
