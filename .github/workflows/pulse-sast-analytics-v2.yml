@@ -1,4 +1,4 @@
-name: Pulse SAST Analytics
+name: Pulse - SAST Analytics
 
 on:
   workflow_call:
