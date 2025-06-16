@@ -1,4 +1,4 @@
-name: Studiographene NodeJs CI
+name: Pulse - Work Breakdown
 
 on:
   workflow_call:
