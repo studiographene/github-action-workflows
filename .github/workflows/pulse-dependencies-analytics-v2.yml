@@ -1,4 +1,4 @@
-name: Pulse Dependencies Analytics
+name: Pulse - Dependency Analytics
 
 on:
   workflow_call:
