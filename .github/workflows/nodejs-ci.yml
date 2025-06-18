@@ -10,6 +10,11 @@ on:
         description: "A secret key to generate HMAC for Pulse API. This is used to send test coverage report to Pulse."
         required: false
     inputs:
+      job_runtime:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        request: false
+        default: "ubuntu-latest"
       PULSE_URL:
         type: string
         default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com"
@@ -117,6 +122,14 @@ on:
         description: "Command to execute at the end of the Developer tests"
         type: string
         default: ""
+      build_test_before_step_command:
+        description: "Command to execute at the start of the Build Test Job"
+        type: string
+        default: ""
+      build_test_after_step_command:
+        description: "Command to execute at the end of the Build Test Job"
+        type: string
+        default: ""
       lint_scan_before_step_command:
         description: "Command to execute at the start of the Lint scan"
         type: string
@@ -139,7 +152,7 @@ on:
 jobs:
   caching:
     name: cache_module
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.job_runtime }}
     permissions:
       contents: read
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
@@ -235,11 +248,12 @@ jobs:
       security_scan_after_step_command: ${{ inputs.security_scan_after_step_command }}
       excluded_jobs: ${{ inputs.excluded_jobs }}
       semgrep_options: ${{ inputs.semgrep_options }}
+      job_runtime: ${{ inputs.job_runtime }}
 
   eslint:
     needs: caching
     name: eslint_scan
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.job_runtime }}
     permissions:
       contents: read
       issues: write
@@ -286,11 +300,62 @@ jobs:
         run: |
           ${{ inputs.technology_based_scans_before_step_command}}
           ${{ inputs.lint_scan_after_step_command }}
+  
+  build_test:
+    needs: caching
+    name: build_test
+    runs-on: ${{ inputs.job_runtime }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}                
+      - name: Build Test before step
+        if: ${{ inputs.technology_based_scans_before_step_command != '' || inputs.build_test_before_step_command != '' }}
+        run: |
+          ${{ inputs.technology_based_scans_before_step_command}}
+          ${{ inputs.build_test_before_step_command }}
+      - name: Restore Cached node modules
+        id: restore_cache_node_modules
+        if: |
+          inputs.package_manager == 'npm' || 
+          inputs.package_manager == 'yarn' || 
+          inputs.package_manager == 'pnpm'  
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ needs.caching.outputs.cache-restore-key }}
+          restore-keys: ${{ needs.caching.outputs.cache-restore-key }}
+      - name: Install dependencies
+        run: |
+          ${{ inputs.package_manager }} install
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Build project
+        env:
+          NPM_TOKEN: ${{ (secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN) && !(github.event.pull_request.merged == true ) }}
+        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'build' ) && !(github.event.pull_request.merged == true )  }}
+        run: |
+          ${{ inputs.build_command }}
+      - name: Build Test after step
+        if: ${{ inputs.technology_based_scans_before_step_command != '' || inputs.build_test_after_step_command != '' }}
+        run: |
+          ${{ inputs.technology_based_scans_before_step_command}}
+          ${{ inputs.build_test_after_step_command }}
 
   developer_tests:
     needs: caching
     name: developer_tests
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.job_runtime }}
     permissions:
       contents: read
       issues: write

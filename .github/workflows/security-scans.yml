@@ -3,6 +3,11 @@ name: Security scans
 on:
   workflow_call:
     inputs:
+      job_runtime:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        request: false
+        default: "ubuntu-latest"
       excluded_jobs:
         type: string
         default: ""
@@ -19,7 +24,7 @@ on:
 jobs:
   SAST:
     name: sast
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.job_runtime }}
     permissions:
       contents: read
       issues: write
@@ -35,10 +40,10 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
-      # - name: SAST before step
-      #   if: ${{ inputs.security_scan_before_step_command != '' }}
-      #   run: |
-      #     ${{ inputs.security_scan_before_step_command}}
+      - name: SAST before step
+        if: ${{ inputs.security_scan_before_step_command != '' }}
+        run: |
+          ${{ inputs.security_scan_before_step_command}}
       - name: SAST Scan using Semgrep
         id: generate_sast_report
         run: |
@@ -85,7 +90,7 @@ jobs:
 
   gitleaks:
     name: gitleaks
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.job_runtime }}
     permissions:
       contents: read
       issues: write
@@ -113,7 +118,7 @@ jobs:
 
   generate_sbom:
     name: generate_sbom
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.job_runtime }}
     permissions:
       contents: read
       issues: write
@@ -164,7 +169,7 @@ jobs:
 
   license_scan:
     name: license_scan
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.job_runtime }}
     needs: generate_sbom
     permissions:
       contents: read
@@ -223,7 +228,7 @@ jobs:
   dependency_scan:
     needs: generate_sbom
     name: dependency_scan
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.job_runtime }}
     permissions:
       contents: read
       issues: write

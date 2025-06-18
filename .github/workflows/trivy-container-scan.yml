@@ -7,6 +7,11 @@ on:
         required: false
 
     inputs:
+      job_runtime:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        request: false
+        default: "ubuntu-latest"
       action_runner_container_image:
         description: "Action runner container image. Default = public.ecr.aws/studiographene/ci:node-20-alpine"
         type: string
@@ -57,7 +62,7 @@ permissions:
 
 jobs:
   container_scan_single:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.job_runtime }}
     if: ${{ !inputs.is_monorepo_with_multi_dockerfile }}
     container:
       image: ${{ inputs.action_runner_container_image }}
@@ -146,7 +151,7 @@ jobs:
           ${{ inputs.after_step_command}}
 
   detect_dockerfile_paths:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.job_runtime }}
     if: ${{ inputs.is_monorepo_with_multi_dockerfile }}
     name: Detect Dockerfile Paths
     outputs:
@@ -180,7 +185,7 @@ jobs:
 
 
   containers_scan:
-      runs-on: ubuntu-latest
+      runs-on: ${{ inputs.job_runtime }}
       if: ${{ inputs.is_monorepo_with_multi_dockerfile }}
       needs: detect_dockerfile_paths
       container:
@@ -262,12 +267,13 @@ jobs:
             fi
 
         - name: PR comment the container scan report
+          if: ${{ !cancelled()  }}
           uses: mshick/add-pr-comment@v2
           with:
             message-id: trivy_container_scan_${{ matrix.dockerfile_paths }}
             message-path: container_scan_prcomment.json
 
         - name: After Step
-          if: ${{ inputs.after_step_command != '' }}
+          if: ${{ inputs.after_step_command != '' && !cancelled() }}
           run: |
             ${{ inputs.after_step_command}}
