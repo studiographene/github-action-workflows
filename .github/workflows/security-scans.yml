@@ -250,7 +250,8 @@ jobs:
               ${{ vars.OSV_SUPPRESSIONS }}
           EOF
           set +e
-          osv-scanner --format markdown --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.md 
+          osv-scanner --format markdown --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.md
+          osv-scanner --format json --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.json
           OSV_EXIT_CODE=$?
           set -e
           echo "## OSV Dependency Scan Report" >> osv_report.md
@@ -274,3 +275,12 @@ jobs:
         with:
           message-id: dependency_scan
           message-path: osv_report.md
+      
+      - name: Upload Dependency scan JSON report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency_scan
+          path: |
+            osv_raw_report.json
+            osv_raw_report.md
+
