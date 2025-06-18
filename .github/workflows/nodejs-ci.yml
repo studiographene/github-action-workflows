@@ -300,13 +300,11 @@ jobs:
           echo "$json_payload" > pulse-test-coverage-report.json
 
       - name: Upload Test Coverage Report Artifact
-        # if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
-        if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test }}
+        if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
         uses: actions/upload-artifact@v4
         with:
           name: pulse-test-coverage-report
-          path: |
-            pulse-test-coverage-report.json
+          path: pulse-test-coverage-report.json
       
       - name: Technology based scans after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' }}
@@ -337,19 +335,19 @@ jobs:
 
   pulse_work_break_down:
     name: pulse-work-break-down
-    # if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
-    uses: studiographene/github-action-workflows/.github/workflows/pulse-work-break-down-v2.yml@feature/PX-2965
+    if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-work-break-down-v2.yml@master
     secrets: inherit
 
   pulse_security_scans:
     name: pulse_security_scans
-    # if: ${{ github.event.pull_request.merged == true }}
-    uses: studiographene/github-action-workflows/.github/workflows/pulse-sast-analytics-v2.yml@feature/PX-2965
+    if: ${{ github.event.pull_request.merged == true }}
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-sast-analytics-v2.yml@master
     secrets: inherit
 
   pulse_version_upgrades:
     name: pulse_version_upgrades
-    # if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
-    uses: studiographene/github-action-workflows/.github/workflows/pulse-dependencies-analytics-v2.yml@feature/PX-2965
+    if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-dependencies-analytics-v2.yml@master
     secrets: inherit
 
