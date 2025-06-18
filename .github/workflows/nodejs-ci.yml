@@ -13,7 +13,7 @@ on:
       job_runtime:
         description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
         type: string
-        request: false
+        required: false
         default: "ubuntu-latest"
       PULSE_URL:
         type: string
