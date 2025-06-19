@@ -25,6 +25,21 @@ on:
         type: string
         required: false
         default: "ubuntu-latest"
+      linting_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      build_test_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      container_scan_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
       PULSE_URL:
         type: string
         default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com"
@@ -263,7 +278,7 @@ jobs:
   eslint:
     needs: caching
     name: eslint_scan
-    runs-on: ${{ inputs.job_runner }}
+    runs-on: ${{ inputs.linting_job_runner }}
     permissions:
       contents: read
       issues: write
@@ -314,7 +329,7 @@ jobs:
   build_test:
     needs: caching
     name: build_test
-    runs-on: ${{ inputs.job_runner }}
+    runs-on: ${{ inputs.build_test_job_runner }}
     permissions:
       contents: read
       issues: write
@@ -444,6 +459,7 @@ jobs:
     uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@feat/ENB-83/split-jobs
     secrets: inherit
     with:
+      job_runner: ${{ inputs.container_scan_job_runner }}
       docker_build_command: ${{ inputs.docker_build_command }}
       docker_build_image_id: ${{ inputs.docker_build_image_id }}
       container_scanners: ${{ inputs.container_scanners }}
