@@ -279,8 +279,8 @@ jobs:
 
       - name: Pulse - Composing Test Coverage Report for Pulse
         id: compose_pulse_report
-        # if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
-        if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test }}
+        if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
+        # if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test }}
         working-directory: ${{ github.workspace }}
         env:
           coverage_file_path: ${{inputs.dev_test_coverage_report_directory}}/coverage-summary.json
