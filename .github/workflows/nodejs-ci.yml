@@ -336,18 +336,18 @@ jobs:
   pulse_work_break_down:
     name: pulse-work-break-down
     if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
-    uses: studiographene/github-action-workflows/.github/workflows/pulse-work-break-down-v2.yml@master
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-work-break-down-v2.yml@feature/PX-2965
     secrets: inherit
 
   pulse_security_scans:
     name: pulse_security_scans
     if: ${{ github.event.pull_request.merged == true }}
-    uses: studiographene/github-action-workflows/.github/workflows/pulse-sast-analytics-v2.yml@master
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-sast-analytics-v2.yml@feature/PX-2965
     secrets: inherit
 
   pulse_version_upgrades:
     name: pulse_version_upgrades
     if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
-    uses: studiographene/github-action-workflows/.github/workflows/pulse-dependencies-analytics-v2.yml@master
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-dependencies-analytics-v2.yml@feature/PX-2965
     secrets: inherit
 
