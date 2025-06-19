@@ -10,7 +10,17 @@ on:
         description: "A secret key to generate HMAC for Pulse API. This is used to send test coverage report to Pulse."
         required: false
     inputs:
-      job_runtime:
+      job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      security_scans_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      caching_job_runner:
         description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
         type: string
         required: false
@@ -152,7 +162,7 @@ on:
 jobs:
   caching:
     name: cache_module
-    runs-on: ${{ inputs.job_runtime }}
+    runs-on: ${{ inputs.caching_job_runner }}
     permissions:
       contents: read
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
@@ -248,12 +258,12 @@ jobs:
       security_scan_after_step_command: ${{ inputs.security_scan_after_step_command }}
       excluded_jobs: ${{ inputs.excluded_jobs }}
       semgrep_options: ${{ inputs.semgrep_options }}
-      job_runtime: ${{ inputs.job_runtime }}
+      job_runner: ${{ inputs.security_scans_job_runner }}
 
   eslint:
     needs: caching
     name: eslint_scan
-    runs-on: ${{ inputs.job_runtime }}
+    runs-on: ${{ inputs.job_runner }}
     permissions:
       contents: read
       issues: write
@@ -304,7 +314,7 @@ jobs:
   build_test:
     needs: caching
     name: build_test
-    runs-on: ${{ inputs.job_runtime }}
+    runs-on: ${{ inputs.job_runner }}
     permissions:
       contents: read
       issues: write
@@ -355,7 +365,7 @@ jobs:
   developer_tests:
     needs: caching
     name: developer_tests
-    runs-on: ${{ inputs.job_runtime }}
+    runs-on: ${{ inputs.job_runner }}
     permissions:
       contents: read
       issues: write

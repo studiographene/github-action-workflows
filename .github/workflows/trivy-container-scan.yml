@@ -7,7 +7,7 @@ on:
         required: false
 
     inputs:
-      job_runtime:
+      job_runner:
         description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
         type: string
         required: false
@@ -62,7 +62,7 @@ permissions:
 
 jobs:
   container_scan_single:
-    runs-on: ${{ inputs.job_runtime }}
+    runs-on: ${{ inputs.job_runner }}
     if: ${{ !inputs.is_monorepo_with_multi_dockerfile }}
     container:
       image: ${{ inputs.action_runner_container_image }}
@@ -151,7 +151,7 @@ jobs:
           ${{ inputs.after_step_command}}
 
   detect_dockerfile_paths:
-    runs-on: ${{ inputs.job_runtime }}
+    runs-on: ${{ inputs.job_runner }}
     if: ${{ inputs.is_monorepo_with_multi_dockerfile }}
     name: Detect Dockerfile Paths
     outputs:
@@ -185,7 +185,7 @@ jobs:
 
 
   containers_scan:
-      runs-on: ${{ inputs.job_runtime }}
+      runs-on: ${{ inputs.job_runner }}
       if: ${{ inputs.is_monorepo_with_multi_dockerfile }}
       needs: detect_dockerfile_paths
       container:

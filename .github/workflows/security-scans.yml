@@ -3,7 +3,7 @@ name: Security scans
 on:
   workflow_call:
     inputs:
-      job_runtime:
+      job_runner:
         description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
         type: string
         required: false
@@ -24,7 +24,7 @@ on:
 jobs:
   SAST:
     name: sast
-    runs-on: ${{ inputs.job_runtime }}
+    runs-on: ${{ inputs.job_runner }}
     permissions:
       contents: read
       issues: write
@@ -90,7 +90,7 @@ jobs:
 
   gitleaks:
     name: gitleaks
-    runs-on: ${{ inputs.job_runtime }}
+    runs-on: ${{ inputs.job_runner }}
     permissions:
       contents: read
       issues: write
@@ -118,7 +118,7 @@ jobs:
 
   generate_sbom:
     name: generate_sbom
-    runs-on: ${{ inputs.job_runtime }}
+    runs-on: ${{ inputs.job_runner }}
     permissions:
       contents: read
       issues: write
@@ -169,7 +169,7 @@ jobs:
 
   license_scan:
     name: license_scan
-    runs-on: ${{ inputs.job_runtime }}
+    runs-on: ${{ inputs.job_runner }}
     needs: generate_sbom
     permissions:
       contents: read
@@ -228,7 +228,7 @@ jobs:
   dependency_scan:
     needs: generate_sbom
     name: dependency_scan
-    runs-on: ${{ inputs.job_runtime }}
+    runs-on: ${{ inputs.job_runner }}
     permissions:
       contents: read
       issues: write
