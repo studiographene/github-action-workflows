@@ -265,11 +265,11 @@ jobs:
         id: generate_dependency_scan_report
         run: |
           echo "Parsing the Dependency Scan Report for vulnerability segregation based on score..."
-          REPORT_RESULT_LENGTH=$(jq -r '.results[].package | length' osv_raw_report.json)
+          REPORT_RESULT_LENGTH=$(jq -r '.results[].package[] | length' osv_raw_report.json)
           echo "DEBUG: REPORT_RESULT_LENGTH=[$REPORT_RESULT_LENGTH]"
           if [ "$REPORT_RESULT_LENGTH" = "0" ]; then
             echo "Executing IF statement (no vulnerabilities found)"
-            SEVERITY_COUNTS="0 0 0"
+            SEVERITY_COUNTS="'0' '0' '0'"
           else
             echo "Executing ELSE statement (vulnerabilities found)"
             SEVERITY_COUNTS=$(jq -r ' [.results[].packages[]? 
