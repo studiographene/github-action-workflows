@@ -99,28 +99,6 @@ jobs:
     secrets: inherit
 ```
 
-
-#### ci.yml (for Monorepo with multiple Dockerfiles to scan every Dockerfile in the repo)
-
-```yaml
-name: CI
-
-on:
-  pull_request: {}
-  issue_comment:
-
-jobs:
-  call-workflow:
-    uses: studiographene/github-action-workflows/.github/workflows/nodejs-ci.yml@master # if you want alternatively pin to tag version
-    with:
-      package_manager: pnpm
-      build_command: pnpm run build
-      lint_command: pnpm run lint
-      run_dev_test: true   # Set this input only if the Developer tests (Unit/Integration/etc.,) are available in your repo code
-      is_monorepo_with_multi_dockerfile: true
-    secrets: inherit
-```
-
 ---
 
 ### Jobs list:
