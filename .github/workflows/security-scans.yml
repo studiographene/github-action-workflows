@@ -276,6 +276,7 @@ jobs:
                 ($scores | map(select(. >= 4 and . <= 6)) | length),
                 ($scores | map(select(. > 6)) | length)
               ] | @sh' osv_raw_report.json)
+            echo "Executing ELSE statement complete"
           fi
           low=$(echo $SEVERITY_COUNTS | cut -d' ' -f1)
           medium=$(echo $SEVERITY_COUNTS | cut -d' ' -f2)
