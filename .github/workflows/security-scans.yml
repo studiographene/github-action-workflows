@@ -275,7 +275,7 @@ jobs:
           fi
 
       - name: Comment Dependency scan report on PR
-        if: ${{ !cancelled() && contains('success,failure', steps.dependency_scan.outcome) }}
+        if: ${{ !cancelled() || contains('success,failure', steps.dependency_scan.outcome) }}
         uses: mshick/add-pr-comment@v2
         with:
           message-id: dependency_scan
