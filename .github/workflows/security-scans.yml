@@ -285,12 +285,11 @@ jobs:
             echo "> LOW SEVERITY COUNT: $OSV_SEVERITY_LOW" >> osv_report.md
             echo "MEDIUM SEVERITY COUNT: $OSV_SEVERITY_MEDIUM" >> osv_report.md
             echo "HIGH SEVERITY COUNT: $OSV_SEVERITY_HIGH" >> osv_report.md
-            echo <br> >> osv_report.md
-            echo "### $OSV_SEVERITY_HIGH HIGH SEVERITY Packaged found. Please resolve these before merging the pull request:<br>" >> osv_report.md
-            cat osv_raw_report.md >> osv_report.md
+            echo "### ${OSV_SEVERITY_HIGH} HIGH SEVERITY Packaged found. Please resolve these before merging the pull request:<br>" >> osv_report.md
             echo "LOW SEVERITY COUNT: $OSV_SEVERITY_LOW"
             echo "MEDIUM SEVERITY COUNT: $OSV_SEVERITY_MEDIUM"
             echo "HIGH SEVERITY COUNT: $OSV_SEVERITY_HIGH"
+            cat osv_raw_report.md >> osv_report.md
           else
             echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
             cat osv_raw_report.md >> osv_report.md
