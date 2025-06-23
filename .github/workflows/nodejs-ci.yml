@@ -382,7 +382,7 @@ jobs:
       discussions: write
       pull-requests: write
       security-events: write
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && inputs.run_dev_test && !contains( inputs.excluded_jobs, 'developer_tests' ) && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v5
     steps:
@@ -398,7 +398,6 @@ jobs:
 
       - name: Tests
         id: developer_tests
-        if: ${{ always() && inputs.run_dev_test && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
         run: |
           ${{ inputs.package_manager }} run test
       - name: Test Coverage Threshold Check
