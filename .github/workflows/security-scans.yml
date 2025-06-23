@@ -263,14 +263,13 @@ jobs:
 
       - name: Generate Dependency Scan Report
         id: generate_dependency_scan_report
+        env:
+          OSV_EXIT_CODE: ${{ steps.dependency_scan.outputs.OSV_EXIT_CODE }}
         run: |
           echo "Parsing the Dependency Scan Report for vulnerability segregation based on score..."
-          if [ "$OSV_EXIT_CODE" = "1" ]; then
+          if [ $OSV_EXIT_CODE -ne 0 ]; then
             echo "Executing IF statement (vulnerabilities found)"
-            SEVERITY_COUNTS=$(jq -r ' [.results[].packages[]? 
-                | select(.groups != null) 
-                | .groups[]?.max_severity 
-                | tonumber] 
+            SEVERITY_COUNTS=$(jq -r ' [.results[].packages[]? | select(.groups != null) | .groups[]?.max_severity | tonumber ]
               | [
                   (map(select(. < 4)) | length),
                   (map(select(. >= 4 and . <= 7)) | length),
