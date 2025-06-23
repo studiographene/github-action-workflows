@@ -256,21 +256,47 @@ jobs:
           EOF
           set +e
           osv-scanner --format markdown --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.md
+          # JSON report is generated to segregate the vulnerabilities based on the CVSS score
           osv-scanner --format json --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.json
-          OSV_EXIT_CODE=$?
+          echo "OSV_EXIT_CODE=$?" >> $GITHUB_OUTPUT
           set -e
+
+      - name: Generate Dependency Scan Report
+        id: generate_dependency_scan_report
+        run: |
+          SEVERITY_COUNTS=$(jq -r '
+            if (.results | length) == 0 then
+              "0 0 0"
+            else
+              [.results[].packages[]? | select(.groups != null) | .groups[]?.max_severity | tonumber] as $scores |
+              [
+                ($scores | map(select(. < 4)) | length),
+                ($scores | map(select(. >= 4 and . <= 6)) | length),
+                ($scores | map(select(. > 6)) | length)
+              ] | @sh
+            end
+          ' osv_raw_report.json)
+          read low medium high <<< $SEVERITY_COUNTS
+          echo "OSV_SEVERITY_LOW=$low" >> $GITHUB_OUTPUT
+          echo "OSV_SEVERITY_MEDIUM=$medium" >> $GITHUB_OUTPUT
+          echo "OSV_SEVERITY_HIGH=$high" >> $GITHUB_OUTPUT
           echo "## OSV Dependency Scan Report" >> osv_report.md
           if [ $OSV_EXIT_CODE -ne 0 ]; then
-            echo "### The following vulnerabilities have been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
+            echo "### The following vulnerabilities have been detected in the packages" >> osv_report.md
+            echo "$OSV_SEVERITY_HIGH HIGH SEVERITY Packaged found. Please resolve these before merging the pull request:" >> osv_report.md
+            echo "> LOW SEVERITY COUNT: $OSV_SEVERITY_LOW" >> osv_report.md
+            echo "> MEDIUM SEVERITY COUNT: $OSV_SEVERITY_MEDIUM" >> osv_report.md
+            echo "> HIGH SEVERITY COUNT: $OSV_SEVERITY_HIGH<br><br>" >> osv_report.md
             cat osv_raw_report.md >> osv_report.md
           else
             echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
             cat osv_raw_report.md >> osv_report.md
           fi
-          if [ $OSV_EXIT_CODE != 0 ]; then
-            echo "::error::Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
+          if [ $OSV_SEVERITY_HIGH > 0 ]; then
+            echo "::error::HIGH SEVERITY Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
             exit 1
-          elif [ $OSV_EXIT_CODE == 0 ]; then
+          elif [ $OSV_SEVERITY_HIGH == 0 && ($OSV_SEVERITY_LOW > 0 || $OSV_SEVERITY_MEDIUM > 0 )]; then
+            echo "::warning::MODERATE or LOW SEVERITY Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
             exit 0
           fi
 
