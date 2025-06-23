@@ -250,6 +250,7 @@ jobs:
             skip-dirs: ${{ inputs.container_scan_skip_dirs }}
 
         - name: Create container vulnerability report
+          id: container_scan_report_generation
           if: ${{ !cancelled()  }}
           shell: bash
           run: |
@@ -267,7 +268,7 @@ jobs:
             fi
 
         - name: PR comment the container scan report
-          if: ${{ !cancelled()  }}
+          if: ${{ !cancelled() && contains('success,failure', steps.container_scan_report_generation.outcome) }}
           uses: mshick/add-pr-comment@v2
           with:
             message-id: trivy_container_scan_${{ matrix.dockerfile_paths }}
