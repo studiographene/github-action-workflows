@@ -177,7 +177,7 @@ jobs:
       discussions: write
       pull-requests: write
       security-events: write
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'license_scan') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-22-alpine
     steps:
