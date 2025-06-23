@@ -265,7 +265,7 @@ jobs:
         id: generate_dependency_scan_report
         run: |
           echo "Parsing the Dependency Scan Report for vulnerability segregation based on score..."
-          if [ "$OSV_EXIT_CODE" == 1 ]; then
+          if [ "$OSV_EXIT_CODE" = "1" ]; then
             echo "Executing IF statement (vulnerabilities found)"
             SEVERITY_COUNTS=$(jq -r ' [.results[].packages[]? 
                 | select(.groups != null) 
