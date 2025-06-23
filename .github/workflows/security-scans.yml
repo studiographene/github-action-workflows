@@ -275,29 +275,36 @@ jobs:
                 ] 
               | @sh
             ' osv_raw_report.json)
-            OSV_SEVERITY_LOW=$(echo $SEVERITY_COUNTS | cut -d' ' -f1)
-            OSV_SEVERITY_MEDIUM=$(echo $SEVERITY_COUNTS | cut -d' ' -f2)
-            OSV_SEVERITY_HIGH=$(echo $SEVERITY_COUNTS | cut -d' ' -f3)
-            echo "OSV_SEVERITY_LOW=$low" >> $GITHUB_OUTPUT
-            echo "OSV_SEVERITY_MEDIUM=$medium" >> $GITHUB_OUTPUT
-            echo "OSV_SEVERITY_HIGH=$high" >> $GITHUB_OUTPUT
+            OSV_SEVERITY_LOW_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f1)
+            OSV_SEVERITY_MEDIUM_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f2)
+            OSV_SEVERITY_HIGH_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f3)
+            echo "OSV_SEVERITY_LOW_COUNT=$low" >> $GITHUB_OUTPUT
+            echo "OSV_SEVERITY_MEDIUM_COUNT=$medium" >> $GITHUB_OUTPUT
+            echo "OSV_SEVERITY_HIGH_COUNT=$high" >> $GITHUB_OUTPUT
             echo "### The following vulnerabilities have been detected in the packages" >> osv_report.md
-            echo "> LOW SEVERITY COUNT: $OSV_SEVERITY_LOW" >> osv_report.md
-            echo "MEDIUM SEVERITY COUNT: $OSV_SEVERITY_MEDIUM" >> osv_report.md
-            echo "HIGH SEVERITY COUNT: $OSV_SEVERITY_HIGH" >> osv_report.md
-            echo "### ${OSV_SEVERITY_HIGH} HIGH SEVERITY Packaged found. Please resolve these before merging the pull request:<br>" >> osv_report.md
-            echo "LOW SEVERITY COUNT: $OSV_SEVERITY_LOW"
-            echo "MEDIUM SEVERITY COUNT: $OSV_SEVERITY_MEDIUM"
-            echo "HIGH SEVERITY COUNT: $OSV_SEVERITY_HIGH"
+            echo "> LOW SEVERITY COUNT: $OSV_SEVERITY_LOW_COUNT" >> osv_report.md
+            echo "MEDIUM SEVERITY COUNT: $OSV_SEVERITY_MEDIUM_COUNT" >> osv_report.md
+            echo "HIGH SEVERITY COUNT: $OSV_SEVERITY_HIGH_COUNT" >> osv_report.md
+            echo "### ${OSV_SEVERITY_HIGH_COUNT} HIGH SEVERITY Packaged found. Please resolve these before merging the pull request:<br>" >> osv_report.md
+            echo "LOW SEVERITY COUNT: $OSV_SEVERITY_LOW_COUNT"
+            echo "MEDIUM SEVERITY COUNT: $OSV_SEVERITY_MEDIUM_COUNT"
+            echo "HIGH SEVERITY COUNT: $OSV_SEVERITY_HIGH_COUNT"
             cat osv_raw_report.md >> osv_report.md
           else
             echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
             cat osv_raw_report.md >> osv_report.md
           fi
-          echo "> LOW SEVERITY COUNT: $OSV_SEVERITY_LOW"
-          echo "> MEDIUM SEVERITY COUNT: $OSV_SEVERITY_MEDIUM"
-          echo "> HIGH SEVERITY COUNT: $OSV_SEVERITY_HIGH"
+          echo "> LOW SEVERITY COUNT: $OSV_SEVERITY_LOW_COUNT"
+          echo "> MEDIUM SEVERITY COUNT: $OSV_SEVERITY_MEDIUM_COUNT"
+          echo "> HIGH SEVERITY COUNT: $OSV_SEVERITY_HIGH_COUNT"
           cat osv_report.md
+          if [ $OSV_SEVERITY_HIGH_COUNT > 0 ]; then
+            echo "::error::HIGH Severity Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
+            exit 1
+          elif [ $OSV_SEVERITY_MEDIUM_COUNT > 0 ]; then
+            echo "::warning::MEDIUM or LOW Severity Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
+            exit 0
+          fi
       - name: Comment Dependency scan report on PR
         if: ${{ !cancelled() || contains('success,failure', steps.dependency_scan.outcome) }}
         uses: mshick/add-pr-comment@v2
