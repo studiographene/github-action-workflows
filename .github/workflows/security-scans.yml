@@ -264,6 +264,7 @@ jobs:
       - name: Generate Dependency Scan Report
         id: generate_dependency_scan_report
         run: |
+          echo "Parsing the Dependency Scan Report for vulnerability segregation based on score..."
           SEVERITY_COUNTS=$(jq -r '
             if (.results | length) == 0 then
               "0 0 0"
@@ -276,7 +277,9 @@ jobs:
               ] | @sh
             end
           ' osv_raw_report.json)
-          read low medium high <<< $SEVERITY_COUNTS
+          low=$(echo $count_output | cut -d' ' -f1)
+          medium=$(echo $count_output | cut -d' ' -f2)
+          high=$(echo $count_output | cut -d' ' -f3)
           echo "OSV_SEVERITY_LOW=$low" >> $GITHUB_OUTPUT
           echo "OSV_SEVERITY_MEDIUM=$medium" >> $GITHUB_OUTPUT
           echo "OSV_SEVERITY_HIGH=$high" >> $GITHUB_OUTPUT
