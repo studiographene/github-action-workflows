@@ -271,10 +271,7 @@ jobs:
             SEVERITY_COUNTS="0 0 0"
           else
             echo "Executing ELSE statement (vulnerabilities found)"
-            SEVERITY_COUNTS=$(jq -r '[.results[].packages[]? 
-              | select(.groups != null) 
-              | .groups[]?.max_severity 
-              | tonumber] as $scores 
+            SEVERITY_COUNTS=$(jq -r '[.results[].packages[]? | select(.groups != null) | .groups[]?.max_severity | tonumber] as $scores 
               | [
                   ($scores | map(select(. < 4)) | length),
                   ($scores | map(select(. >= 4 and . <= 6)) | length),
