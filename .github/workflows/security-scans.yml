@@ -285,7 +285,7 @@ jobs:
             if [ $OSV_SEVERITY_HIGH_COUNT -gt 0 ]; then
               echo "### ${OSV_SEVERITY_HIGH_COUNT} HIGH SEVERITY Packaged found. Please resolve these before merging the pull request:<br>" >> osv_report.md
             else
-              echo "### LOW or MEDIUM SEVERITY Packaged found. Please resolve these before merging the pull request:<br>" >> osv_report.md
+              echo "### MEDIUM or LOW SEVERITY Packaged found:<br>" >> osv_report.md
             fi
             cat osv_raw_report.md >> osv_report.md
           else
