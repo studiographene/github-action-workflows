@@ -271,16 +271,17 @@ jobs:
             SEVERITY_COUNTS="0 0 0"
           else
             echo "Executing ELSE statement (vulnerabilities found)"
-            SEVERITY_COUNTS=$(jq -r '[.results[].packages[]? \
-              | select(.groups != null) \
-              | .groups[]?.max_severity \
-              | tonumber] \
-              | [ \
-                  (map(select(. < 4)) | length), \
-                  (map(select(. >= 4 and . <= 6)) | length), \
-                  (map(select(. > 6)) | length) \
-                ] \
-              | @sh' osv_raw_report.json)
+            SEVERITY_COUNTS=$(jq -r ' [.results[].packages[]? 
+                | select(.groups != null) 
+                | .groups[]?.max_severity 
+                | tonumber] 
+              | [
+                  (map(select(. < 4)) | length),
+                  (map(select(. >= 4 and . <= 6)) | length),
+                  (map(select(. > 6)) | length)
+                ] 
+              | @sh
+            ' osv_raw_report.json)
           fi
           low=$(echo $SEVERITY_COUNTS | cut -d' ' -f1)
           medium=$(echo $SEVERITY_COUNTS | cut -d' ' -f2)
