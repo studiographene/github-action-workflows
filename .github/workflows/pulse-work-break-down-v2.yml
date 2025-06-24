@@ -1,4 +1,4 @@
-name: Studiographene NodeJs CI
+name: Pulse - Work Breakdown
 
 on:
   workflow_call:
@@ -12,7 +12,7 @@ on:
         default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com"
       WORKBREAKDOWN_SCRIPT_URL:
           type: string
-          default: "https://sg-devops-scripts.s3.eu-west-1.amazonaws.com/pulse/pulse-github-work-break-down/pulse-github-work-break-down.py"
+          default: "https://sg-devops-scripts.s3.eu-west-1.amazonaws.com/pulse/pulse-github-work-break-down/commit_analysis_modified_v2.py"
       dev_test_branch:
         description: "Developer-provided branch names to run the tests"
         type: string
@@ -22,7 +22,6 @@ on:
 jobs:
 
   pulse_work_break_down:
-    if: false  # Disabling it as it is integrated under nodejs-ci.yml
     name: pulse-work-break-down
     runs-on: ubuntu-latest
     permissions:
@@ -64,3 +63,9 @@ jobs:
           API_URL: ${{ inputs.PULSE_URL}}/github/commit/workbreakdown
           HMAC_SECRET: ${{ secrets.PULSE_HMAC_SECRET }}
         run: python .github/scripts/pulse-github-work-break-down.py
+
+      - name: Upload Work Breakdown Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-work-breakdown-report
+          path: pulse-work-breakdown-report.json

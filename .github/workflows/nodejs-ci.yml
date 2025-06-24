@@ -415,13 +415,12 @@ jobs:
           message-id: test-coverage-report
           message-path: test-coverage-report.md
 
-      - name: Composing and Sending Test Coverage Report to Pulse
+
+      - name: Pulse - Composing Test Coverage Report for Pulse
         id: compose_pulse_report
         if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
         working-directory: ${{ github.workspace }}
         env:
-          secret: ${{ secrets.PULSE_HMAC_SECRET }}
-          url: ${{ inputs.PULSE_URL}}/github/test-coverage
           coverage_file_path: ${{inputs.dev_test_coverage_report_directory}}/coverage-summary.json
         run: |
 
@@ -436,11 +435,16 @@ jobs:
           --argjson coverage $coverage \
           '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: { "total": $coverage } }')
 
-          hmac=$(echo -n "$json_payload" | tr -d ' \n' | openssl dgst -sha256 -hmac $secret | awk '{print $2}')
+          echo "$json_payload" > pulse-test-coverage-report.json
 
-          echo "GENERATED HMAC: " $hmac
-          curl -X POST $url -H "Content-Type: application/json" -H "X-Signature: $hmac" -d "$json_payload"
 
+      - name: Upload Test Coverage Report Artifact
+        if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-test-coverage-report
+          path: pulse-test-coverage-report.json
+      
       - name: Developer Tests after step
         if: ${{ inputs.technology_based_scans_after_step_command != '' || inputs.developer_tests_after_step_command != '' }}
         run: |
@@ -465,5 +469,17 @@ jobs:
   pulse_work_break_down:
     name: pulse-work-break-down
     if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
-    uses: studiographene/github-action-workflows/.github/workflows/pulse-work-break-down.yml@master
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-work-break-down-v2.yml@master
+    secrets: inherit
+
+  pulse_security_scans:
+    name: pulse_security_scans
+    if: ${{ github.event.pull_request.merged == true }}
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-sast-analytics-v2.yml@master
+    secrets: inherit
+
+  pulse_version_upgrades:
+    name: pulse_version_upgrades
+    if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-dependencies-analytics-v2.yml@master
     secrets: inherit

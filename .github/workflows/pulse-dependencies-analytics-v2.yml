@@ -1,4 +1,4 @@
-name: Pulse Dependencies Analytics
+name: Pulse - Dependency Analytics
 
 on:
   workflow_call:
@@ -15,7 +15,6 @@ on:
 
 jobs:
   pulse_dependencies_report:
-    if: false  # Disabling it as it is integrated under nodejs-ci.yml
     runs-on: ubuntu-latest
 
     steps:
@@ -120,10 +119,13 @@ jobs:
 
           nested_info="{\"coreDependencies\": $core_dependencies_array, \"repositoryInfo\": {\"repoName\": \"${{ github.repository }}\", \"repoId\": \"${{ github.repository_id }}\", \"repoOwner\": \"${{ github.repository_owner }}\"}, \"dependencies\": $dependencies_array}"
           echo "Dependencies information:"
-          echo "$nested_info"
+          echo "$nested_info" > pulse-version-upgrades-report.json
 
-          # Make a POST request with all the JSON object information as the body
-          curl -X POST -H "Content-Type: application/json" -d "$nested_info" "${{ inputs.PULSE_URL }}/github/repo-libraries"
+      - name: Upload Version Upgrades Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-version-upgrades-report
+          path: pulse-version-upgrades-report.json
 
       - name: after step
         if: ${{ inputs.after_step_command != '' }}
