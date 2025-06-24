@@ -9,6 +9,8 @@ CI scans workflow for PhP code.
 | Name                                              | Description                                                                                                                                                                         | Required | Default        |
 | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------------- |
 | excluded_jobs <a name="inputs_EXCLUDED_JOBS"></a> | A string of comma separated job IDs that you want to exclude from execution. Job IDs that can be used to exclude `lint,sast,gitleaks,license_scan,dependency_scan,docker,pr_agent`. | no       |                |
+| is_monorepo_with_multi_dockerfile          | For container scan. Whether it is a monorepo with Dockerfile in differnet directories. If `true` repo will be searched for all the Dockerfile and scan performed on each. To scan only selected Docker file use input `dockerfile_paths` | no  | false  |
+|       dockerfile_paths:                    | For container scan. Set of separated Dockerfile paths. Useful when you want scan Dockerfile in selected directories. Example: [./apps/users/Dockerfile, ./apps/account/Dockerfile] | no  |   |
 | docker_build_command                              | Docker build command                                                                                                                                                                | no       |                |
 | docker_build_image_id                             | Docker image ID as mentioned in docker_build_command                                                                                                                                | no       | `local:latest` |
 | container_scanners:                               | comma-separated list of what security issues to detect (vuln,secret,config)                                                                                                         | no       | `vuln`         |
@@ -52,7 +54,28 @@ on:
 
 jobs:
   call-workflow:
-    uses: studiographene/github-action-workflows/.github/workflows/php-ci.yml@master # if you want alternatively pin to tag version version
+    uses: studiographene/github-action-workflows/.github/workflows/php-ci.yml@master # if you want alternatively pin to tag version
+    secrets: inherit
+```
+
+#### ci.yml (for Monorepo with multiple Dockerfiles to scan every Dockerfile in the repo)
+
+```yaml
+name: CI
+
+on:
+  pull_request: {}
+  issue_comment:
+
+jobs:
+  call-workflow:
+    uses: studiographene/github-action-workflows/.github/workflows/nodejs-ci.yml@master # if you want alternatively pin to tag version
+    with:
+      package_manager: pnpm
+      build_command: pnpm run build
+      lint_command: pnpm run lint
+      run_dev_test: true   # Set this input only if the Developer tests (Unit/Integration/etc.,) are available in your repo code
+      is_monorepo_with_multi_dockerfile: true
     secrets: inherit
 ```
 
