@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.0.0](https://github.com/studiographene/github-action-workflows/compare/v1.15.0...v2.0.0) (2025-06-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* **ENB-83:** split step to jobs, monorepo multi containers scan support, dependency scan moderate failure ([#77](https://github.com/studiographene/github-action-workflows/issues/77))
+
+### Features
+
+* **ENB-83:** split step to jobs, monorepo multi containers scan support, dependency scan moderate failure ([#77](https://github.com/studiographene/github-action-workflows/issues/77)) ([e968aba](https://github.com/studiographene/github-action-workflows/commit/e968aba4aafb75d4126f839a40da30899827771d))
+* **PX-2965:** uploading artifacts for test coverage, sast, dependencies and work breakdown ([#76](https://github.com/studiographene/github-action-workflows/issues/76)) ([1975137](https://github.com/studiographene/github-action-workflows/commit/19751379a2ee9c9876d056a94712049b0054f8e3))
+
+
+### Bug Fixes
+
+* **ENB-83 TF IaC Scan:** install TF runtime ([07e8a41](https://github.com/studiographene/github-action-workflows/commit/07e8a41eb4ce9a7d3a42b4962ba73db4a6e21a7c))
+* **ENB-83 TF IaC Scan:** install TF runtime ([#74](https://github.com/studiographene/github-action-workflows/issues/74)) ([f9243b0](https://github.com/studiographene/github-action-workflows/commit/f9243b0e70902196f3c70af97f1879108a7313e1))
+* **enb-83:** echo typo ([d68155f](https://github.com/studiographene/github-action-workflows/commit/d68155f21761938bbb3e053d1ad86768622fb83c))
+* **enb-83:** install commands change ([b9132b9](https://github.com/studiographene/github-action-workflows/commit/b9132b9858b4b0b3d263a20a6986652ceadabb5d))
+* **ENB-83:** package install command correction ([ee454d5](https://github.com/studiographene/github-action-workflows/commit/ee454d50a2d0fc00f0303320eee110cf8ec5fb68))
+* **enb-83:** TF fmt - change in gbp key creation ([7cecf51](https://github.com/studiographene/github-action-workflows/commit/7cecf513b15dc6b6e927cc62516025ec699f079e))
+* **ENB-83:** typo ([f30c9b5](https://github.com/studiographene/github-action-workflows/commit/f30c9b57770e621fcac931be0755c505c169bc16))
+
 ## [1.15.0](https://github.com/studiographene/github-action-workflows/compare/v1.14.2...v1.15.0) (2025-05-08)
 
 
