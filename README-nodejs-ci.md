@@ -15,8 +15,11 @@ CI scans workflow for NodeJS code.
 | coverage_summary_path | Path to the coverage summary JSON file generated from developer's test | no | `./coverage/coverage-summary.json` |
 | junitxml_path  | Path to the JUnit XML report file generated from developer's test | no | `./coverage/report.xml`  |                                                                             | no       | `npm`           |
 | build_command                              | build command for the project                                               | no       | `npm run build` |
+| package_install_command                    | Package install command to use instead of the default command               | no       |                 |
 | docker_build_command                       | Docker build command                                                        | no       |                 |
 | docker_build_image_id                      | Docker image ID as mentioned in docker_build_command                        | no       | `local:latest`  |
+| is_monorepo_with_multi_dockerfile          | For container scan. Whether it is a monorepo with Dockerfile in differnet directories. If `true` repo will be searched for all the Dockerfile and scan performed on each. To scan only selected Docker file use input `dockerfile_paths` | no  | false  |
+|       dockerfile_paths:                    | For container scan. Set of separated Dockerfile paths. Useful when you want scan Dockerfile in selected directories. Example: [./apps/users/Dockerfile, ./apps/account/Dockerfile] | no  |   |
 | container_scanners:                        | comma-separated list of what security issues to detect (vuln,secret,config) | no       | `vuln`          |
 | container_scan_skip_dirs                   | Comma separated list of directories to skip scanning                        | no       |                 |
 | lint_command                               | lint command for the project                                                | no       | `npm run lint`  |
@@ -25,14 +28,23 @@ CI scans workflow for NodeJS code.
 | security_scan_after_step_command           | Optional commands to pass after secuirty scan job steps execution           | no       |                 |
 | caching_before_step_command                | Optional commands to pass before caching job steps execution                | no       |                 |
 | caching_after_step_command                 | Optional commands to pass after caching job steps execution                 | no       |                 |
-| technology_based_scans_before_step_command | Optional commands to pass before techology based scans job steps execution  | no       |                 |
-| technology_based_scans_after_step_command  | Optional commands to pass after techology based scans job steps execution   | no       |                 |
 | pr_agent_before_step_command               | Optional commands to pass before Codium PR agent job steps execution        | no       |                 |
 | pr_agent_after_step_command                | Optional commands to pass after Codium PR agent job steps execution         | no       |                 |
 | container_scan_before_step_command         | Command to execute at the start of the container scan                       | no       |                 |
 | container_scan_after_step_command          | Command to execute at the end of the container scan                         | no       |                 |
+| developer_tests_before_step_command        | Command to execute at the start of the Developer tests                      | no       |                 |
+| developer_tests_after_step_command         | Command to execute at the end of the Developer tests                        | no       |                 |
+| lint_scan_before_step_command              | Command to execute at the start of the Lint scan                            | no       |                 |
+| lint_scan_after_step_command               | Command to execute at the end of the Lint scan                              | no       |                 |
 | send_dev_test_coverage_report_to_pulse     | Switch deciding to send the Test Coverage Report to Pulse                   | no       | false           |
 | dev_test_coverage_report_directory         | The Directory path from project root where `coverage-summary.json` is generated after running test | false  | `coverage`  |
+
+# Depreciated Inputs
+
+| Name                                       | Description                                                                                                       | Required | Default  |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | -------- | -------- |
+| technology_based_scans_before_step_command | *DEPRECIATED:* only kept to tackle the backwards compatibility to avoid error use the respective new job inputs   |    no    |          |
+| technology_based_scans_after_step_command  | *DEPRECIATED:* only kept to tackle the backwards compatibility to avoid error use the respective new job inputs   |    no    |          |
 
 # Workflow Secrets
 
@@ -65,7 +77,7 @@ CI scans workflow for NodeJS code.
 
 ### CI workflow
 
-1. Create a file `ci.yml` with below content (change inputs as required).
+In your repo, create a file `ci.yml` under `.github/workflows` folder with below content _(change inputs as required)_.
 
 #### ci.yml
 
@@ -94,7 +106,7 @@ jobs:
 #### Jobs have nested steps which are running the mentioned scans.
 
 - pr_agent (Automated PR review using [Codium AI PR Agent](https://www.codium.ai/products/git-plugin/) )
-- docker
+- Container scan
   - docker build
   - container scan (using [Trivy](https://github.com/aquasecurity/trivy))
 - Security scans
@@ -105,3 +117,4 @@ jobs:
 - Technology based scans
   - lint
   - build (code build check)
+- Pulse Work Breakdown

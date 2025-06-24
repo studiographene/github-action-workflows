@@ -7,10 +7,20 @@ on:
         required: false
 
     inputs:
+      job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
       action_runner_container_image:
         description: "Action runner container image. Default = public.ecr.aws/studiographene/ci:node-20-alpine"
         type: string
         default: public.ecr.aws/studiographene/ci:node-20-alpine
+      dockerfile_paths:
+        description: "Set of separated Dockerfile paths. Useful when you want scan Dockerfile in selected directories. Example: [./apps/users/Dockerfile, ./apps/account/Dockerfile]"
+        type: string
+        required: false
+        default: ""
       docker_build_command:
         type: string
         required: false
@@ -46,90 +56,129 @@ permissions:
   contents: read
 
 jobs:
-  container_scan:
-    runs-on: ubuntu-latest
-    container:
-      image: ${{ inputs.action_runner_container_image }}
-    env:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+  detect_dockerfile_paths:
+    runs-on: ${{ inputs.job_runner }}
+    name: Detect Dockerfile Paths
+    outputs:
+      matrix: ${{ inputs.dockerfile_paths == '' && steps.find_dockerfile_generate_matrix.outputs.all_dockerfile_paths_matrix || steps.generate_matrix.outputs.all_dockerfile_paths_matrix }}
     steps:
-      - name: Before Step
-        if: ${{ inputs.before_step_command != '' }}
-        run: |
-          ${{ inputs.before_step_command}}
-
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          fetch-depth: 0
 
-      - # Add support for more platforms with QEMU (optional)
-        # https://github.com/docker/setup-qemu-action
-        name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Docker Build
-        id: docker_build
-        env:
-          FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker build --build-arg NPM_TOKEN={0} -t  {1} .', secrets.NPM_TOKEN, inputs.docker_build_image_id) }}
+      - name: Find Dockerfile paths and Generate matrix JSON
+        if: ${{ inputs.dockerfile_paths == '' }}
+        id: find_dockerfile_generate_matrix
         run: |
-          echo $FINAL_DOCKER_BUILD_COMMAND
-          eval $FINAL_DOCKER_BUILD_COMMAND
-
-      - name: Creating Trivy report PR comment template file
+          paths=$(find . -type f -name 'Dockerfile' | sort | sed 's|^\./||')
+          matrix_json="$(printf '%s' "$paths" | jq -R . | jq -s '{dockerfile_paths: .}')"
+          echo "all_dockerfile_paths_matrix<<EOF" >> $GITHUB_OUTPUT
+          echo "$matrix_json" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo $matrix_json
+      
+      - name: Generate matrix JSON
+        if: ${{ inputs.dockerfile_paths != '' }}
+        id: generate_matrix
         run: |
-          cat <<EOF >> trivyreport.tpl 
-          | Package | Vulnerability | Severity | Status | Installed Version | Fixed Version | Title |
-          | ------- | ------------- | -------- | ------ | ----------------- | ------------- | ----- |
-          {{- range .}}
-          {{- range .Vulnerabilities}}
-          | {{ .PkgName | html }} | {{ .VulnerabilityID | html }} | {{ .Severity | html }} | {{ .Status | html }} | {{ .InstalledVersion | html }} | {{ .FixedVersion | html }} | {{ .Title | html }} |
-          {{- end }}
-          {{- end }}
-          EOF
+          matrix_json=$(jq -n --argjson arr ${{ inputs.dockerfile_paths }} '{dockerfile_paths: $arr}')
+          echo "all_dockerfile_paths_matrix<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$matrix_json" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo $matrix_json
+          echo "$matrix_json"
 
-      - name: Trivy container vulnerability scan
-        id: container_scan
-        uses: aquasecurity/trivy-action@master
-        continue-on-error: true
-        with:
-          image-ref: ${{ inputs.docker_build_image_id }}
-          format: "template"
-          template: "@trivyreport.tpl"
-          output: "trivyreport.json"
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
-          scanners: ${{ inputs.container_scanners }}
-          skip-dirs: ${{ inputs.container_scan_skip_dirs }}
 
-      - name: Create container vulnerability report
-        if: ${{ !cancelled()  }}
-        shell: bash
-        run: |
-          echo "# Trivy Container Scan" > container_scan_prcomment.json
-          if [ ${{ steps.container_scan.outcome }} == "failure" ]
-          then
-            echo "### :warning: Vulnerabilities detected<br>The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.json
-            cat trivyreport.json >> container_scan_prcomment.json
-            echo "::error::Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
-            exit 1
-          elif [ ${{ steps.container_scan.outcome }} == "success" ]
-          then
-            echo "### :rainbow: No vulnerabilities of HIGH or CRITICAL severity detected" >> container_scan_prcomment.json
-            exit 0
-          fi
+  containers_scan:
+      runs-on: ${{ inputs.job_runner }}
+      needs: detect_dockerfile_paths
+      container:
+        image: ${{ inputs.action_runner_container_image }}
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+      strategy:
+        matrix: ${{ fromJSON(needs.detect_dockerfile_paths.outputs.matrix) }}
+          
+      steps:
+        - name: Before Step
+          if: ${{ inputs.before_step_command != '' }}
+          run: |
+            ${{ inputs.before_step_command}}
 
-      - name: PR comment the container scan report
-        uses: mshick/add-pr-comment@v2
-        with:
-          message-id: trivy_container_scan
-          message-path: container_scan_prcomment.json
+        - name: Checkout
+          uses: actions/checkout@v4
+          with:
+            ref: ${{ github.ref }}
 
-      - name: After Step
-        if: ${{ inputs.after_step_command != '' }}
-        run: |
-          ${{ inputs.after_step_command}}
+        - # Add support for more platforms with QEMU (optional)
+          # https://github.com/docker/setup-qemu-action
+          name: Set up QEMU
+          uses: docker/setup-qemu-action@v3
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v3
+
+        - name: Docker Build
+          id: docker_build
+          env:
+            FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker build --build-arg NPM_TOKEN={0} -f {1} -t {2} .', secrets.NPM_TOKEN, matrix.dockerfile_paths, inputs.docker_build_image_id) }}
+          run: |
+            echo $FINAL_DOCKER_BUILD_COMMAND
+            eval $FINAL_DOCKER_BUILD_COMMAND
+
+        - name: Creating Trivy report PR comment template file
+          run: |
+            cat <<EOF >> trivyreport.tpl 
+            | Package | Vulnerability | Severity | Status | Installed Version | Fixed Version | Title |
+            | ------- | ------------- | -------- | ------ | ----------------- | ------------- | ----- |
+            {{- range .}}
+            {{- range .Vulnerabilities}}
+            | {{ .PkgName | html }} | {{ .VulnerabilityID | html }} | {{ .Severity | html }} | {{ .Status | html }} | {{ .InstalledVersion | html }} | {{ .FixedVersion | html }} | {{ .Title | html }} |
+            {{- end }}
+            {{- end }}
+            EOF
+
+        - name: Trivy container vulnerability scan
+          id: container_scan
+          uses: aquasecurity/trivy-action@master
+          continue-on-error: true
+          with:
+            image-ref: ${{ inputs.docker_build_image_id }}
+            format: "template"
+            template: "@trivyreport.tpl"
+            output: "trivyreport.json"
+            exit-code: "1"
+            ignore-unfixed: true
+            vuln-type: "os,library"
+            severity: "CRITICAL,HIGH"
+            scanners: ${{ inputs.container_scanners }}
+            skip-dirs: ${{ inputs.container_scan_skip_dirs }}
+
+        - name: Create container vulnerability report
+          id: container_scan_report_generation
+          if: ${{ !cancelled()  }}
+          shell: bash
+          run: |
+            echo "# Trivy Container Scan" > container_scan_prcomment.json
+            if [ ${{ steps.container_scan.outcome }} == "failure" ]
+            then
+              echo "### :warning: Vulnerabilities detected Dockerfile path \[ ${{ matrix.dockerfile_paths }} \]:<br>The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.json
+              cat trivyreport.json >> container_scan_prcomment.json
+              echo "::error::Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
+              exit 1
+            elif [ ${{ steps.container_scan.outcome }} == "success" ]
+            then
+              echo "### :rainbow: Dockerfile path \[ ${{ matrix.dockerfile_paths }} \]: No vulnerabilities of HIGH or CRITICAL severity detected" >> container_scan_prcomment.json
+              exit 0
+            fi
+
+        - name: PR comment the container scan report
+          if: ${{ !cancelled() || contains('success,failure', steps.container_scan_report_generation.outcome) }}
+          uses: mshick/add-pr-comment@v2
+          with:
+            message-id: trivy_container_scan_${{ matrix.dockerfile_paths }}
+            message-path: container_scan_prcomment.json
+
+        - name: After Step
+          if: ${{ inputs.after_step_command != '' && !cancelled() }}
+          run: |
+            ${{ inputs.after_step_command}}

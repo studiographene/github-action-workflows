@@ -3,6 +3,11 @@ name: Security scans
 on:
   workflow_call:
     inputs:
+      job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
       excluded_jobs:
         type: string
         default: ""
@@ -17,31 +22,29 @@ on:
         default: ""
 
 jobs:
-  security_scans:
-    name: security_scans
-    runs-on: ubuntu-latest
+  SAST:
+    name: sast
+    runs-on: ${{ inputs.job_runner }}
     permissions:
       contents: read
       issues: write
       discussions: write
       pull-requests: write
       security-events: write
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'sast') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
 
-      - name: Security scans before step
+      - name: SAST before step
         if: ${{ inputs.security_scan_before_step_command != '' }}
         run: |
           ${{ inputs.security_scan_before_step_command}}
       - name: SAST Scan using Semgrep
-        if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'sast')  }}
-
         id: generate_sast_report
         run: |
           set +e
@@ -79,19 +82,58 @@ jobs:
             exit 0
           fi
       - name: Comment SAST report on PR
-        if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'sast')  }}
+        if: ${{ !cancelled() }}
         uses: mshick/add-pr-comment@v2
         with:
           message-id: sast-scan
           message-path: sast_report.md
 
+  gitleaks:
+    name: gitleaks
+    runs-on: ${{ inputs.job_runner }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'gitleaks') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      # - name: SAST before step
+      #   if: ${{ inputs.security_scan_before_step_command != '' }}
+      #   run: |
+      #     ${{ inputs.security_scan_before_step_command}}
+
       - name: Gitleaks scan
-        if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'gitleaks')  }}
         uses: gitleaks/gitleaks-action@v1.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  generate_sbom:
+    name: generate_sbom
+    runs-on: ${{ inputs.job_runner }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       - name: Check for composer.lock or composer.json
-        if: ${{ !cancelled() && !contains(inputs.excluded_jobs, 'license_scan') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
         id: check_files
         run: |
           if [ -f composer.lock ] || [ -f composer.json ]; then
@@ -101,20 +143,53 @@ jobs:
             echo "Files do not exist"
             echo "SKIP_DOWNLOAD_LOCKFILE=false" >> $GITHUB_OUTPUT
           fi
-      - name: Download LockFile Artifact
+      - name: Download package_lockFile Artifact
         if: ${{ !cancelled() && steps.check_files.outputs.SKIP_DOWNLOAD_LOCKFILE != 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: lockFile
+          name: package_lockFile
           path: .
       - name: Generate SBOM using CycloneDX
         if: always ()
         run: |
-          cdxgen --no-recurse -o bom.xml -p
+          cdxgen --version
+          npm install -g @cyclonedx/cdxgen-plugins-bin
+          cdxgen --no-recurse -o bom.xml -p --debug
+          ls -al
         env:
           FETCH_LICENSE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CDXGEN_DEBUG_MODE: debug
+      
+      - name: Upload SBOM as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: bom.xml
+
+  license_scan:
+    name: license_scan
+    runs-on: ${{ inputs.job_runner }}
+    needs: generate_sbom
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'license_scan') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Download SBOM Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom
+          path: .
 
       - name: License Scan
         env:
@@ -150,39 +225,94 @@ jobs:
           EOF
           /root/executables/ci-utility check --sbom bom.xml --allowedLicences allowedLicenses.txt
 
+  dependency_scan:
+    needs: generate_sbom
+    name: dependency_scan
+    runs-on: ${{ inputs.job_runner }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Download SBOM Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom
+          path: .
       - name: Dependency Scan using Google OSV
         id: dependency_scan
-        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
         run: |
           cat >> dep_scan_suppression_config.toml <<EOF
               ${{ vars.OSV_SUPPRESSIONS }}
           EOF
           set +e
-          osv-scanner --format markdown --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.md 
-          OSV_EXIT_CODE=$?
+          osv-scanner --format markdown --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.md
+          # JSON report is generated to segregate the vulnerabilities based on the CVSS score
+          osv-scanner --format json --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.json
+          echo "OSV_EXIT_CODE=$?" >> $GITHUB_OUTPUT
           set -e
-          echo "## OSV Dependency Scan Report" >> osv_report.md
+      - name: Generate Dependency Scan Report
+        id: generate_dependency_scan_report
+        env:
+          OSV_EXIT_CODE: ${{ steps.dependency_scan.outputs.OSV_EXIT_CODE }}
+        run: |
           if [ $OSV_EXIT_CODE -ne 0 ]; then
-            echo "### The following vulnerabilities have been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
+            echo "Executing IF statement (vulnerabilities found)"
+            SEVERITY_COUNTS=$(jq -r ' [.results[].packages[]? | select(.groups != null) | .groups[]?.max_severity | tonumber ]
+              | [
+                  (map(select(. < 4)) | length),
+                  (map(select(. >= 4 and . <= 7)) | length),
+                  (map(select(. > 7)) | length)
+                ] 
+              | @sh
+            ' osv_raw_report.json)
+            OSV_SEVERITY_LOW_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f1)
+            OSV_SEVERITY_MEDIUM_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f2)
+            OSV_SEVERITY_HIGH_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f3)
+            echo "### The following vulnerabilities have been detected in the packages" >> osv_report.md
+            echo "> LOW SEVERITY COUNT: $OSV_SEVERITY_LOW_COUNT" >> osv_report.md
+            echo "MEDIUM SEVERITY COUNT: $OSV_SEVERITY_MEDIUM_COUNT" >> osv_report.md
+            echo "HIGH SEVERITY COUNT: $OSV_SEVERITY_HIGH_COUNT" >> osv_report.md
+            if [ $OSV_SEVERITY_HIGH_COUNT -gt 0 ]; then
+              echo "### ${OSV_SEVERITY_HIGH_COUNT} HIGH SEVERITY Packaged found. Please resolve these before merging the pull request:<br>" >> osv_report.md
+            else
+              echo "### MEDIUM or LOW SEVERITY Packaged found:<br>" >> osv_report.md
+            fi
             cat osv_raw_report.md >> osv_report.md
           else
             echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
             cat osv_raw_report.md >> osv_report.md
           fi
-          if [ $OSV_EXIT_CODE != 0 ]; then
-            echo "::error::Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
+          cat osv_report.md
+          if [ $OSV_SEVERITY_HIGH_COUNT -gt 0 ]; then
+            echo "::error::HIGH Severity Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
             exit 1
-          elif [ $OSV_EXIT_CODE == 0 ]; then
+          elif [ $OSV_SEVERITY_MEDIUM_COUNT -gt 0 ]; then
+            echo "::warning::MEDIUM or LOW Severity Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
             exit 0
           fi
-
       - name: Comment Dependency scan report on PR
-        if: ${{ !cancelled() && contains('success,failure', steps.dependency_scan.outcome) }}
+        if: ${{ !cancelled() || contains('success,failure', steps.dependency_scan.outcome) }}
         uses: mshick/add-pr-comment@v2
         with:
           message-id: dependency_scan
           message-path: osv_report.md
-      - name: Security scans after step
-        if: ${{ inputs.security_scan_after_step_command != '' }}
-        run: |
-          ${{ inputs.security_scan_after_step_command }}
+      
+      - name: Upload Dependency scan JSON report artifact
+        if: ${{ !cancelled() || contains('success,failure', steps.dependency_scan.outcome) }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency_scan
+          path: |
+            osv_raw_report.json
+            osv_raw_report.md
+
