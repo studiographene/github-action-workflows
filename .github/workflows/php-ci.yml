@@ -40,7 +40,7 @@ on:
         type: string
         required: false
         default: "feat|fix|build|chore|ci|docs|refactor|revert|style|test"
-      JIRA_PROJECT_PR_TITLE_SCOPE:
+      jira_project_pr_title_scope:
         description: "OPTIONAL. Jira project abbreviation as seen in Jira tickets. For PR conventional title scope."
         type: string
         required: false
@@ -93,7 +93,7 @@ jobs:
       pull-requests: write
     env:
       PR_TITLE_TYPE: ${{ inputs.PR_TITLE_TYPE }}
-      JIRA_PROJECT_PR_TITLE_SCOPE: ${{ inputs.JIRA_PROJECT_PR_TITLE_SCOPE }}
+      JIRA_PROJECT_PR_TITLE_SCOPE: ${{ inputs.jira_project_pr_title_scope }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

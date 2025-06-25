@@ -35,7 +35,7 @@ CI scans workflow for NodeJS code.
 | lint_scan_after_step_command               | Command to execute at the end of the Lint scan                                                     | no       |                 |
 | send_dev_test_coverage_report_to_pulse     | Switch deciding to send the Test Coverage Report to Pulse                                          | no       | false           |
 | dev_test_coverage_report_directory         | The Directory path from project root where `coverage-summary.json` is generated after running test | false    | `coverage`      |
-| PR_TITLE_TYPE                              | OPTIONAL. PR Title conventional types. For multiple types, use pipe | to separate without any space since, it is a regex. Example: `feat|fix|hotfix` | false    | `feat|fix|build|chore|ci|docs|refactor|revert|style|test`      |
+| pr_title_type                              | OPTIONAL. PR Title conventional types. For multiple types, use pipe | to separate without any space since, it is a regex. Example: `feat|fix|hotfix` | false    | `feat|fix|build|chore|ci|docs|refactor|revert|style|test`      |
 | JIRA_PROJECT_PR_TITLE_SCOPE                | OPTIONAL. Jira project abbreviation as seen in Jira tickets. For PR conventional title scope. | false    | `A-Za-z`      |
 
 # Depreciated Inputs
