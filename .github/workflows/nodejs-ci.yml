@@ -517,7 +517,7 @@ jobs:
           PR_TITLE="${{ github.event.pull_request.title }}"
           echo "PR_TITLE: ${PR_TITLE}"
           # Regex pattern
-          if [ $JIRA_PROJECT_PR_TITLE_SCOPE != "" ]; then
+          if [[ $JIRA_PROJECT_PR_TITLE_SCOPE != "" ]]; then
             PATTERN='^(${{ inputs.pr_title_type  }})(\((${{ inputs.jira_project_pr_title_scope }})\-[0-9]+\))(!)?:\s?.+$'
           else
             PATTERN='^(${{ inputs.pr_title_type }})(\([A-Za-z\-]+[0-9]+\))(!)?:\s?.+$'
