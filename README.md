@@ -13,6 +13,6 @@
   - Job name and ID must follow "\_" delimeter (do not use space, "-", or any other)
   ```
   jobs:
-    pr_agent:
-      name: pr_agent
+    ci_check:
+      name: ci_check
   ```
