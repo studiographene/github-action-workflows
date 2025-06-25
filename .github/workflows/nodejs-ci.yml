@@ -521,6 +521,7 @@ jobs:
           PR_TITLE="${{ github.event.pull_request.title }}"
           # Regex pattern
           PATTERN='^("${PR_TITLE_TYPE}")(\([${JIRA_PROJECT_PR_TITLE_SCOPE}\-]+[0-9]+\))(!)?:\s?.+$'
+          echo "REGEX PATTERN\: $PATTERN"
           if [[ ! "$PR_TITLE" =~ $PATTERN ]]; then
             echo "::error::❌ Invalid PR title format. Expected format: <type>(<JIRA-TICKET>): <description>. Example: feat(ABC-123): add login functionality"
             exit 1
