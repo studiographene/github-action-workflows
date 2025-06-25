@@ -18,8 +18,8 @@ CI scans workflow for PhP code.
 | semgrep_options                                   | SEMGREP command options                                                                                                                                                             | no       |                |
 | container_scan_before_step_command                | Optional command to execute before techology based scans job steps execution                                                                                                        | no       |                |
 | container_scan_after_step_command                 | Optional command to execute after techology based scans job steps execution                                                                                                         | no       |                |
-| pr_title_type                              | OPTIONAL. PR Title conventional types. For multiple types, use pipe | to separate without any space since, it is a regex. Example: `feat|fix|hotfix` | false    | `feat|fix|build|chore|ci|docs|refactor|revert|style|test`      |
-| JIRA_PROJECT_PR_TITLE_SCOPE                | OPTIONAL. Jira project abbreviation as seen in Jira tickets. For PR conventional title scope. | false    | `A-Za-z`      |
+| pr_title_type                              | OPTIONAL. PR Title conventional types. For multiple types, use pipe | to separate each without any space. Example: `feat|fix|hotfix` | false    | `feat|fix|test`      |
+| jira_project_pr_title_scope                | OPTIONAL. Jira project abbreviation as seen in Jira tickets for PR conventional title scope. For multiple projects use pipe | to separate each without any space. Example= ABC|abc|12AB | false    |      |
 
 # Action variables
 

@@ -35,16 +35,16 @@ on:
       semgrep_options:
         type: string
         default: ""
-      PR_TITLE_TYPE:
-        description: "PR Title conventional types. For multiple types, use pipe | to separate without any space since, it is a regex. Example= feat|fix|hotfix"
+      pr_title_type:
+        description: "PR Title conventional types. For multiple types use pipe | to separate each without any space. Example= feat|fix|hotfix"
         type: string
         required: false
         default: "feat|fix|build|chore|ci|docs|refactor|revert|style|test"
       jira_project_pr_title_scope:
-        description: "OPTIONAL. Jira project abbreviation as seen in Jira tickets. For PR conventional title scope."
+        description: "OPTIONAL. Jira project abbreviation as seen in Jira tickets for PR conventional title scope. For multiple projects use pipe | to separate each without any space. Example= ABC|abc|12AB"
         type: string
         required: false
-        default: "A-Za-z"
+        default: ""
       container_scan_before_step_command:
         type: string
         default: ""
@@ -91,9 +91,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    env:
-      PR_TITLE_TYPE: ${{ inputs.PR_TITLE_TYPE }}
-      JIRA_PROJECT_PR_TITLE_SCOPE: ${{ inputs.jira_project_pr_title_scope }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -102,10 +99,15 @@ jobs:
       - name: PR Conventional Title check
         id: pr_title_check
         run: |
-          echo "PR_TITLE: ${{ github.event.pull_request.title }}"
           PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR_TITLE: ${PR_TITLE}"
           # Regex pattern
-          PATTERN='^("${PR_TITLE_TYPE}")(\([${JIRA_PROJECT_PR_TITLE_SCOPE}\-]+[0-9]+\))(!)?:\s?.+$'
+          if [ $JIRA_PROJECT_PR_TITLE_SCOPE != "" ]; then
+            PATTERN='^(${{ inputs.pr_title_type  }})(\((${{ inputs.jira_project_pr_title_scope }})\-[0-9]+\))(!)?:\s?.+$'
+          else
+            PATTERN='^(${{ inputs.pr_title_type }})(\([A-Za-z\-]+[0-9]+\))(!)?:\s?.+$'
+          fi
+          echo patter ${PATTERN}
           if [[ ! "$PR_TITLE" =~ $PATTERN ]]; then
             echo "::error::❌ Invalid PR title format. Expected format: <type>(<JIRA-TICKET>): <description>. Example: feat(ABC-123): add login functionality"
             exit 1
@@ -113,7 +115,7 @@ jobs:
             echo "✅ PR title format is valid."
           fi
       - name: Comment the PR Title check result on to PR
-        if: ${{ !cancelled() || contains('success,failure', steps.pr_title_check.outcome) }}
+        if: ${{ !cancelled() || contains('failure', steps.pr_title_check.outcome) }}
         uses: mshick/add-pr-comment@v2
         with:
           message-id: dependency_scan
