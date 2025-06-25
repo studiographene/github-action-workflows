@@ -102,16 +102,30 @@ on:
       semgrep_options:
         type: string
         default: ""
+      PR_TITLE_TYPE:
+        description: "PR Title conventional types. For multiple types, use pipe | to separate without any space since, it is a regex. Example= feat|fix|hotfix"
+        type: string
+        required: false
+        default: "feat|fix|build|chore|ci|docs|refactor|revert|style|test"
+      JIRA_PROJECT_PR_TITLE_SCOPE:
+        description: "OPTIONAL. Jira project abbreviation as seen in Jira tickets. For PR conventional title scope."
+        type: string
+        required: false
+        default: "A-Za-z"
       security_scan_before_step_command:
+        description: "NOT IN USE. Depreciated."
         type: string
         default: ""
       security_scan_after_step_command:
+        description: "NOT IN USE. Depreciated."
         type: string
         default: ""
       pr_agent_before_step_command:
+        description: "NOT IN USE. Depreciated."
         type: string
         default: ""
       pr_agent_after_step_command:
+        description: "NOT IN USE. Depreciated."
         type: string
         default: ""
       caching_before_step_command:
@@ -121,9 +135,11 @@ on:
         type: string
         default: ""
       technology_based_scans_before_step_command:
+        description: "NOT IN USE. Depreciated."
         type: string
         default: ""
       technology_based_scans_after_step_command:
+        description: "NOT IN USE. Depreciated."
         type: string
         default: ""
       container_scan_before_step_command:
@@ -483,3 +499,39 @@ jobs:
     if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
     uses: studiographene/github-action-workflows/.github/workflows/pulse-dependencies-analytics-v2.yml@master
     secrets: inherit
+
+  pr_check:
+    name: pr_check
+    runs-on: ${{ inputs.caching_job_runner }}
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      PR_TITLE_TYPE: ${{ inputs.PR_TITLE_TYPE }}
+      JIRA_PROJECT_PR_TITLE_SCOPE: ${{ inputs.JIRA_PROJECT_PR_TITLE_SCOPE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: PR Conventional Title check
+        id: pr_title_check
+        run: |
+          echo "PR_TITLE: ${{ github.event.pull_request.title }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          # Regex pattern
+          PATTERN='^("${PR_TITLE_TYPE}")(\([${JIRA_PROJECT_PR_TITLE_SCOPE}\-]+[0-9]+\))(!)?:\s?.+$'
+          if [[ ! "$PR_TITLE" =~ $PATTERN ]]; then
+            echo "::error::❌ Invalid PR title format. Expected format: <type>(<JIRA-TICKET>): <description>. Example: feat(ABC-123): add login functionality"
+            exit 1
+          else
+            echo "✅ PR title format is valid."
+          fi
+      - name: Comment the PR Title check result on to PR
+        if: ${{ !cancelled() || contains('success,failure', steps.pr_title_check.outcome) }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: dependency_scan
+          message: |
+            ### ❌ Invalid PR title format
+            Expected format: \<type\>(\<JIRA-TICKET\>): \<description\>. Example: feat(ABC-123): add login functionality

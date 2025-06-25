@@ -16,12 +16,10 @@ CI scans workflow for PhP code.
 | container_scanners:                               | comma-separated list of what security issues to detect (vuln,secret,config)                                                                                                         | no       | `vuln`         |
 | container_scan_skip_dirs                          | Comma separated list of directories to skip scanning                                                                                                                                | no       |                |
 | semgrep_options                                   | SEMGREP command options                                                                                                                                                             | no       |                |
-| security_scan_before_step_command                 | Optional command to execute before secuirty scan job                                                                                                                                | no       |                |
-| security_scan_after_step_command                  | Optional command to execute after secuirty scan job steps execution                                                                                                                 | no       |                |
 | container_scan_before_step_command                | Optional command to execute before techology based scans job steps execution                                                                                                        | no       |                |
 | container_scan_after_step_command                 | Optional command to execute after techology based scans job steps execution                                                                                                         | no       |                |
-| pr_agent_before_step_command                      | Optional command to execute before Codium PR agent job steps execution                                                                                                              | no       |                |
-| pr_agent_after_step_command                       | Optional command to execute after Codium PR agent job steps execution                                                                                                               | no       |                |
+| PR_TITLE_TYPE                              | OPTIONAL. PR Title conventional types. For multiple types, use pipe | to separate without any space since, it is a regex. Example: `feat|fix|hotfix` | false    | `feat|fix|build|chore|ci|docs|refactor|revert|style|test`      |
+| JIRA_PROJECT_PR_TITLE_SCOPE                | OPTIONAL. Jira project abbreviation as seen in Jira tickets. For PR conventional title scope. | false    | `A-Za-z`      |
 
 # Action variables
 
@@ -85,7 +83,6 @@ jobs:
 
 Jobs & its steps:
 
-- pr_agent (Automated PR review using [Codium AI PR Agent](https://www.codium.ai/products/git-plugin/) )
 - docker
   - docker build
   - container scan (using [Trivy](https://github.com/aquasecurity/trivy))
@@ -94,3 +91,4 @@ Jobs & its steps:
   - gitleaks
   - license_scan
   - dependency_scan (using [Google OSV scanner](https://github.com/google/osv-scanner))
+- PR Check

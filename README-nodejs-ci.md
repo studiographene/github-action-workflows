@@ -8,50 +8,51 @@ CI scans workflow for NodeJS code.
 
 | Name                                       | Description                                                                 | Required | Default         |
 | ------------------------------------------ | --------------------------------------------------------------------------- | -------- | --------------- |
-| excluded_jobs <a name="inputs_EXCLUDED_JOBS"></a> | A string of comma separated job IDs that you want to exclude from execution. Job IDs that can be used to exclude `lint,sast,gitleaks,license_scan,dependency_scan,build,docker,pr_agent`. | no       |                 |
-| package_manager                            |
+| excluded_jobs <a name="inputs_EXCLUDED_JOBS"></a> | A string of comma separated job IDs that you want to exclude from execution. Job IDs that can be used to exclude `lint,sast,gitleaks,license_scan,dependency_scan,build,docker,pr_agent`. | no       | package_manager  |
 | run_dev_test | A boolen value to enable Developer tests (Unit/Integration/etc.,) are available in your repo code. | no | false |
 | dev_test_branch | A string of comma separated branches that you want to run developer tests on. Also, when PR merged to this branch, each commits work breakdown will be computed and sent to Pulse (support list of branches. Ex  `dev,qa` or `uat`) | no | `'qa'` |
-| coverage_summary_path | Path to the coverage summary JSON file generated from developer's test | no | `./coverage/coverage-summary.json` |
-| junitxml_path  | Path to the JUnit XML report file generated from developer's test | no | `./coverage/report.xml`  |                                                                             | no       | `npm`           |
+| coverage_summary_path                      | Path to the coverage summary JSON file generated from developer's test      | no       | `./coverage/coverage-summary.json` |
+| junitxml_path                              | Path to the JUnit XML report file generated from developer's test           | no       | `./coverage/report.xml`  |
 | build_command                              | build command for the project                                               | no       | `npm run build` |
 | package_install_command                    | Package install command to use instead of the default command               | no       |                 |
 | docker_build_command                       | Docker build command                                                        | no       |                 |
 | docker_build_image_id                      | Docker image ID as mentioned in docker_build_command                        | no       | `local:latest`  |
 | is_monorepo_with_multi_dockerfile          | For container scan. Whether it is a monorepo with Dockerfile in differnet directories. If `true` repo will be searched for all the Dockerfile and scan performed on each. To scan only selected Docker file use input `dockerfile_paths` | no  | false  |
 |       dockerfile_paths:                    | For container scan. Set of separated Dockerfile paths. Useful when you want scan Dockerfile in selected directories. Example: [./apps/users/Dockerfile, ./apps/account/Dockerfile] | no  |   |
-| container_scanners:                        | comma-separated list of what security issues to detect (vuln,secret,config) | no       | `vuln`          |
-| container_scan_skip_dirs                   | Comma separated list of directories to skip scanning                        | no       |                 |
-| lint_command                               | lint command for the project                                                | no       | `npm run lint`  |
-| semgrep_options                            |                                                                             | no       |                 |
-| security_scan_before_step_command          | Optional commands to pass before secuirty scan job                          | no       |                 |
-| security_scan_after_step_command           | Optional commands to pass after secuirty scan job steps execution           | no       |                 |
-| caching_before_step_command                | Optional commands to pass before caching job steps execution                | no       |                 |
-| caching_after_step_command                 | Optional commands to pass after caching job steps execution                 | no       |                 |
-| pr_agent_before_step_command               | Optional commands to pass before Codium PR agent job steps execution        | no       |                 |
-| pr_agent_after_step_command                | Optional commands to pass after Codium PR agent job steps execution         | no       |                 |
-| container_scan_before_step_command         | Command to execute at the start of the container scan                       | no       |                 |
-| container_scan_after_step_command          | Command to execute at the end of the container scan                         | no       |                 |
-| developer_tests_before_step_command        | Command to execute at the start of the Developer tests                      | no       |                 |
-| developer_tests_after_step_command         | Command to execute at the end of the Developer tests                        | no       |                 |
-| lint_scan_before_step_command              | Command to execute at the start of the Lint scan                            | no       |                 |
-| lint_scan_after_step_command               | Command to execute at the end of the Lint scan                              | no       |                 |
-| send_dev_test_coverage_report_to_pulse     | Switch deciding to send the Test Coverage Report to Pulse                   | no       | false           |
-| dev_test_coverage_report_directory         | The Directory path from project root where `coverage-summary.json` is generated after running test | false  | `coverage`  |
+| container_scanners:                        | comma-separated list of what security issues to detect (vuln,secret,config)                        | no       | `vuln`          |
+| container_scan_skip_dirs                   | Comma separated list of directories to skip scanning                                               | no       |                 |
+| lint_command                               | lint command for the project                                                                       | no       | `npm run lint`  |
+| semgrep_options                            |                                                                                                    | no       |                 |
+| caching_before_step_command                | Optional commands to pass before caching job steps execution                                       | no       |                 |
+| caching_after_step_command                 | Optional commands to pass after caching job steps execution                                        | no       |                 |
+| pr_agent_before_step_command               | Optional commands to pass before Codium PR agent job steps execution                               | no       |                 |
+| pr_agent_after_step_command                | Optional commands to pass after Codium PR agent job steps execution                                | no       |                 |
+| container_scan_before_step_command         | Command to execute at the start of the container scan                                              | no       |                 |
+| container_scan_after_step_command          | Command to execute at the end of the container scan                                                | no       |                 |
+| developer_tests_before_step_command        | Command to execute at the start of the Developer tests                                             | no       |                 |
+| developer_tests_after_step_command         | Command to execute at the end of the Developer tests                                               | no       |                 |
+| lint_scan_before_step_command              | Command to execute at the start of the Lint scan                                                   | no       |                 |
+| lint_scan_after_step_command               | Command to execute at the end of the Lint scan                                                     | no       |                 |
+| send_dev_test_coverage_report_to_pulse     | Switch deciding to send the Test Coverage Report to Pulse                                          | no       | false           |
+| dev_test_coverage_report_directory         | The Directory path from project root where `coverage-summary.json` is generated after running test | false    | `coverage`      |
+| PR_TITLE_TYPE                              | OPTIONAL. PR Title conventional types. For multiple types, use pipe | to separate without any space since, it is a regex. Example: `feat|fix|hotfix` | false    | `feat|fix|build|chore|ci|docs|refactor|revert|style|test`      |
+| JIRA_PROJECT_PR_TITLE_SCOPE                | OPTIONAL. Jira project abbreviation as seen in Jira tickets. For PR conventional title scope. | false    | `A-Za-z`      |
 
 # Depreciated Inputs
 
-| Name                                       | Description                                                                                                       | Required | Default  |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | -------- | -------- |
-| technology_based_scans_before_step_command | *DEPRECIATED:* only kept to tackle the backwards compatibility to avoid error use the respective new job inputs   |    no    |          |
-| technology_based_scans_after_step_command  | *DEPRECIATED:* only kept to tackle the backwards compatibility to avoid error use the respective new job inputs   |    no    |          |
+| Name                                       | Description                                                                                                       |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| technology_based_scans_before_step_command | *DEPRECIATED:* only kept to tackle the backwards compatibility to avoid error use the respective new job inputs   |
+| technology_based_scans_after_step_command  | *DEPRECIATED:* only kept to tackle the backwards compatibility to avoid error use the respective new job inputs   |
+| security_scan_before_step_command          | *DEPRECIATED:* only kept to tackle the backwards compatibility to avoid error use the respective new job inputs   |
+| security_scan_after_step_command           | *DEPRECIATED:* only kept to tackle the backwards compatibility to avoid error use the respective new job inputs   |
 
 # Workflow Secrets
 
 | Name                                       | Description                                                                 | Required | Default         |
 | ------------------------------------------ | --------------------------------------------------------------------------- | -------- | --------------- |
-| `NPM_TOKEN`                                | A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used. `Set this key and GitHub PAT with read:packages permission in GitHub Actions Secrets.`                                                                    | To authenicate SG's private NPM packages hosted on Github Package Registry     | GITHUB_TOKEN |
-| `PULSE_HMAC_SECRET`                        | A secret used to generate HMAC(Hash-based Message Authentication Code) in order for Pulse to verify it the source is a known source or not.                                                                                       | no       | - |
+| `NPM_TOKEN`                                | A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used. `Set this key and GitHub PAT with read:packages permission in GitHub Actions Secrets.`   | To authenicate SG's private NPM packages hosted on Github Package Registry     | GITHUB_TOKEN |
+| `PULSE_HMAC_SECRET`                        | A secret used to generate HMAC(Hash-based Message Authentication Code) in order for Pulse to verify it the source is a known source or not.  | no       | - |
 
 # Action variables
 
@@ -118,3 +119,4 @@ jobs:
   - lint
   - build (code build check)
 - Pulse Work Breakdown
+- PR Check
