@@ -92,7 +92,7 @@ jobs:
           while read -r MSG; do
             echo "➡️  $MSG"
             if [[ ! "$MSG" =~ $PATTERN ]]; then
-              echo "::error::❌ Invalid commit message: '$MSG'"
+              echo "❌ Invalid commit message: '$MSG'"
               INVALID=1
 
             else
