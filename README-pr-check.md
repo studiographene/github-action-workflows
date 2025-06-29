@@ -13,9 +13,10 @@ To validate PR Title and Commits for conventional commit and more
 
 ```yaml
 name: pr-check
+
 on:
-  push:
-    pull_request: {}
+  pull_request:
+    types: [edited, opened, reopened, synchronize]
 
 jobs:
   call-worflow:

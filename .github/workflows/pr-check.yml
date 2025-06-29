@@ -54,6 +54,7 @@ jobs:
             Expected format: \<type\>(\<JIRA-TICKET\>): \<description\>. Example: feat(ABC-123): add login functionality
 
       - name: Get all commits in the PR
+        if: ${{ !cancelled() || contains('failure', steps.pr_title_check.outcome) }}
         id: get_commits
         uses: actions/github-script@v7
         with:
