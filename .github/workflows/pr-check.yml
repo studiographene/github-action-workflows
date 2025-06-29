@@ -48,7 +48,7 @@ jobs:
           if [[ ! "$PR_TITLE" =~ $PATTERN ]]; then
             echo "::error::❌ Invalid PR title format. Expected format: <type>(<JIRA-TICKET>): <description>. Example: feat(ABC-123): add login functionality"
             echo "### ❌ Invalid PR title format" >> report.md
-            echo 'Expected format: <type>(<JIRA-TICKET>): <message>. Example: feat(ABC-123): add login functionality' >> report.md
+            echo 'Expected format: \<type\>(\<JIRA-TICKET\>): \<message\>. Example: feat(ABC-123): add login functionality' >> report.md
             exit 1
           else
             echo "✅ PR title format is valid."
@@ -103,7 +103,7 @@ jobs:
           if [ "$INVALID" -eq 1 ]; then
             echo "::error::❌ One or more commit messages are invalid. Expected format: <type>(<JIRA-TICKET>): <description>. Example: feat(ABC-123): add login functionality"
             echo "### ❌ One or more commit messages are invalid" >> report.md
-            echo 'Expected format: <type>(<JIRA-TICKET>): <message>. Example: feat(ABC-123): add login functionality' >> report.md
+            echo 'Expected format: \<type\>(\<JIRA-TICKET\>): \<message\>. Example: feat(ABC-123): add login functionality' >> report.md
             exit 1
           else
             echo "✅ All commits are valid."
