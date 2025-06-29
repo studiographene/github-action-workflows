@@ -103,15 +103,19 @@ on:
         type: string
         default: ""
       security_scan_before_step_command:
+        description: "NOT IN USE. Depreciated."
         type: string
         default: ""
       security_scan_after_step_command:
+        description: "NOT IN USE. Depreciated."
         type: string
         default: ""
       pr_agent_before_step_command:
+        description: "NOT IN USE. Depreciated."
         type: string
         default: ""
       pr_agent_after_step_command:
+        description: "NOT IN USE. Depreciated."
         type: string
         default: ""
       caching_before_step_command:
@@ -121,9 +125,11 @@ on:
         type: string
         default: ""
       technology_based_scans_before_step_command:
+        description: "NOT IN USE. Depreciated."
         type: string
         default: ""
       technology_based_scans_after_step_command:
+        description: "NOT IN USE. Depreciated."
         type: string
         default: ""
       container_scan_before_step_command:

@@ -41,12 +41,6 @@ on:
       container_scan_after_step_command:
         type: string
         default: ""
-      pr_agent_before_step_command:
-        type: string
-        default: ""
-      pr_agent_after_step_command:
-        type: string
-        default: ""
       security_scan_before_step_command:
         type: string
         default: ""

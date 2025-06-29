@@ -145,7 +145,7 @@ jobs:
             image-ref: ${{ inputs.docker_build_image_id }}
             format: "template"
             template: "@trivyreport.tpl"
-            output: "trivyreport.json"
+            output: "trivyreport.md"
             exit-code: "1"
             ignore-unfixed: true
             vuln-type: "os,library"
@@ -158,16 +158,16 @@ jobs:
           if: ${{ !cancelled()  }}
           shell: bash
           run: |
-            echo "# Trivy Container Scan" > container_scan_prcomment.json
+            echo "# Trivy Container Scan" > container_scan_prcomment.md
             if [ ${{ steps.container_scan.outcome }} == "failure" ]
             then
-              echo "### :warning: Vulnerabilities detected Dockerfile path \[ ${{ matrix.dockerfile_paths }} \]:<br>The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.json
-              cat trivyreport.json >> container_scan_prcomment.json
+              echo "### :warning: Vulnerabilities detected Dockerfile path \[ ${{ matrix.dockerfile_paths }} \]:<br>The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.md
+              cat trivyreport.md >> container_scan_prcomment.md
               echo "::error::Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
               exit 1
             elif [ ${{ steps.container_scan.outcome }} == "success" ]
             then
-              echo "### :rainbow: Dockerfile path \[ ${{ matrix.dockerfile_paths }} \]: No vulnerabilities of HIGH or CRITICAL severity detected" >> container_scan_prcomment.json
+              echo "### :rainbow: Dockerfile path \[ ${{ matrix.dockerfile_paths }} \]: No vulnerabilities of HIGH or CRITICAL severity detected" >> container_scan_prcomment.md
               exit 0
             fi
 
@@ -176,7 +176,7 @@ jobs:
           uses: mshick/add-pr-comment@v2
           with:
             message-id: trivy_container_scan_${{ matrix.dockerfile_paths }}
-            message-path: container_scan_prcomment.json
+            message-path: container_scan_prcomment.md
 
         - name: After Step
           if: ${{ inputs.after_step_command != '' && !cancelled() }}
