@@ -1,0 +1,106 @@
+name: PR Check
+
+on:
+  workflow_call:
+    inputs:
+      pr_title_type:
+          description: "PR Title conventional types. For multiple types use pipe | to separate each without any space. Example= feat|fix|hotfix"
+          type: string
+          required: false
+          default: "feat|fix|build|chore|ci|docs|refactor|revert|style|test"
+      jira_project_pr_title_scope:
+        description: "OPTIONAL. Jira project abbreviation as seen in Jira tickets for PR conventional title scope. For multiple projects use pipe | to separate each without any space. Example= ABC|abc|12AB"
+        type: string
+        required: false
+        default: ""
+
+jobs:
+  pr_check:
+    name: pr_check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: PR Conventional Title check
+        id: pr_title_check
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR_TITLE: ${PR_TITLE}"
+          # Regex pattern
+          if [[ $JIRA_PROJECT_PR_TITLE_SCOPE != "" ]]; then
+            PATTERN='^(${{ inputs.pr_title_type  }})(\((${{ inputs.jira_project_pr_title_scope }})\-[0-9]+\))(!)?:\s?.+$'
+          else
+            PATTERN='^(${{ inputs.pr_title_type }})(\([A-Za-z\-]+[0-9]+\))(!)?:\s?.+$'
+          fi
+          echo patter ${PATTERN}
+          if [[ ! "$PR_TITLE" =~ $PATTERN ]]; then
+            echo "::error::❌ Invalid PR title format. Expected format: <type>(<JIRA-TICKET>): <description>. Example: feat(ABC-123): add login functionality"
+            exit 1
+          else
+            echo "✅ PR title format is valid."
+          fi
+      - name: Comment the PR Title check fail result on to PR
+        if: ${{ !cancelled() || contains('failure', steps.pr_title_check.outcome) }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: dependency_scan
+          message: |
+            ### ❌ Invalid PR title format
+            Expected format: \<type\>(\<JIRA-TICKET\>): \<description\>. Example: feat(ABC-123): add login functionality
+
+      - name: Get all commits in the PR
+        id: get_commits
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+
+            const commits = pr.data.map(c => c.commit.message);
+            core.setOutput("messages", JSON.stringify(commits));
+
+      - name: Validate commit for Conventional Commit
+        id: pr_commits_check
+        run: |
+          # Read all commit messages
+          MESSAGES=${{ steps.get_commits.outputs.messages }}
+
+          # Convert JSON array to Bash array
+          echo "$MESSAGES" | jq -r '.[]' > commits.txt
+
+          INVALID=0
+          echo "Checking commits..."
+
+          while read -r MSG; do
+            echo "➡️  $MSG"
+            if [[ ! "$MSG" =~ $PATTERN ]]; then
+              echo "::error::❌ Invalid commit message: '$MSG'"
+              INVALID=1
+            else
+              echo "::notice::✅ Valid commit"
+            fi
+          done < commits.txt
+
+          if [ "$INVALID" -eq 1 ]; then
+            echo "::error::❌ One or more commit messages are invalid. Expected format: <type>(<JIRA-TICKET>): <description>. Example: feat(ABC-123): add login functionality"
+            exit 1
+          else
+            echo "✅ All commits are valid."
+          fi
+      - name: Comment the PR commits check fail result on to PR
+        if: ${{ !cancelled() || contains('failure', steps.pr_commits_check.outcome) }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: dependency_scan
+          message: |
+            ### ❌ Invalid PR title format
+            Expected format: \<type\>(\<JIRA-TICKET\>): \<description\>. Example: feat(ABC-123): add login functionality
