@@ -26,32 +26,33 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
-      - name: PR Conventional Title check
-        id: pr_title_check
+      - name: PR Conventional REGEX PATTERN
+        id: pr_conventional_regex_pattern
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          echo "PR_TITLE: ${PR_TITLE}"
           # Regex pattern
           if [[ $JIRA_PROJECT_PR_TITLE_SCOPE != "" ]]; then
             PATTERN='^(${{ inputs.pr_title_type  }})(\((${{ inputs.jira_project_pr_title_scope }})\-[0-9]+\))(!)?:\s?.+$'
           else
             PATTERN='^(${{ inputs.pr_title_type }})(\([A-Za-z\-]+[0-9]+\))(!)?:\s?.+$'
           fi
-          echo patter ${PATTERN}
+          echo REGEX PATTER is= ${PATTERN}
+          echo "PATTERN=${PATTERN}" >> "$GITHUB_OUTPUT"
+      
+      - name: PR Conventional Title check
+        id: pr_title_check
+        env:
+          PATTERN: ${{ steps.pr_conventional_regex_pattern.outputs.PATTERN}}
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR_TITLE: ${PR_TITLE}"
           if [[ ! "$PR_TITLE" =~ $PATTERN ]]; then
             echo "::error::❌ Invalid PR title format. Expected format: <type>(<JIRA-TICKET>): <description>. Example: feat(ABC-123): add login functionality"
+            echo "### ❌ Invalid PR title format" >> report.md
+            echo 'Expected format: <type>(<JIRA-TICKET>): <message>. Example: feat(ABC-123): add login functionality' >> report.md
             exit 1
           else
             echo "✅ PR title format is valid."
           fi
-      - name: Comment the PR Title check fail result on to PR
-        if: ${{ !cancelled() || contains('failure', steps.pr_title_check.outcome) }}
-        uses: mshick/add-pr-comment@v2
-        with:
-          message-id: dependency_scan
-          message: |
-            ### ❌ Invalid PR title format
-            Expected format: \<type\>(\<JIRA-TICKET\>): \<description\>. Example: feat(ABC-123): add login functionality
 
       - name: Get all commits in the PR
         # Run this step even if PR title check result is: failed
@@ -68,18 +69,22 @@ jobs:
             });
 
             const commits = pr.data.map(c => c.commit.message);
-            core.setOutput("messages", JSON.stringify(commits));
+            core.setOutput("MESSAGES", JSON.stringify(commits));
 
       - name: Validate commit for Conventional Commit
         # Run this step even if PR title check result is: failed
         if: ${{ !cancelled() || contains('failure', steps.pr_title_check.outcome) }}
         id: pr_commits_check
+        env:
+          PATTERN: ${{ steps.pr_conventional_regex_pattern.outputs.PATTERN}}
         run: |
           # Read all commit messages
-          MESSAGES=${{ steps.get_commits.outputs.messages }}
+          echo "${{ toJSON(steps.get_commits.outputs.MESSAGES) }}"
+          echo $PATTERN 
 
           # Convert JSON array to Bash array
-          echo "$MESSAGES" | jq -r '.[]' > commits.txt
+          printf '%s' "${{ toJSON(steps.get_commits.outputs.MESSAGES) }}" | jq -r '.[]' > commits.txt
+          echo JQ is done
 
           INVALID=0
           echo "Checking commits..."
@@ -89,6 +94,7 @@ jobs:
             if [[ ! "$MSG" =~ $PATTERN ]]; then
               echo "::error::❌ Invalid commit message: '$MSG'"
               INVALID=1
+
             else
               echo "::notice::✅ Valid commit"
             fi
@@ -96,15 +102,15 @@ jobs:
 
           if [ "$INVALID" -eq 1 ]; then
             echo "::error::❌ One or more commit messages are invalid. Expected format: <type>(<JIRA-TICKET>): <description>. Example: feat(ABC-123): add login functionality"
+            echo "### ❌ One or more commit messages are invalid" >> report.md
+            echo 'Expected format: <type>(<JIRA-TICKET>): <message>. Example: feat(ABC-123): add login functionality' >> report.md
             exit 1
           else
             echo "✅ All commits are valid."
           fi
-      - name: Comment the PR commits check fail result on to PR
-        if: ${{ !cancelled() || contains('failure', steps.pr_commits_check.outcome) }}
+      - name: Comment the PR check fail result on to PR
+        if: ${{ !cancelled() || contains('failure', steps.pr_title_check.outcome) || contains('failure', steps.pr_commits_check.outcome) }}
         uses: mshick/add-pr-comment@v2
         with:
-          message-id: dependency_scan
-          message: |
-            ### ❌ Invalid PR title format
-            Expected format: \<type\>(\<JIRA-TICKET\>): \<description\>. Example: feat(ABC-123): add login functionality
+          message-id: pr_commits_check
+          message-path: container_scan_prcomment.json
