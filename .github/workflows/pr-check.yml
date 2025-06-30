@@ -78,11 +78,10 @@ jobs:
         env:
           PATTERN: ${{ steps.pr_conventional_regex_pattern.outputs.PATTERN }}
         run: |
-          echo echoing PATTERN
-          echo $COMMITS 
+          echo Conventional commit PATTERN is= $PATTERN
+          echo Commits in this PR are= $COMMITS 
 
-          INVALID=0
-          echo "Checking commits..."
+          echo "Validating commits..."
           echo "$COMMITS" | while IFS= read -r commit; do
             echo "➡️ $commit"
             if [[ ! "$commit" =~ $PATTERN ]]; then
