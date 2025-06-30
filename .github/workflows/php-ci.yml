@@ -53,8 +53,7 @@ jobs:
   container_scan:
     name: container_scan
     if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && !contains( inputs.excluded_jobs, 'container_scan' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) }}
-    uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@feat/ENB-83/split-jobs
-    secrets: inherit
+    uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master
     with:
       docker_build_command: ${{ inputs.docker_build_command }}
       docker_build_image_id: ${{ inputs.docker_build_image_id }}
