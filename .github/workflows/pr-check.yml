@@ -1,0 +1,104 @@
+name: PR Check
+
+on:
+  workflow_call:
+    inputs:
+      pr_title_type:
+          description: "PR Title conventional types. For multiple types use pipe | to separate each without any space. Example= feat|fix|hotfix"
+          type: string
+          required: false
+          default: "feat|fix|build|chore|ci|docs|refactor|revert|style|test"
+      jira_project_pr_title_scope:
+        description: "OPTIONAL. Jira project abbreviation as seen in Jira tickets for PR conventional title scope. For multiple projects use pipe | to separate each without any space. Example= ABC|abc|12AB"
+        type: string
+        required: false
+        default: ""
+
+jobs:
+  pr_check:
+    name: pr_check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: PR Conventional REGEX PATTERN
+        id: pr_conventional_regex_pattern
+        run: |
+          # Regex pattern
+          if [[ "${{ inputs.jira_project_pr_title_scope }}" != "" ]]; then
+            PATTERN="^(${{ inputs.pr_title_type }})\((${{ inputs.jira_project_pr_title_scope }})-[0-9]+\)(!)?:s?.+$"
+          else
+            PATTERN="^(${{ inputs.pr_title_type }})\([A-Za-z\-]+[0-9]+\)(!)?:s?.+$"
+          fi
+          echo REGEX PATTER is= ${PATTERN}
+          echo "PATTERN=${PATTERN}" >> "$GITHUB_OUTPUT"
+      
+      - name: PR Conventional Title check
+        id: pr_title_check
+        env:
+          PATTERN: ${{ steps.pr_conventional_regex_pattern.outputs.PATTERN }}
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR_TITLE: ${PR_TITLE}"
+          if [[ ! "$PR_TITLE" =~ $PATTERN ]]; then
+            echo "::error::❌ Invalid PR title format. Expected format: <type>(<JIRA-TICKET>): <description>. Example: feat(ABC-123): add login functionality"
+            echo "### ❌ Invalid PR title format" >> report.md
+            echo 'Expected format: \<type\>(\<JIRA-TICKET\>): \<message\>. Example: feat(ABC-123): add login functionality' >> report.md
+            exit 1
+          else
+            echo "✅ PR title format is valid."
+          fi
+
+      - name: Fetch base and head refs
+        # Run this step even if PR title check result is: failed
+        if: ${{ !cancelled() || contains('failure', steps.pr_title_check.outcome) }}
+        run: |
+          git fetch origin ${{ github.base_ref }}:${{ github.base_ref }}
+          git fetch origin ${{ github.head_ref }}:${{ github.head_ref }}
+
+      - name: Get all commits in the PR
+        # Run this step even if PR title check result is: failed
+        if: ${{ !cancelled() || contains('failure', steps.pr_title_check.outcome) }}
+        id: get_commits
+        run: |
+          # Fetch the list of commits between the PR base and head
+          PR_COMMITS=$(git log origin/${{ github.base_ref }}..origin/${{ github.head_ref }} --pretty=format:%s)
+          echo "COMMITS<<EOF" >> $GITHUB_ENV
+          echo "$PR_COMMITS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          echo $COMMITS
+
+      - name: Validate commit for Conventional Commit
+        # Run this step even if PR title check result is: failed
+        if: ${{ !cancelled() || contains('failure', steps.pr_title_check.outcome) }}
+        id: pr_commits_check
+        env:
+          PATTERN: ${{ steps.pr_conventional_regex_pattern.outputs.PATTERN }}
+        run: |
+          echo Conventional commit PATTERN is= $PATTERN
+          echo Commits in this PR are= $COMMITS 
+
+          echo "Validating commits..."
+          echo "$COMMITS" | while IFS= read -r commit; do
+            echo "➡️ $commit"
+            if [[ ! "$commit" =~ $PATTERN ]]; then
+              echo "::error::❌ One or more commit messages are invalid. Expected format: <type>(<JIRA-TICKET>): <description>. Example: feat(ABC-123): add login functionality"
+              echo "### ❌ One or more commit messages are invalid" >> report.md
+              echo 'Expected format: \<type\>(\<JIRA-TICKET\>): \<message\>. Example: feat(ABC-123): add login functionality' >> report.md
+              exit 1
+
+            else
+              echo "::notice::✅ Valid commit"
+            fi
+          done
+      - name: Comment the PR check fail result on to PR
+        if: ${{ !cancelled() || contains('failure', steps.pr_title_check.outcome) || contains('failure', steps.pr_commits_check.outcome) }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: pr_commits_check
+          message-path: report.md

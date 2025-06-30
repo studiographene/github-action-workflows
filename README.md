@@ -10,9 +10,9 @@
   set the scope to `nodejs-ci`, `feature(nodejs-ci): ...message...`
 - In worklow created
   - job name and job ID must be same.
-  - Job name and ID must follow "-" delimeter (do not use space, "\_", or any other)
+  - Job name and ID must follow "\_" delimeter (do not use space, "-", or any other)
   ```
   jobs:
-    pr-agent:
-      name: pr-agent
+    ci_check:
+      name: ci_check
   ```
