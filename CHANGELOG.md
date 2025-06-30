@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.1](https://github.com/studiographene/github-action-workflows/compare/v2.0.0...v2.0.1) (2025-06-30)
+## [2.0.1](https://github.com/studiographene/github-action-workflows/compare/v2.0.0...v2.1.0) (2025-06-30)
 
 
 ### Features
