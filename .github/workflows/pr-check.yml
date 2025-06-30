@@ -55,6 +55,8 @@ jobs:
           fi
 
       - name: Fetch base and head refs
+        # Run this step even if PR title check result is: failed
+        if: ${{ !cancelled() || contains('failure', steps.pr_title_check.outcome) }}
         run: |
           git fetch origin ${{ github.base_ref }}:${{ github.base_ref }}
           git fetch origin ${{ github.head_ref }}:${{ github.head_ref }}
