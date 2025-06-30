@@ -100,3 +100,4 @@ jobs:
         uses: mshick/add-pr-comment@v2
         with:
           message-id: pr_commits_check
+          message-path: report.md
