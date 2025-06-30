@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/studiographene/github-action-workflows/compare/v2.0.0...v2.0.1) (2025-06-30)
+
+
+### Features
+
+* **ENB-83:** + PR check workflow ([#78](https://github.com/studiographene/github-action-workflows/issues/78)) ([05f8169](https://github.com/studiographene/github-action-workflows/commit/05f8169aca588ac30ce55cc0852c96f563d1c562))
+
 ## [2.0.0](https://github.com/studiographene/github-action-workflows/compare/v1.15.0...v2.0.0) (2025-06-24)
 
 
