@@ -30,8 +30,8 @@ jobs:
         id: pr_conventional_regex_pattern
         run: |
           # Regex pattern
-          if [[ "${JIRA_PROJECT_PR_TITLE_SCOPE}" != "" ]]; then
-            PATTERN="^(${{ inputs.pr_title_type }})\((${{ inputs.JIRA_PROJECT_PR_TITLE_SCOPE }})-[0-9]+\)(!)?:s?.+$"
+          if [[ "${jira_project_pr_title_scope}" != "" ]]; then
+            PATTERN="^(${{ inputs.pr_title_type }})\((${{ inputs.jira_project_pr_title_scope }})-[0-9]+\)(!)?:s?.+$"
           else
             PATTERN="^(${{ inputs.pr_title_type }})\([A-Za-z\-]+[0-9]+\)(!)?:s?.+$"
           fi
