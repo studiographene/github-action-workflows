@@ -7,7 +7,7 @@ on:
           description: "PR Title conventional types. For multiple types use pipe | to separate each without any space. Example= feat|fix|hotfix"
           type: string
           required: false
-          default: "feat|fix|build|chore|ci|docs|refactor|revert|style|test"
+          default: "feat|fix|hotfix|build|chore|ci|docs|refactor|revert|style|test"
       jira_project_pr_title_scope:
         description: "OPTIONAL. Jira project abbreviation as seen in Jira tickets for PR conventional title scope. For multiple projects use pipe | to separate each without any space. Example= ABC|abc|12AB"
         type: string
