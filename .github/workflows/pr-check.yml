@@ -97,7 +97,7 @@ jobs:
             fi
           done
       - name: Comment the PR check fail result on to PR
-        if: ${{ !cancelled() || contains('failure', steps.pr_title_check.outcome) || contains('failure', steps.pr_commits_check.outcome) }}
+        if: ${{ contains('failure', steps.pr_title_check.outcome) || contains('failure', steps.pr_commits_check.outcome) }}
         uses: mshick/add-pr-comment@v2
         with:
           message-id: pr_commits_check
