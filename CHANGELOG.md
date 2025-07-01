@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/studiographene/github-action-workflows/compare/v2.1.0...v2.1.1) (2025-07-01)
+
+
+### Bug Fixes
+
+* **enb 83:** pr check now skips merge commit which would not have conventional commit format ([#81](https://github.com/studiographene/github-action-workflows/issues/81)) ([26ed82a](https://github.com/studiographene/github-action-workflows/commit/26ed82a15b946783f1b18e18bbee67a7b3761542))
+
 ## [2.0.1](https://github.com/studiographene/github-action-workflows/compare/v2.0.0...v2.1.0) (2025-06-30)
 
 
