@@ -297,7 +297,7 @@ jobs:
           fi
           cat osv_report.md
           if [ $OSV_SEVERITY_HIGH_COUNT -gt 0 ]; then
-            echo "::error::HIGH Severity Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
+            echo "::error::HIGH Severity Vulnerabilities or Unknown severity score found! Find the scan report in the PR comment if this scan was triggered by PR"
             exit 1
           elif [ $OSV_SEVERITY_MEDIUM_COUNT -gt 0 ]; then
             echo "::warning::MEDIUM or LOW Severity Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
