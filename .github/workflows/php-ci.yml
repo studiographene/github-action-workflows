@@ -49,7 +49,6 @@ on:
         default: ""
 
 jobs:
-
   container_scan:
     name: container_scan
     if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && !contains( inputs.excluded_jobs, 'container_scan' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) }}

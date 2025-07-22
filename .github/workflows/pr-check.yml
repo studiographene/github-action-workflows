@@ -4,10 +4,10 @@ on:
   workflow_call:
     inputs:
       pr_title_type:
-          description: "PR Title conventional types. For multiple types use pipe | to separate each without any space. Example= feat|fix|hotfix"
-          type: string
-          required: false
-          default: "feat|fix|hotfix|build|chore|ci|docs|refactor|revert|style|test"
+        description: "PR Title conventional types. For multiple types use pipe | to separate each without any space. Example= feat|fix|hotfix"
+        type: string
+        required: false
+        default: "feat|fix|hotfix|build|chore|ci|docs|refactor|revert|style|test"
       jira_project_pr_title_scope:
         description: "OPTIONAL. Jira project abbreviation as seen in Jira tickets for PR conventional title scope. For multiple projects use pipe | to separate each without any space. Example= ABC|abc|12AB"
         type: string
@@ -33,11 +33,11 @@ jobs:
           if [[ "${{ inputs.jira_project_pr_title_scope }}" != "" ]]; then
             PATTERN="^(${{ inputs.pr_title_type }})\((${{ inputs.jira_project_pr_title_scope }})-[0-9]+\)(!)?:s?.+$"
           else
-            PATTERN="^(${{ inputs.pr_title_type }})\([A-Za-z\-]+[0-9]+\)(!)?:s?.+$"
+            PATTERN="^(${{ inputs.pr_title_type }})\([A-Za-z0-9\-]+[0-9]+\)(!)?:s?.+$"
           fi
           echo REGEX PATTER is= ${PATTERN}
           echo "PATTERN=${PATTERN}" >> "$GITHUB_OUTPUT"
-      
+
       - name: PR Conventional Title check
         id: pr_title_check
         env:
