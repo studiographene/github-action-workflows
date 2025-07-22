@@ -160,7 +160,7 @@ jobs:
           FETCH_LICENSE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CDXGEN_DEBUG_MODE: debug
-      
+
       - name: Upload SBOM as artifact
         uses: actions/upload-artifact@v4
         with:
@@ -306,7 +306,7 @@ jobs:
         with:
           message-id: dependency_scan
           message-path: osv_report.md
-      
+
       - name: Upload Dependency scan JSON report artifact
         if: ${{ !cancelled() || contains('success,failure', steps.dependency_scan.outcome) }}
         uses: actions/upload-artifact@v4
@@ -315,4 +315,3 @@ jobs:
           path: |
             osv_raw_report.json
             osv_raw_report.md
-
