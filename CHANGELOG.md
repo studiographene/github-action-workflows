@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.2](https://github.com/studiographene/github-action-workflows/compare/v2.1.1...v2.1.2) (2025-07-22)
+
+
+### Bug Fixes
+
+* **ENB-83:** Security scan failing on max_security score is unkown. + PR check ([#85](https://github.com/studiographene/github-action-workflows/issues/85)) ([0adf330](https://github.com/studiographene/github-action-workflows/commit/0adf330a6f47f1bf66aa1d9e1d4c0fcbef7a123e))
+* Updated dev test job to have install dependencies and cache hit/… ([#83](https://github.com/studiographene/github-action-workflows/issues/83)) ([2351a00](https://github.com/studiographene/github-action-workflows/commit/2351a004b88e1ea6863aecf2b4dfdf6d2532cf2f))
+
 ## [2.1.1](https://github.com/studiographene/github-action-workflows/compare/v2.1.0...v2.1.1) (2025-07-01)
 
 
