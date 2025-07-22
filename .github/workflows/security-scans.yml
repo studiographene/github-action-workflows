@@ -272,7 +272,7 @@ jobs:
                   (map(select(test("^[0-9.]+$")) | tonumber | select(. < 4)) | length),
                   (map(select(test("^[0-9.]+$")) | tonumber | select(. >= 4 and . <= 7)) | length),
                   (map(select(test("^[0-9.]+$")) | tonumber | select(. > 7)) | length),
-                  (map(select(. == "" | length)
+                  (map(select((. == "") or (test("^[0-9.]+$") | not))) | length)
                 ] 
               | @sh
             ' osv_raw_report.json)
