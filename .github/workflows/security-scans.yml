@@ -215,6 +215,9 @@ jobs:
             MPL-2.0
             CC-BY-4.0
             Unicode-DFS-2016
+            LGPL-3.0-or-later
+            ODC-By-1.0
+            WTFPL
         if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'license_scan' ) }}
         run: |
           cat > allowedLicenses.txt <<EOF
