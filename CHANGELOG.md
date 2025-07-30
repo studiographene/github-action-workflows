@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.0](https://github.com/studiographene/github-action-workflows/compare/v2.1.2...v2.2.0) (2025-07-30)
+
+
+### Features
+
+* **ENB-830:** License scan license additions ([9d5c3a3](https://github.com/studiographene/github-action-workflows/commit/9d5c3a38758ff42cf4c9d7d43adfa26ea9e2a9ed))
+* **ENB-83:** License scan license additions ([#86](https://github.com/studiographene/github-action-workflows/issues/86)) ([5f7da01](https://github.com/studiographene/github-action-workflows/commit/5f7da0149d168e3210c430141acd526ab8178ecf))
+
 ## [2.1.2](https://github.com/studiographene/github-action-workflows/compare/v2.1.1...v2.1.2) (2025-07-22)
 
 
