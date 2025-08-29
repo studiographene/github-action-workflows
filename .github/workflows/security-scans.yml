@@ -37,9 +37,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-          fetch-depth: 0
 
       - name: SAST before step
         if: ${{ inputs.security_scan_before_step_command != '' }}
