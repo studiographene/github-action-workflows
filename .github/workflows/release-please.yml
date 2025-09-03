@@ -156,9 +156,13 @@ jobs:
   release_please:
     runs-on: ubuntu-latest
     if: ${{ github.ref_name == (inputs.TARGET_BRANCH != '' && inputs.TARGET_BRANCH || github.event.repository.default_branch) }}
-
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      prs_created: ${{ steps.release.outputs.prs_created }}
+      pr: ${{ steps.release.outputs.pr }}
     steps:
       - name: auto-release
+        id: release
         uses: googleapis/release-please-action@v4
         with:
           # this assumes that you have created a personal access token
