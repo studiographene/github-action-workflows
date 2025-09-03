@@ -31,6 +31,17 @@ on:
         required: false
         type: boolean
         default: false
+    
+    outputs:
+      releases_created:
+        description: "true if any release was created, false otherwise"
+        value: ${{ jobs.release_please.outputs.releases_created }}
+      prs_created:
+        description: "true if any pull request was created or updated"
+        value: ${{ jobs.release_please.outputs.prs_created }}
+      pr:
+        description: "A JSON string of the PullRequest object (unset if no release created)"
+        value: ${{ jobs.release_please.outputs.pr }}
 
 permissions:
   contents: write
@@ -145,9 +156,13 @@ jobs:
   release_please:
     runs-on: ubuntu-latest
     if: ${{ github.ref_name == (inputs.TARGET_BRANCH != '' && inputs.TARGET_BRANCH || github.event.repository.default_branch) }}
-
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      prs_created: ${{ steps.release.outputs.prs_created }}
+      pr: ${{ steps.release.outputs.pr }}
     steps:
       - name: auto-release
+        id: release
         uses: googleapis/release-please-action@v4
         with:
           # this assumes that you have created a personal access token

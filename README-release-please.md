@@ -18,6 +18,14 @@ To automatically create Git Tag + Release with
 | `SKIP_GITHUB_RELEASE`      | if set to true, then do not try to tag releases                                                                                                                                                                          | boolean | no       | false   |
 | `SKIP_GITHUB_PULL_REQUEST` | if set to true, then do not try to open pull requests                                                                                                                                                                    | boolean | no       | false   |
 
+# Workflow Outputs
+
+| name           | description|
+| -------------- | ---------- |
+| `releases_created` | true if any release was created, false otherwise |
+| `prs_created` | true if any pull request was created or updated |
+| `pr` | A JSON string of the PullRequest object (unset if no release created) |
+
 # How to setup
 
 > ### If you have anyother GitHub action workflow (like CI checks) defined to run on PR, to avoid those from running on the PR that is created by Release-Please, add `on.pull_request.path-ignore` condition as below in the PR check workflow.
