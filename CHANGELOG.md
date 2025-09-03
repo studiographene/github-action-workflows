@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.3.0](https://github.com/studiographene/github-action-workflows/compare/v2.2.0...v2.3.0) (2025-09-03)
+
+
+### Features
+
+* **ENB-83 release-please:** outputs added ([f929537](https://github.com/studiographene/github-action-workflows/commit/f9295372323af43d8956075ec6d4f50097063b51))
+* **ENB-83 release-please:** outputs added ([45e6d5d](https://github.com/studiographene/github-action-workflows/commit/45e6d5df51bdeec4a98a363e554d563ac817929c))
+* **ENB-83 release-please:** outputs added ([#88](https://github.com/studiographene/github-action-workflows/issues/88)) ([71e3347](https://github.com/studiographene/github-action-workflows/commit/71e33476bdad177b94573225cd2ad578463d157f))
+
 ## [2.2.0](https://github.com/studiographene/github-action-workflows/compare/v2.1.2...v2.2.0) (2025-07-30)
 
 
