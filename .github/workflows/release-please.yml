@@ -31,6 +31,17 @@ on:
         required: false
         type: boolean
         default: false
+    
+    outputs:
+      releases_created:
+        description: "true if any release was created, false otherwise"
+        value: ${{ jobs.release_please.outputs.releases_created }}
+      prs_created:
+        description: "true if any pull request was created or updated"
+        value: ${{ jobs.release_please.outputs.prs_created }}
+      pr:
+        description: "A JSON string of the PullRequest object (unset if no release created)"
+        value: ${{ jobs.release_please.outputs.pr }}
 
 permissions:
   contents: write
