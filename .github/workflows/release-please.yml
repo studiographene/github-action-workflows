@@ -31,7 +31,7 @@ on:
         required: false
         type: boolean
         default: false
-    
+
     outputs:
       releases_created:
         description: "true if any release was created, false otherwise"
@@ -42,6 +42,9 @@ on:
       pr:
         description: "A JSON string of the PullRequest object (unset if no release created)"
         value: ${{ jobs.release_please.outputs.pr }}
+      tag_name:
+        description: "Name of the Git Tag created"
+        value: ${{ jobs.release_please.outputs.tag_name}}
 
 permissions:
   contents: write
