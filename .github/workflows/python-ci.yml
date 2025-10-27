@@ -1,0 +1,531 @@
+name: Studiographene NodeJs CI
+
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        description: "Python version to use in the workflow. Default = 3.9"
+        type: string
+        required: false
+        default: "3.9"
+      linting_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      container_scan_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      security_scans_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      excluded_jobs:
+        type: string
+        default: ""
+      dockerfile_paths:
+        description: "For container scan. Set of separated Dockerfile paths. Useful when you want scan Dockerfile in selected directories. Example: [./apps/users/Dockerfile, ./apps/account/Dockerfile]"
+        type: string
+        required: false
+        default: ""
+      docker_build_command:
+        type: string
+        required: false
+        default: ""
+      docker_build_image_id:
+        description: "Docker image ID as mentioned in docker_build_command"
+        type: string
+        default: "local:latest"
+      container_scanners:
+        description: "comma-separated list of what security issues to detect (vuln,secret,config). Default = vuln"
+        type: string
+        required: false
+        default: vuln
+      container_scan_skip_dirs:
+        description: "Comma separated list of directories to skip scanning"
+        type: string
+        required: false
+      allowedLicenses:
+        type: string
+        required: false
+        description: "`allowedLicenses` input is deprecated, and not used anymore. You can set allowed licenses using `ALLOWED_LICENSES` in GitHub action variables in UI."
+      security_scan_before_step_command:
+        description: "NOT IN USE. Depreciated."
+        type: string
+        default: ""
+      security_scan_after_step_command:
+        description: "NOT IN USE. Depreciated."
+        type: string
+        default: ""
+      container_scan_before_step_command:
+        description: "Command to execute at the start of the container scan"
+        type: string
+        default: ""
+      container_scan_after_step_command:
+        description: "Command to execute at the end of the container scan"
+        type: string
+        default: ""
+      lint_scan_before_step_command:
+        description: "Command to execute at the start of the Lint scan"
+        type: string
+        default: ""
+      lint_scan_after_step_command:
+        description: "Command to execute at the end of the Lint scan"
+        type: string
+        default: ""
+
+permissions:
+  # Required to upload SARIF file to CodeQL. See: https://github.com/github/codeql-action/issues/2117
+  actions: read
+  # Require writing security events to upload SARIF file to security tab
+  security-events: write
+  # Only need to read contents
+  contents: read
+  pull-requests: write
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ${{ inputs.linting_job_runner }}
+
+    steps:
+      - uses: actions/checkout@v5
+      - name: lint scan before step
+        if: ${{ inputs.lint_scan_before_step_command != '' }}
+        run: |
+          ${{ inputs.lint_scan_before_step_command }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python_version != '' }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir -r requirements.txt
+          pip install pylint
+      - name: Lint with pylint
+        run: |
+          # Add the --disable flag to reduce noise but keep JSON complete for summary
+          pylint . --output-format=json --reports=yes --score=yes > pylint_report.json || PYLINT_EXIT_CODE=$?
+          pylint . --output-format=text --reports=yes --score=yes > pylint_text.txt || true
+          PYLINT_EXIT_CODE=${PYLINT_EXIT_CODE:-0}
+
+          # Generating Lint report PR comment Markdown
+          echo "## Pylint Code Quality Report" > pylint_report.md
+
+          # Extract score from text output
+          SCORE=$(grep "Your code has been rated at" pylint_text.txt | head -1 || echo "Score not available")
+          set -e
+          if [ $PYLINT_EXIT_CODE -ne 0 ]; then
+            echo "### ⚠️ Code Quality Issues Found" >> pylint_report.md
+            echo "" >> pylint_report.md
+            echo "**$SCORE**" >> pylint_report.md
+            echo "" >> pylint_report.md
+
+            # Get counts for summary FIRST
+            ERROR_COUNT=$(jq '[.[] | select(.type=="error")] | length' pylint_report.json 2>/dev/null || echo "0")
+            WARNING_COUNT=$(jq '[.[] | select(.type=="warning")] | length' pylint_report.json 2>/dev/null || echo "0")
+            REFACTOR_COUNT=$(jq '[.[] | select(.type=="refactor")] | length' pylint_report.json 2>/dev/null || echo "0")
+            CONVENTION_COUNT=$(jq '[.[] | select(.type=="convention")] | length' pylint_report.json 2>/dev/null || echo "0")
+            INFO_COUNT=$(jq '[.[] | select(.type=="info")] | length' pylint_report.json 2>/dev/null || echo "0")
+            TOTAL_COUNT=$(jq length pylint_report.json 2>/dev/null || echo "0")
+
+            echo "### Summary" >> pylint_report.md
+            echo "- 🔴 Errors: $ERROR_COUNT" >> pylint_report.md
+            echo "- 🟡 Warnings: $WARNING_COUNT" >> pylint_report.md
+            echo "- 🔵 Refactor: $REFACTOR_COUNT" >> pylint_report.md
+            echo "- ⚪ Convention: $CONVENTION_COUNT" >> pylint_report.md
+            echo "- ℹ️ Info: $INFO_COUNT" >> pylint_report.md
+            echo "- **Total Issues: $TOTAL_COUNT**" >> pylint_report.md
+            echo "" >> pylint_report.md
+
+            # Add informational note about other issues
+            if [ $REFACTOR_COUNT -gt 0 ] || [ $CONVENTION_COUNT -gt 0 ] || [ $INFO_COUNT -gt 0 ]; then
+              echo "### 📝 Additional Findings" >> pylint_report.md
+              echo "This report focuses on **Errors** and **Warnings** that require immediate attention." >> pylint_report.md
+              echo "" >> pylint_report.md
+              if [ $REFACTOR_COUNT -gt 0 ]; then
+                echo "- **$REFACTOR_COUNT Refactor suggestions** are available to improve code structure" >> pylint_report.md
+              fi
+              if [ $CONVENTION_COUNT -gt 0 ]; then
+                echo "- **$CONVENTION_COUNT Convention issues** found for code style consistency" >> pylint_report.md
+              fi
+              if [ $INFO_COUNT -gt 0 ]; then
+                echo "- **$INFO_COUNT Informational messages** available" >> pylint_report.md
+              fi
+              echo "" >> pylint_report.md
+              echo "💡 **To view all findings:** Run \`pylint .\` locally or check the [workflow logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> pylint_report.md
+            fi
+
+            # Only show table if there are errors or warnings
+            CRITICAL_COUNT=$((ERROR_COUNT + WARNING_COUNT))
+            if [ $CRITICAL_COUNT -gt 0 ]; then
+              echo "### 🚨 Critical Issues (Errors & Warnings)" >> pylint_report.md
+              echo "| Type | Severity | Message | Line | Column | File |" >> pylint_report.md
+              echo "| --- | --- | --- | --- | --- | --- |" >> pylint_report.md
+
+              # Extracting only errors and warnings for the report
+              echo 'const fs = require("fs");
+              try {
+                const pylintFile = fs.readFileSync("pylint_report.json", "utf8");
+                const pylintData = JSON.parse(pylintFile);
+
+                // Filter to only show errors and warnings
+                const criticalIssues = pylintData.filter(result => 
+                  ["error", "warning"].includes((result.type || "").toLowerCase())
+                );
+
+                // Sort by severity: errors first, then warnings
+                const severityOrder = { error: 1, warning: 2 };
+                criticalIssues.sort((a, b) => (severityOrder[a.type] || 3) - (severityOrder[b.type] || 3));
+
+                // Limit to 100 critical issues to avoid comment size limits
+                const limitedIssues = criticalIssues.slice(0, 100);
+
+                const severityEmojis = {
+                  error: "🔴",
+                  warning: "🟡"
+                };
+
+                for (const result of limitedIssues) {
+                  let messageId = result["message-id"] || result.symbol || "unknown";
+                  let message = (result.message || "").replace(/,/g, ";").replace(/\n/g, " ").replace(/\|/g, "\\|");
+                  let severity = result.type || "info";
+                  let line = result.line || "N/A";
+                  let column = result.column || "N/A";
+                  let fileName = result.path || "N/A";
+
+                  console.log("| " + messageId + " | " + severityEmojis[severity] + " " + severity.charAt(0).toUpperCase() + severity.slice(1) + " | " + message + " | " + line + " | " + column + " | " + fileName + " |");
+                }
+
+                // Show truncation message if needed
+                if (criticalIssues.length > 100) {
+                  console.log("| ... | ... | **Showing top 100 critical issues out of " + criticalIssues.length + " total errors/warnings.** <br> 💡 **To view all findings:** Run \`pylint .\` locally or check the [workflow logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})| ... | ... | ... |");
+                }
+
+              } catch (error) {
+                console.log("| Error | 🔴 Error | Failed to parse pylint output: " + error.message + " | - | - | - |");
+              }' > pylint_report_format.cjs
+
+              node pylint_report_format.cjs >> pylint_report.md
+              echo "" >> pylint_report.md
+            else
+              echo "### ✅ No Critical Issues Found" >> pylint_report.md
+              echo "All errors and warnings have been resolved! 🎉" >> pylint_report.md
+              echo "" >> pylint_report.md
+            fi
+
+          else
+            echo "### ✅ Code Quality Check Passed" >> pylint_report.md
+            echo "" >> pylint_report.md
+            echo "**$SCORE**" >> pylint_report.md
+            echo "" >> pylint_report.md
+            echo "No issues found! 🎉" >> pylint_report.md
+          fi
+
+          # Exit based on pylint result
+          if [ $PYLINT_EXIT_CODE -ne 0 ]; then
+            echo "::error::Pylint found code quality issues"
+            exit 1
+          fi
+
+      - name: Comment report on PR
+        if: ${{ !cancelled() }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: pylint-scan
+          message-path: pylint_report.md
+      - name: lint scan after step
+        if: ${{ inputs.lint_scan_after_step_command != '' }}
+        run: |
+          ${{ inputs.lint_scan_after_step_command }}
+
+  osv:
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.2.3"
+    with:
+      upload-sarif: false
+      ## Markdown report does not work, to be tested further. Currently a cutom Markdown is generated in the below job.
+      # scan-args: |-
+      #   --format=markdown
+      #   --output=osv_report.md
+      #   ./
+
+  report_osv:
+    name: OSV Scanner report
+    runs-on: ubuntu-latest
+    needs: osv
+    if: always()
+    steps:
+      - name: List available artifacts (debug)
+        run: |
+          echo "Available artifacts:"
+          # This won't work directly, but we can check the job outputs
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: new-json-results
+          path: ./osv-results
+        continue-on-error: true
+
+      - name: Check downloaded artifacts
+        run: |
+          echo "Files in current directory:"
+          ls -la
+          echo "Files in osv-results directory:"
+          ls -la ./osv-results/ || echo "osv-results directory not found"
+      - name: Create OSV Markdown Report
+        run: |
+          echo "## OSV Security Scan Report" > osv_report.md
+          echo "" >> osv_report.md
+
+          # Check if results file exists
+          if [ ! -f "./osv-results/new-results.json" ]; then
+            echo "❌ **OSV scan results file not found**" >> osv_report.md
+            exit 0
+          fi
+
+          RESULTS_FILE="./osv-results/new-results.json"
+
+          if [ -z "$RESULTS_FILE" ]; then
+            echo "❌ **OSV scan results file not found**" >> osv_report.md
+            echo "" >> osv_report.md
+            echo "Searched for:" >> osv_report.md
+            echo "- ./osv-results/new-results.json" >> osv_report.md
+            echo "- new-results.json" >> osv_report.md
+            echo "- osv-results.json" >> osv_report.md
+            echo "" >> osv_report.md
+            echo "Available files:" >> osv_report.md
+            find . -name "*.json" -type f >> osv_report.md 2>/dev/null || echo "No JSON files found"
+          else
+            echo "Using results file: $RESULTS_FILE" >> osv_report.md
+            echo "" >> osv_report.md
+
+            # Get total packages scanned
+            TOTAL_PACKAGES=$(jq '.results | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+            
+            # Get packages with vulnerabilities
+            VULN_PACKAGES=$(jq '[.results[].packages[] | select(.vulnerabilities | length > 0)] | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+            
+            # Get total vulnerabilities
+            TOTAL_VULNS=$(jq '[.results[].packages[].vulnerabilities | length] | add // 0' "$RESULTS_FILE" 2>/dev/null || echo "0")
+
+            if [ "$VULN_PACKAGES" -eq 0 ]; then
+              echo "✅ **No security vulnerabilities detected!**" >> osv_report.md
+              echo "" >> osv_report.md
+              echo "All $TOTAL_PACKAGES dependencies are secure according to OSV database." >> osv_report.md
+            else
+              echo "⚠️ **Found $TOTAL_VULNS vulnerabilities in $VULN_PACKAGES packages**" >> osv_report.md
+              echo "" >> osv_report.md
+            
+              # Create temporary file with processed vulnerability data
+              jq -r '.results[].packages[] | 
+              select(.vulnerabilities | length > 0) | 
+              [
+                .package.name,
+                .package.version // "N/A", 
+                (.vulnerabilities | length),
+                (.vulnerabilities[0].database_specific.severity // "Unknown"),
+                (.vulnerabilities[0].id // "N/A")
+              ] | @tsv' "$RESULTS_FILE" > temp_vulns.tsv
+
+            # severity counts
+            HIGH_COUNT=$(awk -F'\t' 'BEGIN{IGNORECASE=1} $4 ~ /HIGH|CRITICAL/ {sum+=$3} END {print sum+0}' temp_vulns.tsv)
+            MEDIUM_COUNT=$(awk -F'\t' 'BEGIN{IGNORECASE=1} $4 ~ /MODERATE/ {sum+=$3} END {print sum+0}' temp_vulns.tsv)
+            LOW_COUNT=$(awk -F'\t' 'BEGIN{IGNORECASE=1} $4 ~ /LOW/ {sum+=$3} END {print sum+0}' temp_vulns.tsv)
+            UNKNOWN_COUNT=$(awk -F'\t' 'BEGIN{IGNORECASE=1} $4 ~ /Unknown/ {sum+=$3} END {print sum+0}' temp_vulns.tsv)
+
+            echo "### Summary by Severity" >> osv_report.md
+            echo "" >> osv_report.md
+            echo "- 🔴 **High**: $HIGH_COUNT" >> osv_report.md
+            echo "- 🟡 **Medium**: $MEDIUM_COUNT" >> osv_report.md
+            echo "- 🟢 **Low**: $LOW_COUNT" >> osv_report.md
+              if [ "$UNKNOWN_COUNT" -gt 0 ]; then
+                echo "- ❓ **Unknown**: $UNKNOWN_COUNT" >> osv_report.md
+              fi
+              echo "" >> osv_report.md
+
+              echo "### Vulnerable Packages" >> osv_report.md
+              echo "" >> osv_report.md
+              echo "| Package | Version | Vulnerabilities | Highest Severity | Sample CVE |" >> osv_report.md
+              echo "| --- | --- | --- | --- | --- |" >> osv_report.md
+
+              # Use the same temp file for the table
+              head -20 temp_vulns.tsv | while IFS=$'\t' read -r pkg_name pkg_version vuln_count severity sample_cve; do
+                # Add severity emoji
+                case "$severity" in
+                  [9].*|10.*) severity_display="🔴 $severity" ;;
+                  [8].*) severity_display="🔴 $severity" ;;
+                  [7].*) severity_display="🔴 $severity" ;;
+                  [6].*|[5].*|[4].*) severity_display="🟡 $severity" ;;
+                  [3].*|[2].*|[1].*) severity_display="🟢 $severity" ;;
+                  *) severity_display="ℹ️ $severity" ;;
+                esac
+                
+                echo "| **$pkg_name** | $pkg_version | $vuln_count | $severity_display | $sample_cve |" >> osv_report.md
+              done
+
+              # Clean up temp file  
+              rm -f temp_vulns.tsv
+
+              echo "" >> osv_report.md
+              echo "### 🔧 Action Required" >> osv_report.md
+              echo "" >> osv_report.md
+              echo "1. **Update vulnerable packages**: \`pip install --upgrade <package-name>\`" >> osv_report.md
+              echo "2. **Vulnerability Priority order**: Fix 🔴 High severity first, then 🟡 Medium, then 🟢 Low" >> osv_report.md
+              echo "3. **Test your application** after applying updates" >> osv_report.md
+              
+              echo "" >> osv_report.md
+              echo "---" >> osv_report.md
+              echo "*Report generated by [OSV Scanner](https://osv.dev/) on $(date)*" >> osv_report.md
+
+              if [ "$VULN_PACKAGES" -gt 20 ]; then
+                  echo "" >> osv_report.md
+                  echo "⚠️ **Note**: Showing first 20 vulnerable packages. Check [workflow logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for complete results." >> osv_report.md
+              fi
+            fi
+          fi
+
+
+          echo "" >> osv_report.md
+          echo "*Scan completed on $(date) with [OSV Scanner](https://osv.dev/)*" >> osv_report.md
+      - name: Comment report on PR
+        if: ${{ !cancelled() }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: osv-scan
+          message-path: osv_report.md
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ${{ inputs.security_scans_job_runner }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v1.6.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  license_scan:
+    name: License Scanner
+    runs-on: ${{ inputs.security_scans_job_runner }}
+    if: ${{ !contains( inputs.excluded_jobs, 'license_scan' ) }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python_version != '' }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pip-licenses
+
+      - name: License Compliance Check
+        run: |
+          echo "## 📄 License Compliance Report" > license_report.md
+          echo "" >> license_report.md
+
+          # Generate license data
+          pip-licenses --format=json --output-file=licenses.json
+          pip-licenses --format=plain --output-file=licenses.txt
+
+          # Define allowed licenses (customize as needed)
+          ALLOWED_LICENSES="MIT,Apache Software License,Apache License,BSD License,BSD,ISC License,Mozilla Public License 2.0 (MPL 2.0),Python Software Foundation License"
+
+          # Check for problematic licenses
+          PROBLEMATIC_LICENSES=$(pip-licenses --format=plain | grep -E "(GPL|AGPL|LGPL|SSPL|OSL|EPL)" || true)
+
+          TOTAL_PACKAGES=$(jq '. | length' licenses.json)
+          UNIQUE_LICENSES=$(jq '[.[].License] | unique | length' licenses.json)
+
+          echo "### Summary" >> license_report.md
+          echo "- **Total Packages**: $TOTAL_PACKAGES" >> license_report.md
+          echo "- **Unique Licenses**: $UNIQUE_LICENSES" >> license_report.md
+          echo "" >> license_report.md
+
+          if [ -n "$PROBLEMATIC_LICENSES" ]; then
+            echo "### ⚠️ Problematic Licenses Found" >> license_report.md
+            echo "" >> license_report.md
+            echo "\`\`\`" >> license_report.md
+            echo "$PROBLEMATIC_LICENSES" >> license_report.md
+            echo "\`\`\`" >> license_report.md
+            echo "" >> license_report.md
+            echo "**Action Required**: Review these licenses for compliance with your project requirements." >> license_report.md
+            echo "" >> license_report.md
+          else
+            echo "### ✅ No Problematic Licenses Found" >> license_report.md
+            echo "" >> license_report.md
+          fi
+
+          echo "### License Distribution" >> license_report.md
+          echo "" >> license_report.md
+          echo "| License | Count |" >> license_report.md
+          echo "| --- | --- |" >> license_report.md
+
+          jq -r '[.[].License] | group_by(.) | map({license: .[0], count: length}) | .[] | [.license, .count] | @tsv' licenses.json | while IFS=$'\t' read -r license count; do
+            echo "| $license | $count |" >> license_report.md
+          done
+
+          echo "" >> license_report.md
+          echo "### All Package Licenses" >> license_report.md
+          echo "" >> license_report.md
+          echo "<details>" >> license_report.md
+          echo "<summary>Click to expand full license list</summary>" >> license_report.md
+          echo "" >> license_report.md
+          echo "| Package | Version | License |" >> license_report.md
+          echo "| --- | --- | --- |" >> license_report.md
+
+          jq -r '.[] | [.Name, .Version, .License] | @tsv' licenses.json | while IFS=$'\t' read -r name version license; do
+            echo "| $name | $version | $license |" >> license_report.md
+          done
+
+          echo "" >> license_report.md
+          echo "</details>" >> license_report.md
+          echo "" >> license_report.md
+          echo "---" >> license_report.md
+          echo "*Generated on $(date)*" >> license_report.md
+
+      - name: Comment License Report
+        if: ${{ !cancelled() }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: license-scan
+          message-path: license_report.md
+
+  container_scan:
+    name: container_scan
+    if: ${{ !contains( inputs.excluded_jobs, 'container_scan' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
+    uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master
+    secrets: inherit
+    with:
+      job_runner: ${{ inputs.container_scan_job_runner }}
+      docker_build_command: ${{ inputs.docker_build_command }}
+      docker_build_image_id: ${{ inputs.docker_build_image_id }}
+      container_scanners: ${{ inputs.container_scanners }}
+      container_scan_skip_dirs: ${{ inputs.container_scan_skip_dirs }}
+      dockerfile_paths: ${{ inputs.dockerfile_paths}}
+      before_step_command: ${{ inputs.container_scan_before_step_command }}
+      after_step_command: ${{ inputs.container_scan_after_step_command}}
+
+  pulse_work_break_down:
+    name: pulse-work-break-down
+    if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-work-break-down-v2.yml@master
+    secrets: inherit
