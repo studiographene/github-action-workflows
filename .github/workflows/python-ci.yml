@@ -80,11 +80,10 @@ on:
 permissions:
   # Required to upload SARIF file to CodeQL. See: https://github.com/github/codeql-action/issues/2117
   actions: read
-  # Require writing security events to upload SARIF file to security tab
   security-events: write
-  # Only need to read contents
   contents: read
   pull-requests: write
+  issues: write
 
 jobs:
   lint:
@@ -531,6 +530,10 @@ jobs:
     if: ${{ !contains( inputs.excluded_jobs, 'container_scan' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
     uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master
     secrets: inherit
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: read
     with:
       job_runner: ${{ inputs.container_scan_job_runner }}
       docker_build_command: ${{ inputs.docker_build_command }}
