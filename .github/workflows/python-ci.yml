@@ -90,7 +90,12 @@ jobs:
   lint:
     name: lint
     runs-on: ${{ inputs.linting_job_runner }}
-
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
     steps:
       - uses: actions/checkout@v5
       - name: lint scan before step
@@ -258,6 +263,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: osv
     if: always()
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
     steps:
       - name: List available artifacts (debug)
         run: |
@@ -424,6 +435,12 @@ jobs:
     name: License Scanner
     runs-on: ${{ inputs.security_scans_job_runner }}
     if: ${{ !contains( inputs.excluded_jobs, 'license_scan' ) }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
     steps:
       - uses: actions/checkout@v5
       - name: Set up Python
