@@ -35,10 +35,13 @@ jobs:
     container:
       image: public.ecr.aws/studiographene/ci:node-22-alpine
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          fetch-depth: 0
+          # sparse-checkout: ""
+          # sparse-checkout-cone-mode: false
+          # clean: false
 
       - name: SAST before step
         if: ${{ inputs.security_scan_before_step_command != '' }}
@@ -129,9 +132,10 @@ jobs:
     container:
       image: public.ecr.aws/studiographene/ci:node-22-alpine
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: ${{ github.ref }}
       - name: Check for composer.lock or composer.json
         id: check_files
         run: |
