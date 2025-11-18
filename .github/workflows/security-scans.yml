@@ -38,10 +38,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          path: .
           fetch-depth: 0
-          # sparse-checkout: ""
-          # sparse-checkout-cone-mode: false
-          # clean: false
+          clean: false
+          sparse-checkout: ""
+          sparse-checkout-cone-mode: false
 
       - name: SAST before step
         if: ${{ inputs.security_scan_before_step_command != '' }}
