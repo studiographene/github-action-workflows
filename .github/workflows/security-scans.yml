@@ -50,7 +50,7 @@ jobs:
           set +e
           cp /root/configs/semgrep/rules/eslint.v1.3.32.yml eslint.v1.3.32.yml
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          semgrep scan --error --config  "p/default" --config eslint.v1.3.32.yml --json ${{ inputs.semgrep_options }} . > semgrep.json
+          semgrep scan --error --config  "p/default" --config eslint.v1.3.32.yml --json ${{ inputs.semgrep_options }}  > semgrep.json
           SEMGREP_EXIT_CODE=$?
           set -e
           if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
