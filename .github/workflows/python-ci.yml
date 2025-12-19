@@ -114,8 +114,8 @@ jobs:
       - name: Lint with pylint
         run: |
           # Add the --disable flag to reduce noise but keep JSON complete for summary
-          pylint . --output-format=json --reports=yes --score=yes > pylint_report.json || PYLINT_EXIT_CODE=$?
-          pylint . --output-format=text --reports=yes --score=yes > pylint_text.txt || true
+          pylint src/ --output-format=json --reports=yes --score=yes > pylint_report.json || PYLINT_EXIT_CODE=$?
+          pylint src/ --output-format=text --reports=yes --score=yes > pylint_text.txt || true
           PYLINT_EXIT_CODE=${PYLINT_EXIT_CODE:-0}
 
           # Generating Lint report PR comment Markdown
