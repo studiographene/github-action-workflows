@@ -80,13 +80,17 @@ jobs:
       - name: Generate matrix JSON
         if: ${{ inputs.dockerfile_paths != '' }}
         id: generate_matrix
+        env:
+          DOCKERFILES: ${{ inputs.dockerfile_paths }}
         run: |
-          matrix_json=$(jq -n --argjson arr ${{ inputs.dockerfile_paths }} '{dockerfile_paths: $arr}')
-          echo "all_dockerfile_paths_matrix<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$matrix_json" >> "$GITHUB_OUTPUT"
+          matrix_json=$(jq -n --argjson arr "$DOCKERFILES" '{dockerfile_paths: $arr}')
+      
+          echo "all_dockerfile_paths_matrix<<EOF" >> $GITHUB_OUTPUT
+          echo "$matrix_json" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          echo $matrix_json
+      
           echo "$matrix_json"
+
 
 
   containers_scan:
