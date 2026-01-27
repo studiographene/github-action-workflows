@@ -76,6 +76,9 @@ on:
         description: "Command to execute at the end of the Lint scan"
         type: string
         default: ""
+      semgrep_options:
+        type: string
+        default: ""
 
 permissions:
   # Required to upload SARIF file to CodeQL. See: https://github.com/github/codeql-action/issues/2117
@@ -550,3 +553,69 @@ jobs:
     if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
     uses: studiographene/github-action-workflows/.github/workflows/pulse-work-break-down-v2.yml@master
     secrets: inherit
+
+  SAST:
+    name: sast
+    runs-on: ${{ inputs.security_scans_job_runner }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'sast') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: SAST before step
+        if: ${{ inputs.security_scan_before_step_command != '' }}
+        run: |
+          ${{ inputs.security_scan_before_step_command}}
+      - name: SAST Scan using Semgrep
+        id: generate_sast_report
+        run: |
+          set +e
+          cp /root/configs/semgrep/rules/eslint.v1.3.32.yml eslint.v1.3.32.yml
+          semgrep scan --error --config  "p/default" --config eslint.v1.3.32.yml --json ${{ inputs.semgrep_options }} > semgrep.json
+          SEMGREP_EXIT_CODE=$?
+          set -e
+          if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
+            echo "## Semgrep SAST Scan Report" > sast_report.md
+            echo "### Below are the vulnerabilities found in the code. Please resolve these before merging the pull request: " >> sast_report.md
+            echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> sast_report.md
+            echo "| --- | --- | --- | --- | --- |" >> sast_report.md
+            echo 'const fs = require("fs");
+            const semgrepFile = fs.readFileSync("semgrep.json", "utf8");
+            const semgrepData = JSON.parse(semgrepFile);
+            for (const result of semgrepData.results) {
+              let ruleId = result.check_id.replaceAll(",",";");
+              ruleId = ruleId.replaceAll("\n","");
+              let message = result.extra.message.replaceAll(",", ";");
+              message = message.replaceAll("\n","");
+              const severity = result.extra.severity;
+              const lineNumber = result.start.line;
+              const fileName = result.path;
+              console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
+            }' > sast_report_format.cjs
+            node sast_report_format.cjs >> sast_report.md
+          else
+            echo "## Semgrep SAST Scan Report" > sast_report.md
+            echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
+          fi
+          if [ $SEMGREP_EXIT_CODE != 0 ]; then
+            echo "::error::Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
+            exit 1
+          elif [ $SEMGREP_EXIT_CODE == 0 ]; then
+            exit 0
+          fi
+      - name: Comment SAST report on PR
+        if: ${{ !cancelled() }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: sast-scan
+          message-path: sast_report.md   
