@@ -12,8 +12,8 @@ To perform container scan and report vulnerabilities on PR
 | `action_runner_container_image` | Action runner container image                                              | string | no       | `public.ecr.aws/studiographene/ci:node-20-alpine` |
 | `before_step_command`           | Command to execute at the start of the job                                 | string | no       |                                                   |
 | `after_step_command`            | Command to execute at the end of the job                                   | string | no       |                                                   |
-| `docker_build_command`          | Optional Docker build command override (must build/load a local image)      | string | no       |                                                   |
-| `docker_build_image_id`         | Docker image ID/tag to scan when using `docker_build_command`              | string | no       | `local:latest`                                    |
+| `docker_build_command`          | Docker Build command                                                       | string | no       | `docker build -t local:latest .`                  |
+| `docker_build_image_id`         | Docker image ID as mentioned in docker_build_command `docker_build_command`              | string | no       | `localbuild:latest`                                    |
 | `container_scanners`            | A string of comma-separated security issues to detect (vuln,secret,config) | string | no       | `vuln`                                            |
 | `container_scan_skip_dirs`      | A string of comma separated directories to skip scanning                   | string | no       |
 
@@ -48,26 +48,4 @@ jobs:
     with:
       action_runner_container_image: "public.ecr.aws/studiographene/ci:node-20-alpine" # optional
 
-```
-
-# Example: custom build command (simple Docker image)
-
-This works when you want Trivy to scan by image tag (`image-ref`). Make sure the tag matches `docker_build_image_id`.
-
-```yaml
-jobs:
-  call-worflow:
-    uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master
-    secrets: inherit
-    with:
-      docker_build_image_id: local:latest
-      docker_build_command: docker build -t local:latest .
-```
-
-If you are scanning multiple Dockerfiles via `dockerfile_paths` (matrix), use the matrix Dockerfile explicitly:
-
-```yaml
-with:
-  docker_build_image_id: local:latest
-  docker_build_command: docker build -f $DOCKERFILE_PATH -t local:latest .
 ```

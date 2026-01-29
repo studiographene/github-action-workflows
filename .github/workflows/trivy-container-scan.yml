@@ -26,10 +26,10 @@ on:
         required: false
         default: ""
       docker_build_image_id:
-        description: "Docker image ID/tag to scan (built locally in the job)"
+        description: "Docker image ID as mentioned in docker_build_command"
         type: string
         required: false
-        default: "local:latest"
+        default: "localbuild:latest"
       container_scanners:
         description: "comma-separated list of what security issues to detect (vuln,secret,config). Default = vuln"
         type: string
@@ -145,8 +145,8 @@ jobs:
             {{- end }}
             EOF
 
-        - name: Trivy container vulnerability scan (Docker image)
-          id: container_scan_docker
+        - name: Trivy container vulnerability scan
+          id: container_scan
           uses: aquasecurity/trivy-action@master
           continue-on-error: true
           with:
@@ -167,7 +167,7 @@ jobs:
           shell: bash
           run: |
             echo "# Trivy Container Scan" > container_scan_prcomment.md
-            SCAN_OUTCOME='${{ steps.container_scan_docker.outcome }}'
+            SCAN_OUTCOME='${{ steps.container_scan.outcome }}'
             if [ "$SCAN_OUTCOME" == "failure" ]
             then
               echo "### :warning: Vulnerabilities detected Dockerfile path \[ ${{ matrix.dockerfile_paths }} \]:<br>The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.md
@@ -192,7 +192,7 @@ jobs:
           run: |
             ${{ inputs.after_step_command}}
 
-        - name: Docker cleanup (reduce disk usage)
+        - name: Docker cleanup
           if: ${{ !cancelled() }}
           continue-on-error: true
           shell: bash
