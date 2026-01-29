@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.3.1](https://github.com/studiographene/github-action-workflows/compare/v2.3.0...v2.3.1) (2025-11-18)
+
+
+### Bug Fixes
+
+* semgrep git issue fix ([1bbdbac](https://github.com/studiographene/github-action-workflows/commit/1bbdbac6820034f25a7d8652146df1e8e9d50da8))
+* semgrep git issue fix ([0f05cee](https://github.com/studiographene/github-action-workflows/commit/0f05ceef72e2628c8c071d819e81adeb1dfbf97f))
+* semgrep git issue fix ([1063238](https://github.com/studiographene/github-action-workflows/commit/106323874822a956d39dbc926410564c3ab9624e))
+* semgrep git issue fix ([afa00c8](https://github.com/studiographene/github-action-workflows/commit/afa00c85879be49665ed67a80143eef87416ebc1))
+* semgrep git issue fix ([3061546](https://github.com/studiographene/github-action-workflows/commit/3061546b6dc7a4114c781aefb311deff1353f13c))
+* semgrep git issue fix ([8fe997f](https://github.com/studiographene/github-action-workflows/commit/8fe997fcdec5854d1e9ae5f6786d492e1e7267e5))
+
 ## [2.3.0](https://github.com/studiographene/github-action-workflows/compare/v2.2.0...v2.3.0) (2025-09-03)
 
 

@@ -33,6 +33,7 @@ jobs:
       - name: SAST Scan
         id: generate_report
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           semgrep --config "p/default" --config /root/configs/semgrep/rules/eslint.yml --sarif ${{ inputs.semgrep_options }} | tee semgrep.sarif
       - name: Display Errors
         id: display_errors
