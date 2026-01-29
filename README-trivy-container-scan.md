@@ -19,10 +19,8 @@ To perform container scan and report vulnerabilities on PR
 
 Notes:
 
-- If `docker_build_command` is not provided, the workflow builds a Docker image archive tar (`trivy-image.tar`) and scans that archive (archive scan is the default path).
-- If `docker_build_command` is provided:
-  - If your command creates `trivy-image.tar` as a Docker image archive (must contain `manifest.json`), the workflow scans that archive.
-  - Otherwise, the workflow scans the local Docker image tag from `docker_build_image_id`.
+- If `docker_build_command` is not provided, the workflow builds a local Docker image tag (`docker_build_image_id`) and scans that image by `image-ref`.
+- If `docker_build_command` is provided, it must build/load a local Docker image tag matching `docker_build_image_id` (the workflow scans by `image-ref`).
 - Your `docker_build_command` can use these env vars provided by the workflow:
   - `DOCKERFILE_PATH` (current matrix dockerfile)
   - `IMAGE_ID` (same value as `docker_build_image_id`)
@@ -72,23 +70,4 @@ If you are scanning multiple Dockerfiles via `dockerfile_paths` (matrix), use th
 with:
   docker_build_image_id: local:latest
   docker_build_command: docker build -f $DOCKERFILE_PATH -t local:latest .
-```
-
-# Example: custom build command that outputs an image tar
-
-This works because your build command outputs `trivy-image.tar`, and the workflow auto-detects and scans it.
-
-```yaml
-jobs:
-  call-worflow:
-    uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master
-    secrets: inherit
-    with:
-      dockerfile_paths: '["./Dockerfile.prod.api","./Dockerfile.prod.celery"]'
-      docker_build_command: >-
-        docker buildx build
-        --build-arg NPM_TOKEN=$NPM_TOKEN
-        -f $DOCKERFILE_PATH
-        --output type=docker,dest=trivy-image.tar
-        .
 ```

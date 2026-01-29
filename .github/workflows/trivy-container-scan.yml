@@ -26,7 +26,7 @@ on:
         required: false
         default: ""
       docker_build_image_id:
-        description: "Docker image ID as mentioned in docker_build_command"
+        description: "Docker image ID/tag to scan (built locally in the job)"
         type: string
         required: false
         default: "local:latest"
@@ -102,6 +102,7 @@ jobs:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       strategy:
         fail-fast: false
+        max-parallel: 1
         matrix: ${{ fromJSON(needs.detect_dockerfile_paths.outputs.matrix) }}
           
       steps:
@@ -127,22 +128,10 @@ jobs:
           env:
             DOCKERFILE_PATH: ${{ matrix.dockerfile_paths }}
             IMAGE_ID: ${{ inputs.docker_build_image_id }}
-            FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker buildx build --build-arg NPM_TOKEN={0} -f {1} --output type=docker,dest=trivy-image.tar .', secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN, matrix.dockerfile_paths) }}
+            FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker build --build-arg NPM_TOKEN={0} -f {1} -t {2} .', secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN, matrix.dockerfile_paths, inputs.docker_build_image_id) }}
           run: |
-            rm -f "trivy-image.tar"
             echo "$FINAL_DOCKER_BUILD_COMMAND"
             eval "$FINAL_DOCKER_BUILD_COMMAND"
-
-        - name: Detect Trivy scan target
-          id: detect_scan_target
-          shell: bash
-          run: |
-            set -euo pipefail
-            if [ -f "trivy-image.tar" ] && tar -tf "trivy-image.tar" 2>/dev/null | grep -qx "manifest.json"; then
-              echo "use_image_archive=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "use_image_archive=false" >> "$GITHUB_OUTPUT"
-            fi
 
         - name: Creating Trivy report PR comment template file
           run: |
@@ -156,26 +145,8 @@ jobs:
             {{- end }}
             EOF
 
-        - name: Trivy container vulnerability scan (image tar archive)
-          id: container_scan_oci
-          if: ${{ steps.detect_scan_target.outputs.use_image_archive == 'true' }}
-          uses: aquasecurity/trivy-action@master
-          continue-on-error: true
-          with:
-            input: "trivy-image.tar"
-            format: "template"
-            template: "@trivyreport.tpl"
-            output: "trivyreport.md"
-            exit-code: "1"
-            ignore-unfixed: true
-            vuln-type: "os,library"
-            severity: "CRITICAL,HIGH"
-            scanners: ${{ inputs.container_scanners }}
-            skip-dirs: ${{ inputs.container_scan_skip_dirs }}
-
         - name: Trivy container vulnerability scan (Docker image)
           id: container_scan_docker
-          if: ${{ steps.detect_scan_target.outputs.use_image_archive != 'true' }}
           uses: aquasecurity/trivy-action@master
           continue-on-error: true
           with:
@@ -196,7 +167,7 @@ jobs:
           shell: bash
           run: |
             echo "# Trivy Container Scan" > container_scan_prcomment.md
-            SCAN_OUTCOME='${{ steps.detect_scan_target.outputs.use_image_archive == 'true' && steps.container_scan_oci.outcome || steps.container_scan_docker.outcome }}'
+            SCAN_OUTCOME='${{ steps.container_scan_docker.outcome }}'
             if [ "$SCAN_OUTCOME" == "failure" ]
             then
               echo "### :warning: Vulnerabilities detected Dockerfile path \[ ${{ matrix.dockerfile_paths }} \]:<br>The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.md
@@ -226,6 +197,5 @@ jobs:
           continue-on-error: true
           shell: bash
           run: |
-            rm -f "trivy-image.tar" || true
             docker buildx prune -af || true
             docker system prune -af || true
