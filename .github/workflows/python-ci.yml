@@ -36,7 +36,7 @@ on:
         required: false
         default: ""
       docker_build_image_id:
-        description: "Docker image ID as mentioned in docker_build_command"
+        description: "Docker image ID/tag to scan (built locally in the job)"
         type: string
         default: "local:latest"
       container_scanners:
@@ -79,6 +79,16 @@ on:
       semgrep_options:
         type: string
         default: ""
+      garak_command:
+        description: "Optional: command to run NVIDIA Garak LLM security scanning (e.g. 'garak --help' or a full scan command). If empty, Garak job is skipped."
+        type: string
+        required: false
+        default: ""
+      dev_test_branch:
+        description: "Developer-provided branch names to run the tests"
+        type: string
+        required: false
+        default: dev  
 
 permissions:
   # Required to upload SARIF file to CodeQL. See: https://github.com/github/codeql-action/issues/2117
@@ -547,6 +557,38 @@ jobs:
       dockerfile_paths: ${{ inputs.dockerfile_paths}}
       before_step_command: ${{ inputs.container_scan_before_step_command }}
       after_step_command: ${{ inputs.container_scan_after_step_command}}
+
+  garak:
+    name: garak
+    runs-on: ${{ inputs.security_scans_job_runner }}
+    if: ${{ inputs.garak_command != '' && !contains(inputs.excluded_jobs, 'garak') && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Install Garak
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir garak
+          garak --version
+
+      - name: Run Garak
+        env:
+          # Garak relies on provider env vars (e.g. OPENAI_API_KEY, AZURE_OPENAI_*, etc.)
+          # Use `secrets: inherit` in the caller workflow to provide them.
+          GARAK_COMMAND: ${{ inputs.garak_command }}
+        run: |
+          set -euo pipefail
+          echo "$GARAK_COMMAND"
+          eval "$GARAK_COMMAND"
 
   pulse_work_break_down:
     name: pulse-work-break-down
