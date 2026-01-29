@@ -29,7 +29,7 @@ on:
         description: "Docker image ID as mentioned in docker_build_command"
         type: string
         required: false
-        default: "localbuild:latest"
+        default: "local:latest"
       container_scanners:
         description: "comma-separated list of what security issues to detect (vuln,secret,config). Default = vuln"
         type: string
@@ -125,10 +125,23 @@ jobs:
         - name: Docker Build
           id: docker_build
           env:
-            FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker build --build-arg NPM_TOKEN={0} -f {1} -t {2} .', secrets.NPM_TOKEN, matrix.dockerfile_paths, inputs.docker_build_image_id) }}
+            DOCKERFILE_PATH: ${{ matrix.dockerfile_paths }}
+            IMAGE_ID: ${{ inputs.docker_build_image_id }}
+            FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker buildx build --build-arg NPM_TOKEN={0} -f {1} --output type=oci,dest=trivy-image.tar .', secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN, matrix.dockerfile_paths) }}
           run: |
-            echo $FINAL_DOCKER_BUILD_COMMAND
-            eval $FINAL_DOCKER_BUILD_COMMAND
+            rm -f "trivy-image.tar"
+            echo "$FINAL_DOCKER_BUILD_COMMAND"
+            eval "$FINAL_DOCKER_BUILD_COMMAND"
+
+        - name: Detect Trivy scan target
+          id: detect_scan_target
+          shell: bash
+          run: |
+            if [ -f "trivy-image.tar" ]; then
+              echo "use_oci_archive=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "use_oci_archive=false" >> "$GITHUB_OUTPUT"
+            fi
 
         - name: Creating Trivy report PR comment template file
           run: |
@@ -142,8 +155,26 @@ jobs:
             {{- end }}
             EOF
 
-        - name: Trivy container vulnerability scan
-          id: container_scan
+        - name: Trivy container vulnerability scan (OCI archive)
+          id: container_scan_oci
+          if: ${{ steps.detect_scan_target.outputs.use_oci_archive == 'true' }}
+          uses: aquasecurity/trivy-action@master
+          continue-on-error: true
+          with:
+            input: "trivy-image.tar"
+            format: "template"
+            template: "@trivyreport.tpl"
+            output: "trivyreport.md"
+            exit-code: "1"
+            ignore-unfixed: true
+            vuln-type: "os,library"
+            severity: "CRITICAL,HIGH"
+            scanners: ${{ inputs.container_scanners }}
+            skip-dirs: ${{ inputs.container_scan_skip_dirs }}
+
+        - name: Trivy container vulnerability scan (Docker image)
+          id: container_scan_docker
+          if: ${{ steps.detect_scan_target.outputs.use_oci_archive != 'true' }}
           uses: aquasecurity/trivy-action@master
           continue-on-error: true
           with:
@@ -164,13 +195,14 @@ jobs:
           shell: bash
           run: |
             echo "# Trivy Container Scan" > container_scan_prcomment.md
-            if [ ${{ steps.container_scan.outcome }} == "failure" ]
+            SCAN_OUTCOME='${{ inputs.docker_build_command == '' && steps.container_scan_oci.outcome || steps.container_scan_docker.outcome }}'
+            if [ "$SCAN_OUTCOME" == "failure" ]
             then
               echo "### :warning: Vulnerabilities detected Dockerfile path \[ ${{ matrix.dockerfile_paths }} \]:<br>The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.md
               cat trivyreport.md >> container_scan_prcomment.md
               echo "::error::Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
               exit 1
-            elif [ ${{ steps.container_scan.outcome }} == "success" ]
+            elif [ "$SCAN_OUTCOME" == "success" ]
             then
               echo "### :rainbow: Dockerfile path \[ ${{ matrix.dockerfile_paths }} \]: No vulnerabilities of HIGH or CRITICAL severity detected" >> container_scan_prcomment.md
               exit 0
