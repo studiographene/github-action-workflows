@@ -80,13 +80,17 @@ jobs:
       - name: Generate matrix JSON
         if: ${{ inputs.dockerfile_paths != '' }}
         id: generate_matrix
+        env:
+          DOCKERFILES: ${{ inputs.dockerfile_paths }}
         run: |
-          matrix_json=$(jq -n --argjson arr ${{ inputs.dockerfile_paths }} '{dockerfile_paths: $arr}')
-          echo "all_dockerfile_paths_matrix<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$matrix_json" >> "$GITHUB_OUTPUT"
+          matrix_json=$(jq -n --argjson arr "$DOCKERFILES" '{dockerfile_paths: $arr}')
+      
+          echo "all_dockerfile_paths_matrix<<EOF" >> $GITHUB_OUTPUT
+          echo "$matrix_json" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          echo $matrix_json
+      
           echo "$matrix_json"
+
 
 
   containers_scan:
@@ -97,6 +101,8 @@ jobs:
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       strategy:
+        fail-fast: false
+        max-parallel: 1
         matrix: ${{ fromJSON(needs.detect_dockerfile_paths.outputs.matrix) }}
           
       steps:
@@ -120,10 +126,12 @@ jobs:
         - name: Docker Build
           id: docker_build
           env:
-            FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker build --build-arg NPM_TOKEN={0} -f {1} -t {2} .', secrets.NPM_TOKEN, matrix.dockerfile_paths, inputs.docker_build_image_id) }}
+            DOCKERFILE_PATH: ${{ matrix.dockerfile_paths }}
+            IMAGE_ID: ${{ inputs.docker_build_image_id }}
+            FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker build --build-arg NPM_TOKEN={0} -f {1} -t {2} .', secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN, matrix.dockerfile_paths, inputs.docker_build_image_id) }}
           run: |
-            echo $FINAL_DOCKER_BUILD_COMMAND
-            eval $FINAL_DOCKER_BUILD_COMMAND
+            echo "$FINAL_DOCKER_BUILD_COMMAND"
+            eval "$FINAL_DOCKER_BUILD_COMMAND"
 
         - name: Creating Trivy report PR comment template file
           run: |
@@ -159,13 +167,14 @@ jobs:
           shell: bash
           run: |
             echo "# Trivy Container Scan" > container_scan_prcomment.md
-            if [ ${{ steps.container_scan.outcome }} == "failure" ]
+            SCAN_OUTCOME='${{ steps.container_scan.outcome }}'
+            if [ "$SCAN_OUTCOME" == "failure" ]
             then
               echo "### :warning: Vulnerabilities detected Dockerfile path \[ ${{ matrix.dockerfile_paths }} \]:<br>The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.md
               cat trivyreport.md >> container_scan_prcomment.md
               echo "::error::Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
               exit 1
-            elif [ ${{ steps.container_scan.outcome }} == "success" ]
+            elif [ "$SCAN_OUTCOME" == "success" ]
             then
               echo "### :rainbow: Dockerfile path \[ ${{ matrix.dockerfile_paths }} \]: No vulnerabilities of HIGH or CRITICAL severity detected" >> container_scan_prcomment.md
               exit 0
@@ -182,3 +191,11 @@ jobs:
           if: ${{ inputs.after_step_command != '' && !cancelled() }}
           run: |
             ${{ inputs.after_step_command}}
+
+        - name: Docker cleanup
+          if: ${{ !cancelled() }}
+          continue-on-error: true
+          shell: bash
+          run: |
+            docker buildx prune -af || true
+            docker system prune -af || true

@@ -13,9 +13,17 @@ To perform container scan and report vulnerabilities on PR
 | `before_step_command`           | Command to execute at the start of the job                                 | string | no       |                                                   |
 | `after_step_command`            | Command to execute at the end of the job                                   | string | no       |                                                   |
 | `docker_build_command`          | Docker Build command                                                       | string | no       | `docker build -t local:latest .`                  |
-| `docker_build_image_id`         | Docker image ID as mentioned in docker_build_command                       | string | no       | `local:latest`                                    |
+| `docker_build_image_id`         | Docker image ID as mentioned in docker_build_command `docker_build_command`              | string | no       | `localbuild:latest`                                    |
 | `container_scanners`            | A string of comma-separated security issues to detect (vuln,secret,config) | string | no       | `vuln`                                            |
 | `container_scan_skip_dirs`      | A string of comma separated directories to skip scanning                   | string | no       |
+
+Notes:
+
+- If `docker_build_command` is not provided, the workflow builds a local Docker image tag (`docker_build_image_id`) and scans that image by `image-ref`.
+- If `docker_build_command` is provided, it must build/load a local Docker image tag matching `docker_build_image_id` (the workflow scans by `image-ref`).
+- Your `docker_build_command` can use these env vars provided by the workflow:
+  - `DOCKERFILE_PATH` (current matrix dockerfile)
+  - `IMAGE_ID` (same value as `docker_build_image_id`)
 
 # Action variables
 
@@ -39,4 +47,5 @@ jobs:
     secrets: inherit
     with:
       action_runner_container_image: "public.ecr.aws/studiographene/ci:node-20-alpine" # optional
+
 ```
