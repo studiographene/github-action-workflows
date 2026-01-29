@@ -19,9 +19,9 @@ To perform container scan and report vulnerabilities on PR
 
 Notes:
 
-- If `docker_build_command` is not provided, the workflow builds an OCI archive (`trivy-image.tar`) and scans that archive (OCI is the default scan path).
+- If `docker_build_command` is not provided, the workflow builds a Docker image archive tar (`trivy-image.tar`) and scans that archive (archive scan is the default path).
 - If `docker_build_command` is provided:
-  - If your command creates `trivy-image.tar`, the workflow scans that OCI archive.
+  - If your command creates `trivy-image.tar` as a Docker image archive (must contain `manifest.json`), the workflow scans that archive.
   - Otherwise, the workflow scans the local Docker image tag from `docker_build_image_id`.
 - Your `docker_build_command` can use these env vars provided by the workflow:
   - `DOCKERFILE_PATH` (current matrix dockerfile)
@@ -74,7 +74,7 @@ with:
   docker_build_command: docker build -f $DOCKERFILE_PATH -t local:latest .
 ```
 
-# Example: custom build command that uses OCI (recommended incase of disk space issue)
+# Example: custom build command that outputs an image tar
 
 This works because your build command outputs `trivy-image.tar`, and the workflow auto-detects and scans it.
 
@@ -89,6 +89,6 @@ jobs:
         docker buildx build
         --build-arg NPM_TOKEN=$NPM_TOKEN
         -f $DOCKERFILE_PATH
-        --output type=oci,dest=trivy-image.tar
+        --output type=docker,dest=trivy-image.tar
         .
 ```

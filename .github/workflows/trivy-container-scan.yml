@@ -127,7 +127,7 @@ jobs:
           env:
             DOCKERFILE_PATH: ${{ matrix.dockerfile_paths }}
             IMAGE_ID: ${{ inputs.docker_build_image_id }}
-            FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker buildx build --build-arg NPM_TOKEN={0} -f {1} --output type=oci,dest=trivy-image.tar .', secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN, matrix.dockerfile_paths) }}
+            FINAL_DOCKER_BUILD_COMMAND: ${{ inputs.docker_build_command != '' && inputs.docker_build_command || format('docker buildx build --build-arg NPM_TOKEN={0} -f {1} --output type=docker,dest=trivy-image.tar .', secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN, matrix.dockerfile_paths) }}
           run: |
             rm -f "trivy-image.tar"
             echo "$FINAL_DOCKER_BUILD_COMMAND"
@@ -137,10 +137,11 @@ jobs:
           id: detect_scan_target
           shell: bash
           run: |
-            if [ -f "trivy-image.tar" ]; then
-              echo "use_oci_archive=true" >> "$GITHUB_OUTPUT"
+            set -euo pipefail
+            if [ -f "trivy-image.tar" ] && tar -tf "trivy-image.tar" 2>/dev/null | grep -qx "manifest.json"; then
+              echo "use_image_archive=true" >> "$GITHUB_OUTPUT"
             else
-              echo "use_oci_archive=false" >> "$GITHUB_OUTPUT"
+              echo "use_image_archive=false" >> "$GITHUB_OUTPUT"
             fi
 
         - name: Creating Trivy report PR comment template file
@@ -155,9 +156,9 @@ jobs:
             {{- end }}
             EOF
 
-        - name: Trivy container vulnerability scan (OCI archive)
+        - name: Trivy container vulnerability scan (image tar archive)
           id: container_scan_oci
-          if: ${{ steps.detect_scan_target.outputs.use_oci_archive == 'true' }}
+          if: ${{ steps.detect_scan_target.outputs.use_image_archive == 'true' }}
           uses: aquasecurity/trivy-action@master
           continue-on-error: true
           with:
@@ -174,7 +175,7 @@ jobs:
 
         - name: Trivy container vulnerability scan (Docker image)
           id: container_scan_docker
-          if: ${{ steps.detect_scan_target.outputs.use_oci_archive != 'true' }}
+          if: ${{ steps.detect_scan_target.outputs.use_image_archive != 'true' }}
           uses: aquasecurity/trivy-action@master
           continue-on-error: true
           with:
@@ -195,7 +196,7 @@ jobs:
           shell: bash
           run: |
             echo "# Trivy Container Scan" > container_scan_prcomment.md
-            SCAN_OUTCOME='${{ inputs.docker_build_command == '' && steps.container_scan_oci.outcome || steps.container_scan_docker.outcome }}'
+            SCAN_OUTCOME='${{ steps.detect_scan_target.outputs.use_image_archive == 'true' && steps.container_scan_oci.outcome || steps.container_scan_docker.outcome }}'
             if [ "$SCAN_OUTCOME" == "failure" ]
             then
               echo "### :warning: Vulnerabilities detected Dockerfile path \[ ${{ matrix.dockerfile_paths }} \]:<br>The following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.<br><br>" >> container_scan_prcomment.md
@@ -219,3 +220,12 @@ jobs:
           if: ${{ inputs.after_step_command != '' && !cancelled() }}
           run: |
             ${{ inputs.after_step_command}}
+
+        - name: Docker cleanup (reduce disk usage)
+          if: ${{ !cancelled() }}
+          continue-on-error: true
+          shell: bash
+          run: |
+            rm -f "trivy-image.tar" || true
+            docker buildx prune -af || true
+            docker system prune -af || true
