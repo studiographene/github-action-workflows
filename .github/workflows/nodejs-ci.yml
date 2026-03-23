@@ -181,7 +181,7 @@ jobs:
     runs-on: ${{ inputs.caching_job_runner }}
     permissions:
       contents: read
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    if: ${{ (github.event_name != 'issue_comment') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-22-alpine
     outputs:
@@ -266,7 +266,7 @@ jobs:
   security_scans:
     name: security_scans
     needs: caching
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
+    if: ${{ (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
     uses: studiographene/github-action-workflows/.github/workflows/security-scans.yml@master
     secrets: inherit
     with:
@@ -286,7 +286,7 @@ jobs:
       discussions: write
       pull-requests: write
       security-events: write
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    if: ${{ (github.event_name != 'issue_comment') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-22-alpine
     steps:
@@ -337,7 +337,7 @@ jobs:
       discussions: write
       pull-requests: write
       security-events: write
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains( inputs.excluded_jobs, 'build_test' )  }}
+    if: ${{ (github.event_name != 'issue_comment') && !contains( inputs.excluded_jobs, 'build_test' )  }}
     container:
       image: public.ecr.aws/studiographene/ci:node-22-alpine
     steps:
@@ -388,7 +388,7 @@ jobs:
       discussions: write
       pull-requests: write
       security-events: write
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && inputs.run_dev_test && !contains( inputs.excluded_jobs, 'developer_tests' ) && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
+    if: ${{ (github.event_name != 'issue_comment') && inputs.run_dev_test && !contains( inputs.excluded_jobs, 'developer_tests' ) && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v5
     steps:
@@ -474,7 +474,7 @@ jobs:
 
   container_scan:
     name: container_scan
-    if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && !contains( inputs.excluded_jobs, 'container_scan' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
+    if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && !contains( inputs.excluded_jobs, 'container_scan' ) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
     uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master
     secrets: inherit
     with:
