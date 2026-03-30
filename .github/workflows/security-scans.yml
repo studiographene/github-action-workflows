@@ -155,7 +155,7 @@ jobs:
         run: |
           cdxgen --version
           npm install -g @cyclonedx/cdxgen-plugins-bin
-          cdxgen --no-recurse -o bom.xml -p --debug
+          cdxgen --deep --recurse -o bom.xml -p --debug
           ls -al
         env:
           FETCH_LICENSE: true
