@@ -244,130 +244,143 @@ jobs:
       image: public.ecr.aws/studiographene/ci:node-22-alpine
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.ref }}
 
-      - name: Download SBOM Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: sbom
-          path: .
+    - name: Download SBOM Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: sbom
+        path: .
 
-      - name: Dependency Scan (SBOM + Lockfile)
-        id: dependency_scan
-        run: |
-          set +e
+    - name: Dependency Scan (SBOM + Lockfile)
+      id: dependency_scan
+      run: |
+        set +e
 
-          echo "📄 Preparing suppression config"
-          cat >> dep_scan_suppression_config.toml <<EOF
-          ${{ vars.OSV_SUPPRESSIONS }}
-          EOF
+        echo "Preparing suppression config"
+        cat >> dep_scan_suppression_config.toml <<EOF
+        ${{ vars.OSV_SUPPRESSIONS }}
+        EOF
 
-          # Scan with SBOM  
-
-          echo "📦 Running SBOM scan"
-          osv-scanner --format json \
-            --config=./dep_scan_suppression_config.toml \
-            --sbom=bom.xml > osv_sbom.json
-
-          # Dynamic lockfile detection and scan with lockfiles
-
-          LOCK_SCAN_DONE=false
-
-          if [ -f pnpm-lock.yaml ]; then
-            echo "🔍 Found pnpm-lock.yaml"
-            osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=pnpm-lock.yaml > osv_lock.json
-            LOCK_SCAN_DONE=true
-
-          elif [ -f package-lock.json ]; then
-            echo "🔍 Found package-lock.json"
-            osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=package-lock.json > osv_lock.json
-            LOCK_SCAN_DONE=true
-
-          elif [ -f yarn.lock ]; then
-            echo "🔍 Found yarn.lock"
-            osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=yarn.lock > osv_lock.json
-            LOCK_SCAN_DONE=true
-
-          elif [ -f composer.lock ]; then
-            echo "🔍 Found composer.lock"
-            osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=composer.lock > osv_lock.json
-            LOCK_SCAN_DONE=true
-
-          else
-            echo "⚠️ No lockfile found — skipping lockfile scan"
-          fi
-
-          # Merge results
-
-          if [ "$LOCK_SCAN_DONE" = true ]; then
-            echo "🔗 Merging SBOM + lockfile results"
-            jq -s '{results: (.[0].results + .[1].results)}' osv_sbom.json osv_lock.json > osv_raw_report.json
-          else
-            echo "📄 Using SBOM results only"
-            cp osv_sbom.json osv_raw_report.json
-          fi
+        
+        # SBOM scan
+        echo "📦 Running SBOM scan"
+        osv-scanner --format json \
+          --config=./dep_scan_suppression_config.toml \
+          --sbom=bom.xml > osv_sbom.json
 
 
-          # Generate Markdown
-  
-          osv-scanner --format markdown \
-            --config=./dep_scan_suppression_config.toml \
-            --sbom=bom.xml > osv_raw_report.md
+        # Lockfile scan (dynamic)
+
+        LOCK_SCAN_DONE=false
 
 
-          # Count vulnerabilities
-    
-          TOTAL_VULNS=$(jq '[.results[].packages[].vulnerabilities | length] | add // 0' osv_raw_report.json)
+        if [ -f pnpm-lock.yaml ]; then
+          echo "🔍 Found pnpm-lock.yaml"
+          osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=pnpm-lock.yaml > osv_lock.json
+          LOCK_SCAN_DONE=true
 
-          HIGH=$(jq '[.results[].packages[].vulnerabilities[]? | select(.severity=="HIGH" or .severity=="CRITICAL")] | length' osv_raw_report.json)
-          MEDIUM=$(jq '[.results[].packages[].vulnerabilities[]? | select(.severity=="MODERATE")] | length' osv_raw_report.json)
-          LOW=$(jq '[.results[].packages[].vulnerabilities[]? | select(.severity=="LOW")] | length' osv_raw_report.json)
-          UNKNOWN=$(jq '[.results[].packages[].vulnerabilities[]? | select(.severity==null)] | length' osv_raw_report.json)
+        elif [ -f package-lock.json ]; then
+          echo "🔍 Found package-lock.json"
+          osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=package-lock.json > osv_lock.json
+          LOCK_SCAN_DONE=true
 
-          echo "OSV_SEVERITY_LOW_COUNT=$LOW" >> $GITHUB_ENV
-          echo "OSV_SEVERITY_MEDIUM_COUNT=$MEDIUM" >> $GITHUB_ENV
-          echo "OSV_SEVERITY_HIGH_COUNT=$HIGH" >> $GITHUB_ENV
-          echo "OSV_SEVERITY_UNKNOWN_COUNT=$UNKNOWN" >> $GITHUB_ENV
+        elif [ -f yarn.lock ]; then
+          echo "🔍 Found yarn.lock"
+          osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=yarn.lock > osv_lock.json
+          LOCK_SCAN_DONE=true
 
-          if [ "$TOTAL_VULNS" -gt 0 ]; then
-            echo "OSV_EXIT_CODE=1" >> $GITHUB_OUTPUT
-          else
-            echo "OSV_EXIT_CODE=0" >> $GITHUB_OUTPUT
-          fi
+        elif [ -f composer.lock ]; then
+          echo "🔍 Found composer.lock"
+          osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=composer.lock > osv_lock.json
+          LOCK_SCAN_DONE=true
 
-          set -e
+        else
+          echo "⚠️ No lockfile found — skipping lockfile scan"
+        fi
 
-      - name: Generate Dependency Scan Report
-        run: |
-          echo "### The following vulnerabilities have been detected in the packages" >> osv_report.md
-          echo "> LOW SEVERITY COUNT: $OSV_SEVERITY_LOW_COUNT" >> osv_report.md
-          echo "MEDIUM SEVERITY COUNT: $OSV_SEVERITY_MEDIUM_COUNT" >> osv_report.md
-          echo "HIGH SEVERITY COUNT: $OSV_SEVERITY_HIGH_COUNT" >> osv_report.md
-          echo "UNKNOWN SEVERITY SCORE COUNT: $OSV_SEVERITY_UNKNOWN_COUNT" >> osv_report.md
 
-          if (( OSV_SEVERITY_HIGH_COUNT > 0 || OSV_SEVERITY_UNKNOWN_COUNT > 0 )); then
-            echo "### 🔴 High severity vulnerabilities found. Please fix before merging<br>" >> osv_report.md
-          else
-            echo "### 🟡 Medium/Low severity vulnerabilities found<br>" >> osv_report.md
-          fi
+        # Merge results
 
-          cat osv_raw_report.md >> osv_report.md
-          cat osv_report.md
+        if [ "$LOCK_SCAN_DONE" = true ]; then
+          echo "🔗 Merging SBOM + lockfile results"
+          jq -s '{results: (.[0].results + .[1].results)}' osv_sbom.json osv_lock.json > osv_raw_report.json
+        else
+          cp osv_sbom.json osv_raw_report.json
+        fi
 
-          if [ "$OSV_SEVERITY_HIGH_COUNT" -gt 0 ]; then
-            echo "::error::High severity vulnerabilities found"
-            exit 1
-          elif [ "$OSV_SEVERITY_MEDIUM_COUNT" -gt 0 ]; then
-            echo "::warning::Medium/Low vulnerabilities found"
-            exit 0
-          fi
+        # Generate Markdown from merged JSON
 
-      - name: Comment Dependency scan report on PR
-        if: ${{ !cancelled() }}
-        uses: mshick/add-pr-comment@v2
-        with:
-          message-id: dependency_scan
-          message-path: osv_report.md
+        echo "| OSV URL | Severity | Package | Version | Source |" > osv_raw_report.md
+        echo "| --- | --- | --- | --- | --- |" >> osv_raw_report.md
+
+        jq -r '
+        .results[].packages[] |
+        select(.vulnerabilities != null and (.vulnerabilities | length > 0)) |
+        . as $pkg |
+        .vulnerabilities[] |
+        "| https://osv.dev/\(.id) | \(.database_specific.severity // "UNKNOWN") | \($pkg.package.name) | \($pkg.package.version // "N/A") | merged |"
+        ' osv_raw_report.json >> osv_raw_report.md
+
+        # Severity counts (correct parsing)
+
+        TOTAL_VULNS=$(jq '[.results[].packages[].vulnerabilities | length] | add // 0' osv_raw_report.json)
+
+        HIGH=$(jq '[.results[].packages[].vulnerabilities[]? | select(.database_specific.severity=="HIGH" or .database_specific.severity=="CRITICAL")] | length' osv_raw_report.json)
+        MEDIUM=$(jq '[.results[].packages[].vulnerabilities[]? | select(.database_specific.severity=="MODERATE")] | length' osv_raw_report.json)
+        LOW=$(jq '[.results[].packages[].vulnerabilities[]? | select(.database_specific.severity=="LOW")] | length' osv_raw_report.json)
+        UNKNOWN=$(jq '[.results[].packages[].vulnerabilities[]? | select(.database_specific.severity==null)] | length' osv_raw_report.json)
+
+        # Export outputs 
+        echo "low=$LOW" >> $GITHUB_OUTPUT
+        echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
+        echo "high=$HIGH" >> $GITHUB_OUTPUT
+        echo "unknown=$UNKNOWN" >> $GITHUB_OUTPUT
+
+        if [ "$TOTAL_VULNS" -gt 0 ]; then
+          echo "OSV_EXIT_CODE=1" >> $GITHUB_OUTPUT
+        else
+          echo "OSV_EXIT_CODE=0" >> $GITHUB_OUTPUT
+        fi
+
+        set -e
+
+    - name: Generate Dependency Scan Report
+      env:
+        LOW: ${{ steps.dependency_scan.outputs.low }}
+        MEDIUM: ${{ steps.dependency_scan.outputs.medium }}
+        HIGH: ${{ steps.dependency_scan.outputs.high }}
+        UNKNOWN: ${{ steps.dependency_scan.outputs.unknown }}
+      run: |
+        echo "### The following vulnerabilities have been detected in the packages" >> osv_report.md
+        echo "> LOW SEVERITY COUNT: $LOW" >> osv_report.md
+        echo "MEDIUM SEVERITY COUNT: $MEDIUM" >> osv_report.md
+        echo "HIGH SEVERITY COUNT: $HIGH" >> osv_report.md
+        echo "UNKNOWN SEVERITY SCORE COUNT: $UNKNOWN" >> osv_report.md
+
+        if (( HIGH > 0 || UNKNOWN > 0 )); then
+          echo "### 🔴 High severity vulnerabilities found. Please fix before merging<br>" >> osv_report.md
+        else
+          echo "### 🟡 Medium/Low severity vulnerabilities found<br>" >> osv_report.md
+        fi
+
+        cat osv_raw_report.md >> osv_report.md
+        cat osv_report.md
+
+        if [ "$HIGH" -gt 0 ]; then
+          echo "::error::High severity vulnerabilities found"
+          exit 1
+        elif [ "$MEDIUM" -gt 0 ]; then
+          echo "::warning::Medium/Low vulnerabilities found"
+          exit 0
+        fi
+
+    - name: Comment Dependency scan report on PR
+      if: ${{ !cancelled() }}
+      uses: mshick/add-pr-comment@v2
+      with:
+        message-id: dependency_scan
+        message-path: osv_report.md
