@@ -244,143 +244,169 @@ jobs:
       image: public.ecr.aws/studiographene/ci:node-22-alpine
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ github.ref }}
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
-    - name: Download SBOM Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: sbom
-        path: .
+      - name: Download SBOM Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom
+          path: .
 
-    - name: Dependency Scan (SBOM + Lockfile)
-      id: dependency_scan
-      run: |
-        set +e
+      - name: Dependency Scan (SBOM + Lockfile)
+        id: dependency_scan
+        run: |
+          set +e
 
-        echo "Preparing suppression config"
-        cat >> dep_scan_suppression_config.toml <<EOF
-        ${{ vars.OSV_SUPPRESSIONS }}
-        EOF
+          echo "📄 Preparing suppression config"
+          cat >> dep_scan_suppression_config.toml <<EOF
+          ${{ vars.OSV_SUPPRESSIONS }}
+          EOF
 
-        
-        # SBOM scan
-        echo "📦 Running SBOM scan"
-        osv-scanner --format json \
-          --config=./dep_scan_suppression_config.toml \
-          --sbom=bom.xml > osv_sbom.json
+          # -------------------------------
+          # SBOM scan
+          # -------------------------------
+          echo "📦 Running SBOM scan"
+          osv-scanner --format json \
+            --config=./dep_scan_suppression_config.toml \
+            --sbom=bom.xml > osv_sbom.json
 
+          # -------------------------------
+          # Lockfile scan (dynamic)
+          # -------------------------------
+          LOCK_SCAN_DONE=false
 
-        # Lockfile scan (dynamic)
+          if [ -f pnpm-lock.yaml ]; then
+            echo "🔍 Found pnpm-lock.yaml"
+            osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=pnpm-lock.yaml > osv_lock.json
+            LOCK_SCAN_DONE=true
 
-        LOCK_SCAN_DONE=false
+          elif [ -f package-lock.json ]; then
+            echo "🔍 Found package-lock.json"
+            osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=package-lock.json > osv_lock.json
+            LOCK_SCAN_DONE=true
 
+          elif [ -f yarn.lock ]; then
+            echo "🔍 Found yarn.lock"
+            osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=yarn.lock > osv_lock.json
+            LOCK_SCAN_DONE=true
 
-        if [ -f pnpm-lock.yaml ]; then
-          echo "🔍 Found pnpm-lock.yaml"
-          osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=pnpm-lock.yaml > osv_lock.json
-          LOCK_SCAN_DONE=true
+          elif [ -f composer.lock ]; then
+            echo "🔍 Found composer.lock"
+            osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=composer.lock > osv_lock.json
+            LOCK_SCAN_DONE=true
 
-        elif [ -f package-lock.json ]; then
-          echo "🔍 Found package-lock.json"
-          osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=package-lock.json > osv_lock.json
-          LOCK_SCAN_DONE=true
+          else
+            echo "⚠️ No lockfile found — skipping lockfile scan"
+          fi
 
-        elif [ -f yarn.lock ]; then
-          echo "🔍 Found yarn.lock"
-          osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=yarn.lock > osv_lock.json
-          LOCK_SCAN_DONE=true
+          # -------------------------------
+          # Merge results
+          # -------------------------------
+          if [ "$LOCK_SCAN_DONE" = true ]; then
+            jq -s '{results: (.[0].results + .[1].results)}' osv_sbom.json osv_lock.json > osv_raw_report.json
+          else
+            cp osv_sbom.json osv_raw_report.json
+          fi
 
-        elif [ -f composer.lock ]; then
-          echo "🔍 Found composer.lock"
-          osv-scanner --format json --config=./dep_scan_suppression_config.toml --lockfile=composer.lock > osv_lock.json
-          LOCK_SCAN_DONE=true
+          # -------------------------------
+          # Generate Sorted + Deduped Markdown
+          # -------------------------------
+          echo "| OSV URL | Severity | Package | Version | Source |" > osv_raw_report.md
+          echo "| --- | --- | --- | --- | --- |" >> osv_raw_report.md
 
-        else
-          echo "⚠️ No lockfile found — skipping lockfile scan"
-        fi
+          jq -r '
+          [
+            .results[].packages[] 
+            | select(.vulnerabilities != null and (.vulnerabilities | length > 0))
+            | . as $pkg
+            | .vulnerabilities[]
+            | {
+                id: .id,
+                severity: (.database_specific.severity // "UNKNOWN"),
+                package: $pkg.package.name,
+                version: ($pkg.package.version // "N/A")
+              }
+          ]
+          | unique_by(.id + .package + .version)
+          | sort_by(
+              if .severity=="CRITICAL" then 0
+              elif .severity=="HIGH" then 1
+              elif .severity=="MODERATE" then 2
+              elif .severity=="LOW" then 3
+              else 4 end
+            )
+          | .[]
+          | "| https://osv.dev/\(.id) | \(.severity) | \(.package) | \(.version) | merged |"
+          ' osv_raw_report.json >> osv_raw_report.md
 
+          # -------------------------------
+          # Severity counts
+          # -------------------------------
+          TOTAL=$(jq '[.results[].packages[].vulnerabilities | length] | add // 0' osv_raw_report.json)
 
-        # Merge results
+          CRITICAL=$(jq '[.results[].packages[].vulnerabilities[]? | select(.database_specific.severity=="CRITICAL")] | length' osv_raw_report.json)
+          HIGH=$(jq '[.results[].packages[].vulnerabilities[]? | select(.database_specific.severity=="HIGH")] | length' osv_raw_report.json)
+          MEDIUM=$(jq '[.results[].packages[].vulnerabilities[]? | select(.database_specific.severity=="MODERATE")] | length' osv_raw_report.json)
+          LOW=$(jq '[.results[].packages[].vulnerabilities[]? | select(.database_specific.severity=="LOW")] | length' osv_raw_report.json)
+          UNKNOWN=$(jq '[.results[].packages[].vulnerabilities[]? | select(.database_specific.severity==null)] | length' osv_raw_report.json)
 
-        if [ "$LOCK_SCAN_DONE" = true ]; then
-          echo "🔗 Merging SBOM + lockfile results"
-          jq -s '{results: (.[0].results + .[1].results)}' osv_sbom.json osv_lock.json > osv_raw_report.json
-        else
-          cp osv_sbom.json osv_raw_report.json
-        fi
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "high=$HIGH" >> $GITHUB_OUTPUT
+          echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
+          echo "low=$LOW" >> $GITHUB_OUTPUT
+          echo "unknown=$UNKNOWN" >> $GITHUB_OUTPUT
 
-        # Generate Markdown from merged JSON
+          if [ "$TOTAL" -gt 0 ]; then
+            echo "OSV_EXIT_CODE=1" >> $GITHUB_OUTPUT
+          else
+            echo "OSV_EXIT_CODE=0" >> $GITHUB_OUTPUT
+          fi
 
-        echo "| OSV URL | Severity | Package | Version | Source |" > osv_raw_report.md
-        echo "| --- | --- | --- | --- | --- |" >> osv_raw_report.md
+          set -e
 
-        jq -r '
-        .results[].packages[] |
-        select(.vulnerabilities != null and (.vulnerabilities | length > 0)) |
-        . as $pkg |
-        .vulnerabilities[] |
-        "| https://osv.dev/\(.id) | \(.database_specific.severity // "UNKNOWN") | \($pkg.package.name) | \($pkg.package.version // "N/A") | merged |"
-        ' osv_raw_report.json >> osv_raw_report.md
+      - name: Generate Dependency Scan Report
+        env:
+          CRITICAL: ${{ steps.dependency_scan.outputs.critical }}
+          HIGH: ${{ steps.dependency_scan.outputs.high }}
+          MEDIUM: ${{ steps.dependency_scan.outputs.medium }}
+          LOW: ${{ steps.dependency_scan.outputs.low }}
+          UNKNOWN: ${{ steps.dependency_scan.outputs.unknown }}
+        run: |
+          echo "### The following vulnerabilities have been detected in the packages" >> osv_report.md
+          echo "> CRITICAL: $CRITICAL" >> osv_report.md
+          echo "HIGH: $HIGH" >> osv_report.md
+          echo "MEDIUM: $MEDIUM" >> osv_report.md
+          echo "LOW: $LOW" >> osv_report.md
+          echo "UNKNOWN: $UNKNOWN" >> osv_report.md
 
-        # Severity counts (correct parsing)
+          if (( CRITICAL > 0 )); then
+            echo "### 🔴 CRITICAL vulnerabilities found — fix immediately<br>" >> osv_report.md
+          elif (( HIGH > 0 )); then
+            echo "### 🔴 HIGH vulnerabilities found<br>" >> osv_report.md
+          else
+            echo "### 🟡 Medium/Low vulnerabilities found<br>" >> osv_report.md
+          fi
 
-        TOTAL_VULNS=$(jq '[.results[].packages[].vulnerabilities | length] | add // 0' osv_raw_report.json)
+          cat osv_raw_report.md >> osv_report.md
+          cat osv_report.md
 
-        HIGH=$(jq '[.results[].packages[].vulnerabilities[]? | select(.database_specific.severity=="HIGH" or .database_specific.severity=="CRITICAL")] | length' osv_raw_report.json)
-        MEDIUM=$(jq '[.results[].packages[].vulnerabilities[]? | select(.database_specific.severity=="MODERATE")] | length' osv_raw_report.json)
-        LOW=$(jq '[.results[].packages[].vulnerabilities[]? | select(.database_specific.severity=="LOW")] | length' osv_raw_report.json)
-        UNKNOWN=$(jq '[.results[].packages[].vulnerabilities[]? | select(.database_specific.severity==null)] | length' osv_raw_report.json)
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "::error::Critical vulnerabilities found"
+            exit 1
+          elif [ "$HIGH" -gt 0 ]; then
+            echo "::error::High vulnerabilities found"
+            exit 1
+          elif [ "$MEDIUM" -gt 0 ]; then
+            echo "::warning::Medium vulnerabilities found"
+            exit 0
+          fi
 
-        # Export outputs 
-        echo "low=$LOW" >> $GITHUB_OUTPUT
-        echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
-        echo "high=$HIGH" >> $GITHUB_OUTPUT
-        echo "unknown=$UNKNOWN" >> $GITHUB_OUTPUT
-
-        if [ "$TOTAL_VULNS" -gt 0 ]; then
-          echo "OSV_EXIT_CODE=1" >> $GITHUB_OUTPUT
-        else
-          echo "OSV_EXIT_CODE=0" >> $GITHUB_OUTPUT
-        fi
-
-        set -e
-
-    - name: Generate Dependency Scan Report
-      env:
-        LOW: ${{ steps.dependency_scan.outputs.low }}
-        MEDIUM: ${{ steps.dependency_scan.outputs.medium }}
-        HIGH: ${{ steps.dependency_scan.outputs.high }}
-        UNKNOWN: ${{ steps.dependency_scan.outputs.unknown }}
-      run: |
-        echo "### The following vulnerabilities have been detected in the packages" >> osv_report.md
-        echo "> LOW SEVERITY COUNT: $LOW" >> osv_report.md
-        echo "MEDIUM SEVERITY COUNT: $MEDIUM" >> osv_report.md
-        echo "HIGH SEVERITY COUNT: $HIGH" >> osv_report.md
-        echo "UNKNOWN SEVERITY SCORE COUNT: $UNKNOWN" >> osv_report.md
-
-        if (( HIGH > 0 || UNKNOWN > 0 )); then
-          echo "### 🔴 High severity vulnerabilities found. Please fix before merging<br>" >> osv_report.md
-        else
-          echo "### 🟡 Medium/Low severity vulnerabilities found<br>" >> osv_report.md
-        fi
-
-        cat osv_raw_report.md >> osv_report.md
-        cat osv_report.md
-
-        if [ "$HIGH" -gt 0 ]; then
-          echo "::error::High severity vulnerabilities found"
-          exit 1
-        elif [ "$MEDIUM" -gt 0 ]; then
-          echo "::warning::Medium/Low vulnerabilities found"
-          exit 0
-        fi
-
-    - name: Comment Dependency scan report on PR
-      if: ${{ !cancelled() }}
-      uses: mshick/add-pr-comment@v2
-      with:
-        message-id: dependency_scan
-        message-path: osv_report.md
+      - name: Comment Dependency scan report on PR
+        if: ${{ !cancelled() }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: dependency_scan
+          message-path: osv_report.md
