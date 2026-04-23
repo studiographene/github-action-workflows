@@ -183,7 +183,7 @@ jobs:
       contents: read
     if: ${{ (github.event_name != 'issue_comment') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: public.ecr.aws/studiographene/ci:node-24-alpine
     outputs:
       cache-key: ${{ steps.set-cache-key.outputs.cache-key }}
       cache-restore-key: ${{ steps.set-cache-restore-key.outputs.cache-restore-key }}
@@ -288,7 +288,7 @@ jobs:
       security-events: write
     if: ${{ (github.event_name != 'issue_comment') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: public.ecr.aws/studiographene/ci:node-24-alpine
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -339,7 +339,7 @@ jobs:
       security-events: write
     if: ${{ (github.event_name != 'issue_comment') && !contains( inputs.excluded_jobs, 'build_test' )  }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: public.ecr.aws/studiographene/ci:node-24-alpine
     steps:
       - name: Checkout
         uses: actions/checkout@v4
