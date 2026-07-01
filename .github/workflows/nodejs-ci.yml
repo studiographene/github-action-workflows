@@ -65,6 +65,11 @@ on:
         type: boolean
         required: false
         default: false
+      developer_tests_container_image:
+        description: "Container image to use for the developer_tests job"
+        type: string
+        required: false
+        default: "public.ecr.aws/studiographene/ci:node-20-buster-slim-v5"
       dev_test_branch:
         description: "Developer-provided branch names to run the tests"
         type: string
@@ -390,7 +395,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && inputs.run_dev_test && !contains( inputs.excluded_jobs, 'developer_tests' ) && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v5
+      image: ${{ inputs.developer_tests_container_image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
