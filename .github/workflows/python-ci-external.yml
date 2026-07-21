@@ -1,0 +1,333 @@
+name: Studiographene NodeJs CI
+
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        description: "Python version to use in the workflow. Default = 3.9"
+        type: string
+        required: false
+        default: "3.9"
+      linting_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      container_scan_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      security_scans_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      excluded_jobs:
+        type: string
+        default: ""
+      dockerfile_paths:
+        description: "For container scan. Set of separated Dockerfile paths. Useful when you want scan Dockerfile in selected directories. Example: [./apps/users/Dockerfile, ./apps/account/Dockerfile]"
+        type: string
+        required: false
+        default: ""
+      docker_build_command:
+        type: string
+        required: false
+        default: ""
+      docker_build_image_id:
+        description: "Docker image ID/tag to scan (built locally in the job)"
+        type: string
+        default: "local:latest"
+      container_scanners:
+        description: "comma-separated list of what security issues to detect (vuln,secret,config). Default = vuln"
+        type: string
+        required: false
+        default: vuln
+      container_scan_skip_dirs:
+        description: "Comma separated list of directories to skip scanning"
+        type: string
+        required: false
+      security_scan_before_step_command:
+        description: "NOT IN USE. Depreciated."
+        type: string
+        default: ""
+      security_scan_after_step_command:
+        description: "NOT IN USE. Depreciated."
+        type: string
+        default: ""
+      container_scan_before_step_command:
+        description: "Command to execute at the start of the container scan"
+        type: string
+        default: ""
+      container_scan_after_step_command:
+        description: "Command to execute at the end of the container scan"
+        type: string
+        default: ""
+      lint_scan_before_step_command:
+        description: "Command to execute at the start of the Lint scan"
+        type: string
+        default: ""
+      lint_scan_after_step_command:
+        description: "Command to execute at the end of the Lint scan"
+        type: string
+        default: ""
+      semgrep_options:
+        type: string
+        default: ""
+      garak_command:
+        description: "Optional: command to run NVIDIA Garak LLM security scanning (e.g. 'garak --help' or a full scan command). If empty, Garak job is skipped."
+        type: string
+        required: false
+        default: ""
+      dev_test_branch:
+        description: "Developer-provided branch names to run the tests"
+        type: string
+        required: false
+        default: dev  
+
+permissions:
+  # Required to upload SARIF file to CodeQL. See: https://github.com/github/codeql-action/issues/2117
+  actions: read
+  security-events: write
+  contents: read
+  pull-requests: write
+  issues: write
+  discussions: write
+
+jobs:
+
+  osv:
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.2.3"
+    with:
+      upload-sarif: false
+      ## Markdown report does not work, to be tested further. Currently a cutom Markdown is generated in the below job.
+      # scan-args: |-
+      #   --format=markdown
+      #   --output=osv_report.md
+      #   ./
+
+  report_osv:
+    name: OSV Scanner report
+    runs-on: ubuntu-latest
+    needs: osv
+    if: always()
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    steps:
+      - name: List available artifacts (debug)
+        run: |
+          echo "Available artifacts:"
+          # This won't work directly, but we can check the job outputs
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: new-json-results
+          path: ./osv-results
+        continue-on-error: true
+
+      - name: Check downloaded artifacts
+        run: |
+          echo "Files in current directory:"
+          ls -la
+          echo "Files in osv-results directory:"
+          ls -la ./osv-results/ || echo "osv-results directory not found"
+      - name: Create OSV Markdown Report
+        run: |
+          echo "## OSV Security Scan Report" > osv_report.md
+          echo "" >> osv_report.md
+
+          # Check if results file exists
+          if [ ! -f "./osv-results/new-results.json" ]; then
+            echo "❌ **OSV scan results file not found**" >> osv_report.md
+            exit 0
+          fi
+
+          RESULTS_FILE="./osv-results/new-results.json"
+
+          if [ -z "$RESULTS_FILE" ]; then
+            echo "❌ **OSV scan results file not found**" >> osv_report.md
+            echo "" >> osv_report.md
+            echo "Searched for:" >> osv_report.md
+            echo "- ./osv-results/new-results.json" >> osv_report.md
+            echo "- new-results.json" >> osv_report.md
+            echo "- osv-results.json" >> osv_report.md
+            echo "" >> osv_report.md
+            echo "Available files:" >> osv_report.md
+            find . -name "*.json" -type f >> osv_report.md 2>/dev/null || echo "No JSON files found"
+          else
+            echo "Using results file: $RESULTS_FILE" >> osv_report.md
+            echo "" >> osv_report.md
+
+            # Get total packages scanned
+            TOTAL_PACKAGES=$(jq '.results | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+            
+            # Get packages with vulnerabilities
+            VULN_PACKAGES=$(jq '[.results[].packages[] | select(.vulnerabilities | length > 0)] | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+            
+            # Get total vulnerabilities
+            TOTAL_VULNS=$(jq '[.results[].packages[].vulnerabilities | length] | add // 0' "$RESULTS_FILE" 2>/dev/null || echo "0")
+
+            if [ "$VULN_PACKAGES" -eq 0 ]; then
+              echo "✅ **No security vulnerabilities detected!**" >> osv_report.md
+              echo "" >> osv_report.md
+              echo "All $TOTAL_PACKAGES dependencies are secure according to OSV database." >> osv_report.md
+            else
+              echo "⚠️ **Found $TOTAL_VULNS vulnerabilities in $VULN_PACKAGES packages**" >> osv_report.md
+              echo "" >> osv_report.md
+            
+              # Create temporary file with processed vulnerability data
+              jq -r '.results[].packages[] | 
+              select(.vulnerabilities | length > 0) | 
+              [
+                .package.name,
+                .package.version // "N/A", 
+                (.vulnerabilities | length),
+                (.vulnerabilities[0].database_specific.severity // "Unknown"),
+                (.vulnerabilities[0].id // "N/A")
+              ] | @tsv' "$RESULTS_FILE" > temp_vulns.tsv
+
+            # severity counts
+            HIGH_COUNT=$(awk -F'\t' 'BEGIN{IGNORECASE=1} $4 ~ /HIGH|CRITICAL/ {sum+=$3} END {print sum+0}' temp_vulns.tsv)
+            MEDIUM_COUNT=$(awk -F'\t' 'BEGIN{IGNORECASE=1} $4 ~ /MODERATE/ {sum+=$3} END {print sum+0}' temp_vulns.tsv)
+            LOW_COUNT=$(awk -F'\t' 'BEGIN{IGNORECASE=1} $4 ~ /LOW/ {sum+=$3} END {print sum+0}' temp_vulns.tsv)
+            UNKNOWN_COUNT=$(awk -F'\t' 'BEGIN{IGNORECASE=1} $4 ~ /Unknown/ {sum+=$3} END {print sum+0}' temp_vulns.tsv)
+
+            echo "### Summary by Severity" >> osv_report.md
+            echo "" >> osv_report.md
+            echo "- 🔴 **High**: $HIGH_COUNT" >> osv_report.md
+            echo "- 🟡 **Medium**: $MEDIUM_COUNT" >> osv_report.md
+            echo "- 🟢 **Low**: $LOW_COUNT" >> osv_report.md
+              if [ "$UNKNOWN_COUNT" -gt 0 ]; then
+                echo "- ❓ **Unknown**: $UNKNOWN_COUNT" >> osv_report.md
+              fi
+              echo "" >> osv_report.md
+
+              echo "### Vulnerable Packages" >> osv_report.md
+              echo "" >> osv_report.md
+              echo "| Package | Version | Vulnerabilities | Highest Severity | Sample CVE |" >> osv_report.md
+              echo "| --- | --- | --- | --- | --- |" >> osv_report.md
+
+              # Use the same temp file for the table
+              head -20 temp_vulns.tsv | while IFS=$'\t' read -r pkg_name pkg_version vuln_count severity sample_cve; do
+                # Add severity emoji
+                case "$severity" in
+                  [9].*|10.*) severity_display="🔴 $severity" ;;
+                  [8].*) severity_display="🔴 $severity" ;;
+                  [7].*) severity_display="🔴 $severity" ;;
+                  [6].*|[5].*|[4].*) severity_display="🟡 $severity" ;;
+                  [3].*|[2].*|[1].*) severity_display="🟢 $severity" ;;
+                  *) severity_display="ℹ️ $severity" ;;
+                esac
+                
+                echo "| **$pkg_name** | $pkg_version | $vuln_count | $severity_display | $sample_cve |" >> osv_report.md
+              done
+
+              # Clean up temp file  
+              rm -f temp_vulns.tsv
+
+              echo "" >> osv_report.md
+              echo "### 🔧 Action Required" >> osv_report.md
+              echo "" >> osv_report.md
+              echo "1. **Update vulnerable packages**: \`pip install --upgrade <package-name>\`" >> osv_report.md
+              echo "2. **Vulnerability Priority order**: Fix 🔴 High severity first, then 🟡 Medium, then 🟢 Low" >> osv_report.md
+              echo "3. **Test your application** after applying updates" >> osv_report.md
+              
+              echo "" >> osv_report.md
+              echo "---" >> osv_report.md
+              echo "*Report generated by [OSV Scanner](https://osv.dev/) on $(date)*" >> osv_report.md
+
+              if [ "$VULN_PACKAGES" -gt 20 ]; then
+                  echo "" >> osv_report.md
+                  echo "⚠️ **Note**: Showing first 20 vulnerable packages. Check [workflow logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for complete results." >> osv_report.md
+              fi
+            fi
+          fi
+
+
+          echo "" >> osv_report.md
+          echo "*Scan completed on $(date) with [OSV Scanner](https://osv.dev/)*" >> osv_report.md
+      - name: Comment report on PR
+        if: ${{ !cancelled() }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: osv-scan
+          message-path: osv_report.md
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ${{ inputs.security_scans_job_runner }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v1.6.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+  container_scan:
+    name: container_scan
+    if: ${{ !contains( inputs.excluded_jobs, 'container_scan' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
+    uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master
+    secrets: inherit
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: read
+    with:
+      job_runner: ${{ inputs.container_scan_job_runner }}
+      docker_build_command: ${{ inputs.docker_build_command }}
+      docker_build_image_id: ${{ inputs.docker_build_image_id }}
+      container_scanners: ${{ inputs.container_scanners }}
+      container_scan_skip_dirs: ${{ inputs.container_scan_skip_dirs }}
+      dockerfile_paths: ${{ inputs.dockerfile_paths}}
+      before_step_command: ${{ inputs.container_scan_before_step_command }}
+      after_step_command: ${{ inputs.container_scan_after_step_command}}
+
+  garak:
+    name: garak
+    runs-on: ${{ inputs.security_scans_job_runner }}
+    if: ${{ inputs.garak_command != '' && !contains(inputs.excluded_jobs, 'garak') && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Install Garak
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir garak
+          garak --version
+
+      - name: Run Garak
+        env:
+          # Garak relies on provider env vars (e.g. OPENAI_API_KEY, AZURE_OPENAI_*, etc.)
+          # Use `secrets: inherit` in the caller workflow to provide them.
+          GARAK_COMMAND: ${{ inputs.garak_command }}
+        run: |
+          set -euo pipefail
+          echo "$GARAK_COMMAND"
+          eval "$GARAK_COMMAND"
