@@ -1,0 +1,513 @@
+name: Studiographene NodeJs CI
+
+on:
+  workflow_call:
+    secrets:
+      NPM_TOKEN:
+        description: "A GitHub PersonalAccessToken used to access GitHub package regististy. NPM_TOKEN is also passed as Docker build --build-arg. If not defined default GITHUB_TOKEN is used."
+        required: false
+      PULSE_HMAC_SECRET:
+        description: "A secret key to generate HMAC for Pulse API. This is used to send test coverage report to Pulse."
+        required: false
+    inputs:
+      job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      security_scans_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      caching_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      linting_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      build_test_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      container_scan_job_runner:
+        description: "GitHub action Jobs runtime. For example GitHub default runtimes like ubuntu-latest or you custome runtime. Default = ubuntu-latest"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+      PULSE_URL:
+        type: string
+        default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com"
+      WORKBREAKDOWN_SCRIPT_URL:
+        type: string
+        default: "https://sg-devops-scripts.s3.eu-west-1.amazonaws.com/pulse/pulse-github-work-break-down/pulse-github-work-break-down.py"
+      excluded_jobs:
+        type: string
+        default: ""
+      package_manager:
+        type: string
+        default: "npm"
+      package_install_command:
+        description: "Package install command to use instead of the default command."
+        type: string
+        required: false
+        default: ""
+      build_command:
+        type: string
+        default: "npm run build"
+      run_dev_test:
+        description: "A boolen value to enable Developer tests (Unit/Integration/etc.,). Set value as `true` if tests are available in your repo code"
+        type: boolean
+        required: false
+        default: false
+      developer_tests_container_image:
+        description: "Container image to use for the developer_tests job"
+        type: string
+        required: false
+        default: "public.ecr.aws/studiographene/ci:node-20-buster-slim-v5"
+      dev_test_branch:
+        description: "Developer-provided branch names to run the tests"
+        type: string
+        required: false
+        default: dev
+      dockerfile_paths:
+        description: "For container scan. Set of separated Dockerfile paths. Useful when you want scan Dockerfile in selected directories. Example: [./apps/users/Dockerfile, ./apps/account/Dockerfile]"
+        type: string
+        required: false
+        default: ""
+      docker_build_command:
+        type: string
+        required: false
+        default: ""
+      docker_build_image_id:
+        description: "Docker image ID as mentioned in docker_build_command"
+        type: string
+        default: "local:latest"
+      container_scanners:
+        description: "comma-separated list of what security issues to detect (vuln,secret,config). Default = vuln"
+        type: string
+        required: false
+        default: vuln
+      container_scan_skip_dirs:
+        description: "Comma separated list of directories to skip scanning"
+        type: string
+        required: false
+      lint_command:
+        type: string
+        default: "npm run lint"
+      allowedLicenses:
+        type: string
+        required: false
+        description: "`allowedLicenses` input is deprecated, and not used anymore. You can set allowed licenses using `ALLOWED_LICENSES` in GitHub action variables in UI."
+      semgrep_options:
+        type: string
+        default: ""
+      security_scan_before_step_command:
+        description: "NOT IN USE. Depreciated."
+        type: string
+        default: ""
+      security_scan_after_step_command:
+        description: "NOT IN USE. Depreciated."
+        type: string
+        default: ""
+      pr_agent_before_step_command:
+        description: "NOT IN USE. Depreciated."
+        type: string
+        default: ""
+      pr_agent_after_step_command:
+        description: "NOT IN USE. Depreciated."
+        type: string
+        default: ""
+      caching_before_step_command:
+        type: string
+        default: ""
+      caching_after_step_command:
+        type: string
+        default: ""
+      technology_based_scans_before_step_command:
+        description: "NOT IN USE. Depreciated."
+        type: string
+        default: ""
+      technology_based_scans_after_step_command:
+        description: "NOT IN USE. Depreciated."
+        type: string
+        default: ""
+      container_scan_before_step_command:
+        description: "Command to execute at the start of the container scan"
+        type: string
+        default: ""
+      container_scan_after_step_command:
+        description: "Command to execute at the end of the container scan"
+        type: string
+        default: ""
+      developer_tests_before_step_command:
+        description: "Command to execute at the start of the Developer tests"
+        type: string
+        default: ""
+      developer_tests_after_step_command:
+        description: "Command to execute at the end of the Developer tests"
+        type: string
+        default: ""
+      build_test_before_step_command:
+        description: "Command to execute at the start of the Build Test Job"
+        type: string
+        default: ""
+      build_test_after_step_command:
+        description: "Command to execute at the end of the Build Test Job"
+        type: string
+        default: ""
+      lint_scan_before_step_command:
+        description: "Command to execute at the start of the Lint scan"
+        type: string
+        default: ""
+      lint_scan_after_step_command:
+        description: "Command to execute at the end of the Lint scan"
+        type: string
+        default: ""
+      send_dev_test_coverage_report_to_pulse:
+        description: "A boolean value to enable sending test coverage report to Pulse"
+        type: boolean
+        required: false
+        default: false
+      dev_test_coverage_report_directory:
+        description: "Location of the test coverage report"
+        type: string
+        required: false
+        default: "coverage"
+
+jobs:
+  caching:
+    name: cache_module
+    runs-on: ${{ inputs.caching_job_runner }}
+    permissions:
+      contents: read
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    outputs:
+      cache-key: ${{ steps.set-cache-key.outputs.cache-key }}
+      cache-restore-key: ${{ steps.set-cache-restore-key.outputs.cache-restore-key }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: before step
+        if: ${{ inputs.caching_before_step_command != '' }}
+        run: |
+          ${{ inputs.caching_before_step_command}}
+      - name: Set cache key
+        id: set-cache-key
+        if: |
+          inputs.package_manager == 'npm' || 
+          inputs.package_manager == 'yarn' || 
+          inputs.package_manager == 'pnpm'
+        run: |
+          echo "cache-key=${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> "$GITHUB_OUTPUT"
+      - name: Set cache restore key
+        id: set-cache-restore-key
+        if: |
+          inputs.package_manager == 'npm' || 
+          inputs.package_manager == 'yarn' || 
+          inputs.package_manager == 'pnpm'
+        run: |
+          echo "cache-restore-key=${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> "$GITHUB_OUTPUT"
+      - name: Cache node modules
+        id: cache-node-modules
+        if: |
+          inputs.package_manager == 'npm' || 
+          inputs.package_manager == 'yarn' || 
+          inputs.package_manager == 'pnpm'
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ steps.set-cache-key.outputs.cache-key }}
+          restore-keys: ${{ steps.set-cache-restore-key.outputs.cache-restore-key }}
+      - name: List the state of node modules
+        if: ${{ steps.cache-node-modules.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+        run: ${{ inputs.package_manager }} list
+      - name: Install dependencies
+        run: |
+          ${{ inputs.package_install_command != '' && inputs.package_install_command || format('{0} install', inputs.package_manager) }}
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Convert package_lockFile version > 2 in case of npm
+        if: inputs.package_manager == 'npm'
+        run: |
+          ${{ inputs.package_manager }} install --package_lockFile-version 2 --package-lock-only
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Upload package-lock artifact
+        uses: actions/upload-artifact@v4
+        if: inputs.package_manager == 'npm'
+        with:
+          name: package_lockFile
+          path: package-lock.json
+      - name: Upload yarn-lock
+        uses: actions/upload-artifact@v4
+        if: inputs.package_manager == 'yarn'
+        with:
+          name: package_lockFile
+          path: yarn.lock
+      - name: Upload pnpm-lock
+        uses: actions/upload-artifact@v4
+        if: inputs.package_manager == 'pnpm'
+        with:
+          name: package_lockFile
+          path: pnpm-lock.yaml
+      - name: after step
+        if: ${{ inputs.caching_after_step_command != '' }}
+        run: |
+          ${{ inputs.caching_after_step_command}}
+
+  # security_scans:
+  #   name: security_scans
+  #   needs: caching
+  #   if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
+  #   uses: studiographene/github-action-workflows/.github/workflows/security-scans.yml@master
+  #   secrets: inherit
+  #   with:
+  #     security_scan_before_step_command: ${{ inputs.security_scan_before_step_command }}
+  #     security_scan_after_step_command: ${{ inputs.security_scan_after_step_command }}
+  #     excluded_jobs: ${{ inputs.excluded_jobs }}
+  #     semgrep_options: ${{ inputs.semgrep_options }}
+  #     job_runner: ${{ inputs.security_scans_job_runner }}
+
+  generate_sbom:
+    name: generate_sbom
+    needs: caching
+    runs-on: ${{ inputs.job_runner }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Check for composer.lock or composer.json
+        id: check_files
+        run: |
+          if [ -f composer.lock ] || [ -f composer.json ]; then
+            echo "Files exist"
+            echo "SKIP_DOWNLOAD_LOCKFILE=true" >> $GITHUB_OUTPUT
+          else
+            echo "Files do not exist"
+            echo "SKIP_DOWNLOAD_LOCKFILE=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Download package_lockFile Artifact
+        if: ${{ !cancelled() && steps.check_files.outputs.SKIP_DOWNLOAD_LOCKFILE != 'true' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: package_lockFile
+          path: .
+      - name: Generate SBOM using CycloneDX
+        if: always ()
+        run: |
+          cdxgen --version
+          npm install -g @cyclonedx/cdxgen-plugins-bin
+          cdxgen --no-recurse -o bom.xml -p --debug
+          ls -al
+        env:
+          FETCH_LICENSE: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CDXGEN_DEBUG_MODE: debug
+
+      - name: Upload SBOM as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: bom.xml
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ${{ inputs.job_runner }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'gitleaks') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      # - name: SAST before step
+      #   if: ${{ inputs.security_scan_before_step_command != '' }}
+      #   run: |
+      #     ${{ inputs.security_scan_before_step_command}}
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v1.6.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency_scan:
+    needs: generate_sbom
+    name: dependency_scan
+    runs-on: ${{ inputs.job_runner }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Download SBOM Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom
+          path: .
+      - name: Dependency Scan using Google OSV
+        id: dependency_scan
+        run: |
+          cat >> dep_scan_suppression_config.toml <<EOF
+              ${{ vars.OSV_SUPPRESSIONS }}
+          EOF
+          set +e
+          osv-scanner --format markdown --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.md
+          # JSON report is generated to segregate the vulnerabilities based on the CVSS score
+          osv-scanner --format json --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.json
+          echo "OSV_EXIT_CODE=$?" >> $GITHUB_OUTPUT
+          set -e
+      - name: Generate Dependency Scan Report
+        id: generate_dependency_scan_report
+        env:
+          OSV_EXIT_CODE: ${{ steps.dependency_scan.outputs.OSV_EXIT_CODE }}
+        run: |
+          if [ $OSV_EXIT_CODE -ne 0 ]; then
+            echo "Executing IF statement (vulnerabilities found)"
+            SEVERITY_COUNTS=$(jq -r ' [.results[].packages[]? | select(.groups != null) | .groups[]?.max_severity ]
+              | [
+                  (map(select(test("^[0-9.]+$")) | tonumber | select(. < 4)) | length),
+                  (map(select(test("^[0-9.]+$")) | tonumber | select(. >= 4 and . <= 7)) | length),
+                  (map(select(test("^[0-9.]+$")) | tonumber | select(. > 7)) | length),
+                  (map(select((. == "") or (test("^[0-9.]+$") | not))) | length)
+                ] 
+              | @sh
+            ' osv_raw_report.json)
+            OSV_SEVERITY_LOW_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f1)
+            OSV_SEVERITY_MEDIUM_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f2)
+            OSV_SEVERITY_HIGH_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f3)
+            OSV_SEVERITY_UNKNOWN_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f4)
+            echo "### The following vulnerabilities have been detected in the packages" >> osv_report.md
+            echo "> LOW SEVERITY COUNT: $OSV_SEVERITY_LOW_COUNT" >> osv_report.md
+            echo "MEDIUM SEVERITY COUNT: $OSV_SEVERITY_MEDIUM_COUNT" >> osv_report.md
+            echo "HIGH SEVERITY COUNT: $OSV_SEVERITY_HIGH_COUNT" >> osv_report.md
+            echo "UNKNOWN SEVERITY SCORE COUNT: $OSV_SEVERITY_UNKNOWN_COUNT" >> osv_report.md
+            if (( OSV_SEVERITY_HIGH_COUNT > 0 || OSV_SEVERITY_UNKNOWN_COUNT > 0 )); then
+              echo "### ${OSV_SEVERITY_HIGH_COUNT} HIGH SEVERITY Packaged found. Please resolve these before merging the pull request:<br>" >> osv_report.md
+            else
+              echo "### MEDIUM or LOW SEVERITY Packaged found:<br>" >> osv_report.md
+            fi
+            cat osv_raw_report.md >> osv_report.md
+          else
+            echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
+            cat osv_raw_report.md >> osv_report.md
+          fi
+          cat osv_report.md
+          if [ $OSV_SEVERITY_HIGH_COUNT -gt 0 ]; then
+            echo "::error::HIGH Severity Vulnerabilities or Unknown severity score found! Find the scan report in the PR comment if this scan was triggered by PR"
+            exit 1
+          elif [ $OSV_SEVERITY_MEDIUM_COUNT -gt 0 ]; then
+            echo "::warning::MEDIUM or LOW Severity Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
+            exit 0
+          fi
+      - name: Comment Dependency scan report on PR
+        if: ${{ !cancelled() || contains('success,failure', steps.dependency_scan.outcome) }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: dependency_scan
+          message-path: osv_report.md
+
+  eslint:
+    needs: caching
+    name: eslint_scan
+    runs-on: ${{ inputs.linting_job_runner }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: lint scan before step
+        if: ${{ inputs.technology_based_scans_before_step_command != '' || inputs.lint_scan_before_step_command != '' }}
+        run: |
+          ${{ inputs.technology_based_scans_before_step_command}}
+          ${{ inputs.lint_scan_before_step_command }}
+      - name: Cache node modules
+        id: cache-node-modules
+        if: |
+          inputs.package_manager == 'npm' || 
+          inputs.package_manager == 'yarn' || 
+          inputs.package_manager == 'pnpm'
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ needs.caching.outputs.cache-restore-key }}
+          restore-keys: ${{ needs.caching.outputs.cache-restore-key }}
+      - name: Install dependencies
+        run: |
+          ${{ inputs.package_manager }} install
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: linting
+        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'lint' ) && !(github.event.pull_request.merged == true ) }}
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          ${{ inputs.lint_command }}
+      - name: lint scan after step
+        if: ${{ inputs.technology_based_scans_before_step_command != '' || inputs.lint_scan_after_step_command != '' }}
+        run: |
+          ${{ inputs.technology_based_scans_before_step_command}}
+          ${{ inputs.lint_scan_after_step_command }}
+
+  container_scan:
+    name: container_scan
+    if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && !contains( inputs.excluded_jobs, 'container_scan' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
+    uses: studiographene/github-action-workflows/.github/workflows/trivy-container-scan.yml@master
+    secrets: inherit
+    with:
+      job_runner: ${{ inputs.container_scan_job_runner }}
+      docker_build_command: ${{ inputs.docker_build_command }}
+      docker_build_image_id: ${{ inputs.docker_build_image_id }}
+      container_scanners: ${{ inputs.container_scanners }}
+      container_scan_skip_dirs: ${{ inputs.container_scan_skip_dirs }}
+      dockerfile_paths: ${{ inputs.dockerfile_paths}}
+      before_step_command: ${{ inputs.container_scan_before_step_command }}
+      after_step_command: ${{ inputs.container_scan_after_step_command}}
