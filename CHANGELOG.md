@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.5.0](https://github.com/studiographene/github-action-workflows/compare/v2.4.0...v2.5.0) (2026-08-19)
+
+
+### Features
+
+* added pulse technical jobs to mobile ci ([ebc63d2](https://github.com/studiographene/github-action-workflows/commit/ebc63d20f1c57d8cc81c57309c2ea8be2ec10e66))
+* added pulse technical jobs to mobile ci ([#100](https://github.com/studiographene/github-action-workflows/issues/100)) ([8c50497](https://github.com/studiographene/github-action-workflows/commit/8c50497022f85457eb16f61149b43b65213c3fda))
+* added support for custom image usages in devloper tests job ([7359bf0](https://github.com/studiographene/github-action-workflows/commit/7359bf063626ec104da61f9d485aebb3ad4cc430))
+* added support for custom image usages in devloper tests job ([#102](https://github.com/studiographene/github-action-workflows/issues/102)) ([e78d2c6](https://github.com/studiographene/github-action-workflows/commit/e78d2c66e09ded945f1821ab9f944a5d8b8a81d5))
+* update ci for external repo ([25d551a](https://github.com/studiographene/github-action-workflows/commit/25d551a4cd9d7752351052104100308efcf9735f))
+* update ci for external repo ([#106](https://github.com/studiographene/github-action-workflows/issues/106)) ([a81a2c7](https://github.com/studiographene/github-action-workflows/commit/a81a2c7696f67c31513088d8699b5b9b41850c46))
+* update python ci for external repo ([8f435ab](https://github.com/studiographene/github-action-workflows/commit/8f435ab816790a4c6b3a73e5aade31866a1c9b31))
+* update python ci for external repo ([#104](https://github.com/studiographene/github-action-workflows/issues/104)) ([8ca52c0](https://github.com/studiographene/github-action-workflows/commit/8ca52c0c1b4feb9487d731099e2af9099465f361))
+
 ## [2.4.0](https://github.com/studiographene/github-action-workflows/compare/v2.3.1...v2.4.0) (2026-03-30)
 
 
