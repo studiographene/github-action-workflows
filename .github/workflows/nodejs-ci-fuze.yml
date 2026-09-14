@@ -422,6 +422,9 @@ jobs:
       TYPEORM_USERNAME: root
       TYPEORM_PASSWORD: root
       TYPEORM_DATABASE: fuze
+      # Test-only signing secret: tokens are signed and verified within the
+      # same CI run, so any fixed value works - this is not a real secret.
+      JWT_SECRET: developer-tests-ci-only-secret
     steps:
       - name: Checkout
         uses: actions/checkout@v4
