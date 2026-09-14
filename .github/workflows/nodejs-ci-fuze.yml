@@ -450,7 +450,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Run database migrations
         run: |
-          npm run migrate:run
+          npm run migrate:dev
       - name: Tests
         id: developer_tests
         run: |
