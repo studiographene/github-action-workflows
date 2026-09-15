@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.4.0](https://github.com/studiographene/github-action-workflows/compare/v2.3.1...v2.4.0) (2026-03-30)
+
+
+### Features
+
+* added oci builds support for container scans ([efe9bb3](https://github.com/studiographene/github-action-workflows/commit/efe9bb3fe1d76032d5748bee4f30810b17fa5f90))
+* **python-ci:** add optional Garak job ([c9de09f](https://github.com/studiographene/github-action-workflows/commit/c9de09f858c5140a701cc711db275b529e5f0389))
+* setup python-ci ([1ffb997](https://github.com/studiographene/github-action-workflows/commit/1ffb997d94ed08ed6f70b3e5f8ce74562130f15d))
+* setup python-ci ([a51cd74](https://github.com/studiographene/github-action-workflows/commit/a51cd74c819eb62c289c5f7b7a2a6b5541aedddb))
+* updated matrix strategy for trivy ([7631cc5](https://github.com/studiographene/github-action-workflows/commit/7631cc5d71ed27552621696348c58dcbadbfa90b))
+* updated matrix strategy for trivy ([#98](https://github.com/studiographene/github-action-workflows/issues/98)) ([0a7b81a](https://github.com/studiographene/github-action-workflows/commit/0a7b81adc415f2753b3b67685a1c5495b5eba9f5))
+
+
+### Bug Fixes
+
+* **trivy-container-scan:** scan docker-archive tar; validate tar and prune buildx ([2daf472](https://github.com/studiographene/github-action-workflows/commit/2daf4724329823309e1e119fbf70c80892bd4a7f))
+* **trivy-container-scan:** scan tagged image only ([275a97d](https://github.com/studiographene/github-action-workflows/commit/275a97d05d5f313826896ba59ca6ea9dafbad85d))
+
 ## [2.3.1](https://github.com/studiographene/github-action-workflows/compare/v2.3.0...v2.3.1) (2025-11-18)
 
 

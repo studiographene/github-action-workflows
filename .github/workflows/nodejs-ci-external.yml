@@ -268,18 +268,183 @@ jobs:
         run: |
           ${{ inputs.caching_after_step_command}}
 
-  security_scans:
-    name: security_scans
+  # security_scans:
+  #   name: security_scans
+  #   needs: caching
+  #   if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
+  #   uses: studiographene/github-action-workflows/.github/workflows/security-scans.yml@master
+  #   secrets: inherit
+  #   with:
+  #     security_scan_before_step_command: ${{ inputs.security_scan_before_step_command }}
+  #     security_scan_after_step_command: ${{ inputs.security_scan_after_step_command }}
+  #     excluded_jobs: ${{ inputs.excluded_jobs }}
+  #     semgrep_options: ${{ inputs.semgrep_options }}
+  #     job_runner: ${{ inputs.security_scans_job_runner }}
+
+  generate_sbom:
+    name: generate_sbom
     needs: caching
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !(github.event.pull_request.merged == true) }}
-    uses: studiographene/github-action-workflows/.github/workflows/security-scans.yml@master
-    secrets: inherit
-    with:
-      security_scan_before_step_command: ${{ inputs.security_scan_before_step_command }}
-      security_scan_after_step_command: ${{ inputs.security_scan_after_step_command }}
-      excluded_jobs: ${{ inputs.excluded_jobs }}
-      semgrep_options: ${{ inputs.semgrep_options }}
-      job_runner: ${{ inputs.security_scans_job_runner }}
+    runs-on: ${{ inputs.job_runner }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Check for composer.lock or composer.json
+        id: check_files
+        run: |
+          if [ -f composer.lock ] || [ -f composer.json ]; then
+            echo "Files exist"
+            echo "SKIP_DOWNLOAD_LOCKFILE=true" >> $GITHUB_OUTPUT
+          else
+            echo "Files do not exist"
+            echo "SKIP_DOWNLOAD_LOCKFILE=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Download package_lockFile Artifact
+        if: ${{ !cancelled() && steps.check_files.outputs.SKIP_DOWNLOAD_LOCKFILE != 'true' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: package_lockFile
+          path: .
+      - name: Generate SBOM using CycloneDX
+        if: always ()
+        run: |
+          cdxgen --version
+          npm install -g @cyclonedx/cdxgen-plugins-bin
+          cdxgen --no-recurse -o bom.xml -p --debug
+          ls -al
+        env:
+          FETCH_LICENSE: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CDXGEN_DEBUG_MODE: debug
+
+      - name: Upload SBOM as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: bom.xml
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ${{ inputs.job_runner }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'gitleaks') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      # - name: SAST before step
+      #   if: ${{ inputs.security_scan_before_step_command != '' }}
+      #   run: |
+      #     ${{ inputs.security_scan_before_step_command}}
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v1.6.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency_scan:
+    needs: generate_sbom
+    name: dependency_scan
+    runs-on: ${{ inputs.job_runner }}
+    permissions:
+      contents: read
+      issues: write
+      discussions: write
+      pull-requests: write
+      security-events: write
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-22-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Download SBOM Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom
+          path: .
+      - name: Dependency Scan using Google OSV
+        id: dependency_scan
+        run: |
+          cat >> dep_scan_suppression_config.toml <<EOF
+              ${{ vars.OSV_SUPPRESSIONS }}
+          EOF
+          set +e
+          osv-scanner --format markdown --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.md
+          # JSON report is generated to segregate the vulnerabilities based on the CVSS score
+          osv-scanner --format json --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.json
+          echo "OSV_EXIT_CODE=$?" >> $GITHUB_OUTPUT
+          set -e
+      - name: Generate Dependency Scan Report
+        id: generate_dependency_scan_report
+        env:
+          OSV_EXIT_CODE: ${{ steps.dependency_scan.outputs.OSV_EXIT_CODE }}
+        run: |
+          if [ $OSV_EXIT_CODE -ne 0 ]; then
+            echo "Executing IF statement (vulnerabilities found)"
+            SEVERITY_COUNTS=$(jq -r ' [.results[].packages[]? | select(.groups != null) | .groups[]?.max_severity ]
+              | [
+                  (map(select(test("^[0-9.]+$")) | tonumber | select(. < 4)) | length),
+                  (map(select(test("^[0-9.]+$")) | tonumber | select(. >= 4 and . <= 7)) | length),
+                  (map(select(test("^[0-9.]+$")) | tonumber | select(. > 7)) | length),
+                  (map(select((. == "") or (test("^[0-9.]+$") | not))) | length)
+                ] 
+              | @sh
+            ' osv_raw_report.json)
+            OSV_SEVERITY_LOW_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f1)
+            OSV_SEVERITY_MEDIUM_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f2)
+            OSV_SEVERITY_HIGH_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f3)
+            OSV_SEVERITY_UNKNOWN_COUNT=$(echo $SEVERITY_COUNTS | cut -d' ' -f4)
+            echo "### The following vulnerabilities have been detected in the packages" >> osv_report.md
+            echo "> LOW SEVERITY COUNT: $OSV_SEVERITY_LOW_COUNT" >> osv_report.md
+            echo "MEDIUM SEVERITY COUNT: $OSV_SEVERITY_MEDIUM_COUNT" >> osv_report.md
+            echo "HIGH SEVERITY COUNT: $OSV_SEVERITY_HIGH_COUNT" >> osv_report.md
+            echo "UNKNOWN SEVERITY SCORE COUNT: $OSV_SEVERITY_UNKNOWN_COUNT" >> osv_report.md
+            if (( OSV_SEVERITY_HIGH_COUNT > 0 || OSV_SEVERITY_UNKNOWN_COUNT > 0 )); then
+              echo "### ${OSV_SEVERITY_HIGH_COUNT} HIGH SEVERITY Packaged found. Please resolve these before merging the pull request:<br>" >> osv_report.md
+            else
+              echo "### MEDIUM or LOW SEVERITY Packaged found:<br>" >> osv_report.md
+            fi
+            cat osv_raw_report.md >> osv_report.md
+          else
+            echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
+            cat osv_raw_report.md >> osv_report.md
+          fi
+          cat osv_report.md
+          if [ $OSV_SEVERITY_HIGH_COUNT -gt 0 ]; then
+            echo "::error::HIGH Severity Vulnerabilities or Unknown severity score found! Find the scan report in the PR comment if this scan was triggered by PR"
+            exit 1
+          elif [ $OSV_SEVERITY_MEDIUM_COUNT -gt 0 ]; then
+            echo "::warning::MEDIUM or LOW Severity Vulnerabilities found! Find the scan report in the PR comment if this scan was triggered by PR"
+            exit 0
+          fi
+      - name: Comment Dependency scan report on PR
+        if: ${{ !cancelled() || contains('success,failure', steps.dependency_scan.outcome) }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: dependency_scan
+          message-path: osv_report.md
 
   eslint:
     needs: caching
@@ -331,151 +496,6 @@ jobs:
         run: |
           ${{ inputs.technology_based_scans_before_step_command}}
           ${{ inputs.lint_scan_after_step_command }}
-  
-  build_test:
-    needs: caching
-    name: build_test
-    runs-on: ${{ inputs.build_test_job_runner }}
-    permissions:
-      contents: read
-      issues: write
-      discussions: write
-      pull-requests: write
-      security-events: write
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains( inputs.excluded_jobs, 'build_test' )  }}
-    container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}                
-      - name: Build Test before step
-        if: ${{ inputs.technology_based_scans_before_step_command != '' || inputs.build_test_before_step_command != '' }}
-        run: |
-          ${{ inputs.technology_based_scans_before_step_command}}
-          ${{ inputs.build_test_before_step_command }}
-      - name: Restore Cached node modules
-        id: restore_cache_node_modules
-        if: |
-          inputs.package_manager == 'npm' || 
-          inputs.package_manager == 'yarn' || 
-          inputs.package_manager == 'pnpm'  
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ needs.caching.outputs.cache-restore-key }}
-          restore-keys: ${{ needs.caching.outputs.cache-restore-key }}
-      - name: Install dependencies
-        run: |
-          ${{ inputs.package_manager }} install
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
-      - name: Build project
-        env:
-          NPM_TOKEN: ${{ (secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN) && !(github.event.pull_request.merged == true ) }}
-        if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'build' ) && !(github.event.pull_request.merged == true )  }}
-        run: |
-          ${{ inputs.build_command }}
-      - name: Build Test after step
-        if: ${{ inputs.technology_based_scans_before_step_command != '' || inputs.build_test_after_step_command != '' }}
-        run: |
-          ${{ inputs.technology_based_scans_before_step_command}}
-          ${{ inputs.build_test_after_step_command }}
-
-  developer_tests:
-    needs: caching
-    name: developer_tests
-    runs-on: ${{ inputs.job_runner }}
-    permissions:
-      contents: read
-      issues: write
-      discussions: write
-      pull-requests: write
-      security-events: write
-    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && inputs.run_dev_test && !contains( inputs.excluded_jobs, 'developer_tests' ) && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
-    container:
-      image: ${{ inputs.developer_tests_container_image }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-      - name: Developer Tests before step
-        if: ${{ inputs.technology_based_scans_before_step_command != '' || inputs.developer_tests_before_step_command != '' }}
-        run: |
-          ${{ inputs.technology_based_scans_before_step_command}}
-          ${{ inputs.developer_tests_before_step_command }}
-      - name: Cache node modules
-        id: cache-node-modules
-        if: |
-          inputs.package_manager == 'npm' || 
-          inputs.package_manager == 'yarn' || 
-          inputs.package_manager == 'pnpm'  
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ needs.caching.outputs.cache-restore-key }}
-          restore-keys: ${{ needs.caching.outputs.cache-restore-key }}
-      - name: Install dependencies
-        run: |
-          ${{ inputs.package_manager }} install
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && secrets.NPM_TOKEN || secrets.GITHUB_TOKEN }}
-      - name: Tests
-        id: developer_tests
-        run: |
-          ${{ inputs.package_manager }} run test
-      - name: Test Coverage Threshold Check
-        working-directory: ${{ github.workspace }}
-        if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) }}
-        env:
-          COVERAGE_THRESHOLD: ${{ vars.COVERAGE_THRESHOLD }}
-          COVERAGE_DIRECTORY: ${{ inputs.dev_test_coverage_report_directory }}
-        run: |
-          node /root/generate-dev-test-coverage-report.cjs
-      - name: Test Coverage Report
-        if: ${{  !cancelled() && contains('failure,success', steps.developer_tests.outcome) && !(github.event.pull_request.merged == true ) }}
-        uses: studiographene/add-pr-comment@main
-        with:
-          message-id: test-coverage-report
-          message-path: test-coverage-report.md
-
-
-      - name: Pulse - Composing Test Coverage Report for Pulse
-        id: compose_pulse_report
-        if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
-        working-directory: ${{ github.workspace }}
-        env:
-          coverage_file_path: ${{inputs.dev_test_coverage_report_directory}}/coverage-summary.json
-        run: |
-
-          current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-          coverage=$(jq -c '.total' "$coverage_file_path")
-
-          json_payload=$(jq -n \
-          --arg organisationId ${{ github.repository_owner_id }} \
-          --arg repoId ${{ github.repository_id }} \
-          --arg createdAt $current_date \
-          --argjson coverage $coverage \
-          '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: { "total": $coverage } }')
-
-          echo "$json_payload" > pulse-test-coverage-report.json
-
-
-      - name: Upload Test Coverage Report Artifact
-        if: ${{ always() && inputs.send_dev_test_coverage_report_to_pulse && inputs.run_dev_test && github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.dev_test_branch}}
-        uses: actions/upload-artifact@v4
-        with:
-          name: pulse-test-coverage-report
-          path: pulse-test-coverage-report.json
-      
-      - name: Developer Tests after step
-        if: ${{ inputs.technology_based_scans_after_step_command != '' || inputs.developer_tests_after_step_command != '' }}
-        run: |
-          ${{ inputs.technology_based_scans_after_step_command}}
-           ${{ inputs.developer_tests_after_step_command }}
 
   container_scan:
     name: container_scan
@@ -491,21 +511,3 @@ jobs:
       dockerfile_paths: ${{ inputs.dockerfile_paths}}
       before_step_command: ${{ inputs.container_scan_before_step_command }}
       after_step_command: ${{ inputs.container_scan_after_step_command}}
-
-  pulse_work_break_down:
-    name: pulse-work-break-down
-    if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
-    uses: studiographene/github-action-workflows/.github/workflows/pulse-work-break-down-v2.yml@master
-    secrets: inherit
-
-  pulse_security_scans:
-    name: pulse_security_scans
-    if: ${{ github.event.pull_request.merged == true }}
-    uses: studiographene/github-action-workflows/.github/workflows/pulse-sast-analytics-v2.yml@master
-    secrets: inherit
-
-  pulse_version_upgrades:
-    name: pulse_version_upgrades
-    if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
-    uses: studiographene/github-action-workflows/.github/workflows/pulse-dependencies-analytics-v2.yml@master
-    secrets: inherit

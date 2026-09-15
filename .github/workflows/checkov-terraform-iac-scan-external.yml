@@ -1,0 +1,76 @@
+name: checkov
+
+on:
+  workflow_call:
+    inputs:
+      directories:
+        description: 'optional: .tf files located directories in JSON Array format to run scan, example "["path/1", "path/2"]". If not defined all the directories containing .tf files will be scanned.'
+        type: string
+        default: "['.']"
+      quiet:
+        description: "optional: display only failed checks"
+        type: boolean
+        default: true
+      output_format:
+        description: "optional: the output format, `cli` and/or one of: `json`, `junitxml`, `github_failed_only`, or `sarif`."
+        type: string
+        default: "cli,sarif"
+      download_external_modules:
+        description: "optional: download external terraform modules from public git repositories and terraform registry"
+        type: boolean
+        default: true
+      var_file:
+        description: "optional: variable files to load in addition to the default files. Currently only supported for source Terraform and Helm chart scans."
+        type: string
+        default: ""
+      log_level:
+        description: "optional: set log level."
+        type: string
+        default: "WARNING"
+
+jobs:
+  tf_fmt:
+    name: tf_fmt
+    permissions:
+      contents: write # for making commit
+    runs-on: ubuntu-latest
+    env:
+      HEAD_BRANCH: ${{ github.head_ref }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Install dependencies
+        run: |
+          wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+          https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update && sudo apt install terraform
+          sudo apt update
+          sudo apt install -y terraform
+
+      - name: Terraform fmt
+        run: |
+          DIRECTORIES="$(find . -type f -name "*.tf" -exec dirname {} \; | sed 's|^\./||')"
+          # Iterate over each directory to do fmt
+          IFS=$'\n'   # Set the Internal Field Separator to newline
+          for dir in ${DIRECTORIES}; do
+              cd "${{ github.workspace }}/${dir}" && echo "in directory: ${dir}"
+              terraform fmt
+          done
+      - name: commit formatted code
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -am "chore: terraform fmt" || echo "No changes to commit"
+          git config pull.rebase true && git pull origin ${HEAD_BRANCH}
+          git push origin ${HEAD_BRANCH}
+
+
+# Below `Upload SARIF file` can be only used if GitHub Enterprise feature Advanced Security is enabled
+#      - name: Upload SARIF file
+#        uses: github/codeql-action/upload-sarif@v3
+#        if: ${{ !cancelled() }}
+#        with:
+#          sarif_file: results.sarif
