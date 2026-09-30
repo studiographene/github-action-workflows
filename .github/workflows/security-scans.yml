@@ -26,6 +26,7 @@ jobs:
     name: sast
     runs-on: ${{ inputs.job_runner }}
     permissions:
+      packages: read
       contents: read
       issues: write
       discussions: write
@@ -33,7 +34,10 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'sast') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: ghcr.io/studiographene/ci:node-22-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -93,6 +97,7 @@ jobs:
     name: gitleaks
     runs-on: ${{ inputs.job_runner }}
     permissions:
+      packages: read
       contents: read
       issues: write
       discussions: write
@@ -100,7 +105,10 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'gitleaks') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: ghcr.io/studiographene/ci:node-22-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,6 +129,7 @@ jobs:
     name: generate_sbom
     runs-on: ${{ inputs.job_runner }}
     permissions:
+      packages: read
       contents: read
       issues: write
       discussions: write
@@ -128,7 +137,10 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: ghcr.io/studiographene/ci:node-22-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -173,6 +185,7 @@ jobs:
     runs-on: ${{ inputs.job_runner }}
     needs: generate_sbom
     permissions:
+      packages: read
       contents: read
       issues: write
       discussions: write
@@ -180,7 +193,10 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'license_scan') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: ghcr.io/studiographene/ci:node-22-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -234,6 +250,7 @@ jobs:
     name: dependency_scan
     runs-on: ${{ inputs.job_runner }}
     permissions:
+      packages: read
       contents: read
       issues: write
       discussions: write
@@ -241,7 +258,10 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: ghcr.io/studiographene/ci:node-22-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
