@@ -13,9 +13,9 @@ on:
         required: false
         default: "ubuntu-latest"
       action_runner_container_image:
-        description: "Action runner container image. Default = public.ecr.aws/studiographene/ci:node-20-alpine"
+        description: "Action runner container image. Default = ghcr.io/studiographene/ci:node-20-alpine"
         type: string
-        default: public.ecr.aws/studiographene/ci:node-20-alpine
+        default: ghcr.io/studiographene/ci:node-20-alpine
       dockerfile_paths:
         description: "Set of separated Dockerfile paths. Useful when you want scan Dockerfile in selected directories. Example: [./apps/users/Dockerfile, ./apps/account/Dockerfile]"
         type: string
