@@ -180,10 +180,14 @@ jobs:
     name: cache_module
     runs-on: ${{ inputs.caching_job_runner }}
     permissions:
+      packages: read
       contents: read
     if: ${{ (github.event_name != 'issue_comment') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-24-alpine
+      image: ghcr.io/studiographene/ci:node-24-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       cache-key: ${{ steps.set-cache-key.outputs.cache-key }}
       cache-restore-key: ${{ steps.set-cache-restore-key.outputs.cache-restore-key }}
@@ -281,6 +285,7 @@ jobs:
     name: eslint_scan
     runs-on: ${{ inputs.linting_job_runner }}
     permissions:
+      packages: read
       contents: read
       issues: write
       discussions: write
@@ -288,7 +293,10 @@ jobs:
       security-events: write
     if: ${{ (github.event_name != 'issue_comment') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-24-alpine
+      image: ghcr.io/studiographene/ci:node-24-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -332,6 +340,7 @@ jobs:
     name: build_test
     runs-on: ${{ inputs.build_test_job_runner }}
     permissions:
+      packages: read
       contents: read
       issues: write
       discussions: write
@@ -339,7 +348,10 @@ jobs:
       security-events: write
     if: ${{ (github.event_name != 'issue_comment') && !contains( inputs.excluded_jobs, 'build_test' )  }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-24-alpine
+      image: ghcr.io/studiographene/ci:node-24-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -383,6 +395,7 @@ jobs:
     name: developer_tests
     runs-on: ${{ inputs.job_runner }}
     permissions:
+      packages: read
       contents: read
       issues: write
       discussions: write
@@ -390,7 +403,10 @@ jobs:
       security-events: write
     if: ${{ (github.event_name != 'issue_comment') && inputs.run_dev_test && !contains( inputs.excluded_jobs, 'developer_tests' ) && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-buster-slim-v5
+      image: ghcr.io/studiographene/ci:node-20-buster-slim-v5
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
