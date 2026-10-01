@@ -20,7 +20,10 @@ jobs:
   pulse_sast_report:
     runs-on: ubuntu-latest
     container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine
+      image: ghcr.io/studiographene/ci:node-20-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

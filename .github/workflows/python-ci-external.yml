@@ -262,13 +262,17 @@ jobs:
     name: gitleaks
     runs-on: ${{ inputs.security_scans_job_runner }}
     permissions:
+      packages: read
       contents: read
       issues: write
       discussions: write
       pull-requests: write
       security-events: write
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: ghcr.io/studiographene/ci:node-22-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5

@@ -69,7 +69,7 @@ on:
         description: "Container image to use for the developer_tests job"
         type: string
         required: false
-        default: "public.ecr.aws/studiographene/ci:node-20-buster-slim-v5"
+        default: "ghcr.io/studiographene/ci:node-20-buster-slim-v5"
       dev_test_branch:
         description: "Developer-provided branch names to run the tests"
         type: string
@@ -185,10 +185,14 @@ jobs:
     name: cache_module
     runs-on: ${{ inputs.caching_job_runner }}
     permissions:
+      packages: read
       contents: read
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: ghcr.io/studiographene/ci:node-22-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       cache-key: ${{ steps.set-cache-key.outputs.cache-key }}
       cache-restore-key: ${{ steps.set-cache-restore-key.outputs.cache-restore-key }}
@@ -286,6 +290,7 @@ jobs:
     needs: caching
     runs-on: ${{ inputs.job_runner }}
     permissions:
+      packages: read
       contents: read
       issues: write
       discussions: write
@@ -293,7 +298,10 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: ghcr.io/studiographene/ci:node-22-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -337,6 +345,7 @@ jobs:
     name: gitleaks
     runs-on: ${{ inputs.job_runner }}
     permissions:
+      packages: read
       contents: read
       issues: write
       discussions: write
@@ -344,7 +353,10 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'gitleaks') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: ghcr.io/studiographene/ci:node-22-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -366,6 +378,7 @@ jobs:
     name: dependency_scan
     runs-on: ${{ inputs.job_runner }}
     permissions:
+      packages: read
       contents: read
       issues: write
       discussions: write
@@ -373,7 +386,10 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: ghcr.io/studiographene/ci:node-22-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -451,6 +467,7 @@ jobs:
     name: eslint_scan
     runs-on: ${{ inputs.linting_job_runner }}
     permissions:
+      packages: read
       contents: read
       issues: write
       discussions: write
@@ -458,7 +475,10 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
-      image: public.ecr.aws/studiographene/ci:node-22-alpine
+      image: ghcr.io/studiographene/ci:node-22-alpine
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
