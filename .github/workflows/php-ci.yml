@@ -47,6 +47,11 @@ on:
       security_scan_after_step_command:
         type: string
         default: ""
+      dev_test_branch:
+        description: "Developer-provided branch names to run the tests"
+        type: string
+        required: false
+        default: dev
 
 jobs:
   container_scan:
