@@ -513,7 +513,7 @@ jobs:
   pulse_security_scans:
     name: pulse_security_scans
     if: ${{ github.event.pull_request.merged == true }}
-    uses: studiographene/github-action-workflows/.github/workflows/pulse-sast-analytics-v2.yml@master
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-sast-analytics-v2.yml@feature/pulse-sast-scan-semgrep
     secrets: inherit
     with:
       semgrep_options: ${{ inputs.semgrep_options }}
