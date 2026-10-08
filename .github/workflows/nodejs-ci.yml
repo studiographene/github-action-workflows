@@ -515,7 +515,10 @@ jobs:
     if: ${{ github.event.pull_request.merged == true }}
     uses: studiographene/github-action-workflows/.github/workflows/pulse-sast-analytics-v2.yml@master
     secrets: inherit
-
+    with:
+      semgrep_options: ${{ inputs.semgrep_options }}
+      before_step_command: ${{ inputs.security_scan_before_step_command }}
+      after_step_command: ${{ inputs.security_scan_after_step_command }}
   pulse_version_upgrades:
     name: pulse_version_upgrades
     if: ${{ github.event.pull_request.merged == true && contains(inputs.dev_test_branch, github.event.pull_request.base.ref) }}

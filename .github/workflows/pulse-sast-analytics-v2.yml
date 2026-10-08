@@ -20,7 +20,7 @@ jobs:
   pulse_sast_report:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/studiographene/ci:node-20-alpine
+      image: ghcr.io/studiographene/ci:node-22-alpine
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -36,8 +36,9 @@ jobs:
       - name: SAST Scan
         id: generate_report
         run: |
+          cp /root/configs/semgrep/rules/eslint.v1.3.32.yml eslint.v1.3.32.yml
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          semgrep --config "p/default" --config /root/configs/semgrep/rules/eslint.yml --sarif ${{ inputs.semgrep_options }} | tee semgrep.sarif
+          semgrep scan --config "p/default" --config eslint.v1.3.32.yml --json ${{ inputs.semgrep_options }} | tee semgrep.json
       - name: Display Errors
         id: display_errors
         env:
@@ -46,7 +47,7 @@ jobs:
           ORG_ID: ${{ github.event.organization.id }}
           REPO_ID: ${{ github.repository_id }}
         run: |
-          jq -n '[inputs | .runs[].results[] | {ruleId: .ruleId, message: .message.text, location: .locations[].physicalLocation.artifactLocation.uri, lineNo: .locations[].physicalLocation.region.startLine, snippet: .locations[].physicalLocation.region.snippet.text}]' semgrep.sarif > temp_errors.json
+          jq -n '[inputs | .results[] | {ruleId: .check_id, message: .extra.message, location: .path, lineNo: .start.line, snippet: .extra.lines}]' semgrep.json > temp_errors.json
           date=$(date +%Y-%m-%d)
           branch=${BRANCH_NAME}
           repo=${REPO_NAME}
