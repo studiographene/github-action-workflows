@@ -42,29 +42,42 @@ jobs:
       - name: Display Errors
         id: display_errors
         env:
-          BRANCH_NAME: ${{ github.event.pull_request.base.ref }} # ${{ github.ref_name }}
+          # PR runs keep the existing base-branch behaviour; push runs now get a real branch
+          BRANCH_NAME: ${{ github.event.pull_request.base.ref || github.ref_name }}
           REPO_NAME: ${{ github.repository }}
           ORG_ID: ${{ github.event.organization.id }}
           REPO_ID: ${{ github.repository_id }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          MERGED_AT: ${{ github.event.pull_request.merged_at }}
+          IS_DEFAULT_BRANCH: ${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch }}
         run: |
-          jq -n '[inputs | .results[] | {ruleId: .check_id, message: .extra.message, location: .path, lineNo: .start.line, snippet: .extra.lines}]' semgrep.json > temp_errors.json
-          date=$(date +%Y-%m-%d)
-          branch=${BRANCH_NAME}
-          repo=${REPO_NAME}
-          orgId=${ORG_ID}
-          repoId=${REPO_ID}
-          data=$(jq -n --arg date "$date" --arg branch "$branch" --arg orgId "$orgId" --arg repoId "$repoId" --arg repo "$repo" '{date: $date, branch: $branch, repo: $repo, orgId: $orgId, repoId: $repoId, errors: input}' temp_errors.json)
-          # Write the data to a JSON file
-          echo "No. of error findings: $data"
-          echo "$data" > pulse-security-errors-report.json
-          # url="${{ inputs.PULSE_URL }}/github/repo-sast-errors"
-          # content_type="application/json"  # Set your content type
-
-          # # Send the request
-          # curl -X POST \
-          #         -H "Content-Type: $content_type" \
-          #         --data-binary "@sast_errors.json" \
-          #         "$url"
+          set -euo pipefail
+          # Legacy v1 fields, unchanged shape so the existing consumer keeps working
+          jq '[.results[] | {ruleId: .check_id, message: .extra.message, location: .path, lineNo: .start.line, snippet: .extra.lines}]' semgrep.json > temp_errors.json
+          created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          # Superset: raw Semgrep JSON (results, version, ...) + legacy fields + v2 metadata
+          jq \
+            --arg date "$(date +%Y-%m-%d)" \
+            --arg createdAt "$created_at" \
+            --arg branch "$BRANCH_NAME" \
+            --arg repo "$REPO_NAME" \
+            --arg orgId "$ORG_ID" \
+            --arg repoId "$REPO_ID" \
+            --arg commitSha "$COMMIT_SHA" \
+            --arg prNumber "$PR_NUMBER" \
+            --arg mergedAt "$MERGED_AT" \
+            --arg isDefault "$IS_DEFAULT_BRANCH" \
+            --slurpfile errors temp_errors.json \
+            '. + {
+               date: $date, createdAt: $createdAt, branch: $branch, repo: $repo,
+               orgId: $orgId, repoId: $repoId, commitSha: $commitSha,
+               prNumber: (if $prNumber == "" then null else ($prNumber | tonumber) end),
+               mergedAt: (if $mergedAt == "" then null else $mergedAt end),
+               isDefaultBranch: ($isDefault == "true"),
+               errors: $errors[0]
+             }' semgrep.json > pulse-security-errors-report.json
+          echo "No. of error findings: $(jq '.results | length' semgrep.json)"
 
       - name: Upload SAST Errors Artifact
         uses: actions/upload-artifact@v4

@@ -29,3 +29,12 @@ jobs:
     uses: studiographene/github-action-workflows/.github/workflows/pulse-sast-analytics.yml@master # if you want alternatively pin to tag version version
     secrets: inherit
 ```
+
+## Artifact format (`pulse-security-errors-report`)
+
+`pulse-sast-analytics-v2.yml` uploads the raw Semgrep JSON (`results`, `version`, ...) plus:
+
+- Legacy fields: `date`, `repo`, `orgId`, `repoId`, `errors[]`.
+- Scan metadata: `branch`, `createdAt`, `commitSha`, `prNumber`, `mergedAt`, `isDefaultBranch`.
+
+`prNumber` and `mergedAt` are `null` when not available (for example, push builds). `isDefaultBranch` is `true` only for a push to the repository default branch.
