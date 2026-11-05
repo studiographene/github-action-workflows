@@ -37,4 +37,4 @@ jobs:
 - Legacy fields: `date`, `repo`, `orgId`, `repoId`, `errors[]`.
 - Scan metadata: `branch`, `createdAt`, `commitSha`, `prNumber`, `mergedAt`, `isDefaultBranch`.
 
-`prNumber` and `mergedAt` are `null` when not available (for example, push builds). `isDefaultBranch` is `true` only for a push to the repository default branch.
+`prNumber` and `mergedAt` are `null` when not available (for example, push builds). `isDefaultBranch` is `true` for a push to the default branch, or a merged PR whose base is the default branch. `commitSha` is the merge commit for a merged PR (`nodejs-ci.yml` only runs this workflow for merged PRs), otherwise the PR head or pushed commit.
