@@ -37,6 +37,6 @@ jobs:
 
 - Legacy fields: `date`, `repo`, `orgId`, `repoId`, `errors[]`.
 - Scan metadata: `branch`, `createdAt`, `commitSha`, `prNumber`, `mergedAt`, `isDefaultBranch`.
-- Branch scope: `devTestBranch` (the configured value) and `isDevTestBranch` (whether this scan's `branch` is one of them). Both are `null` when `dev_test_branch` is not configured. Pulse's v2 pipeline only ingests scans where `isDevTestBranch` is `true`; `false`, `null` and missing are not ingested.
+- Branch scope: `devTestBranch` (the configured value) and `isDevTestBranch` (whether this scan's `branch` is one of them). Both are `null` when `dev_test_branch` is not configured. Pulse's v2 pipeline ingests scans where `isDevTestBranch` is `true`, skips `false`, and for `null`/missing only ingests onto the branch Pulse already tracks for the repo (the first scan sets it).
 
 `prNumber` and `mergedAt` are `null` when not available (for example, push builds). `isDefaultBranch` is `true` for a push to the default branch, or a merged PR whose base is the default branch. `commitSha` is the merge commit for a merged PR (`nodejs-ci.yml` only runs this workflow for merged PRs), otherwise the PR head or pushed commit.
