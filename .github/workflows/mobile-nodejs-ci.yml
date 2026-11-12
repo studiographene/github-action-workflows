@@ -105,19 +105,19 @@ jobs:
         uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'npm'
         with:
-          name: lockFile
+          name: package_lockFile
           path: package-lock.json
       - name: Upload yarn-lock
         uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'yarn'
         with:
-          name: lockFile
+          name: package_lockFile
           path: yarn.lock
       - name: Upload pnpm-lock
         uses: actions/upload-artifact@v4
         if: inputs.package_manager == 'pnpm'
         with:
-          name: lockFile
+          name: package_lockFile
           path: pnpm-lock.yaml
       - name: Eslint scan
         if: ${{ !cancelled() && !contains( inputs.excluded_jobs, 'lint' )  }}
