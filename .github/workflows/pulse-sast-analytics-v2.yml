@@ -9,6 +9,10 @@ on:
       semgrep_options:
         type: string
         default: ""
+      dev_test_branch:
+        description: "Branch name(s) Pulse uses for this repo (comma separated). Empty means not configured."
+        type: string
+        default: ""
       before_step_command:
         type: string
         default: ""
@@ -42,29 +46,56 @@ jobs:
       - name: Display Errors
         id: display_errors
         env:
-          BRANCH_NAME: ${{ github.event.pull_request.base.ref }} # ${{ github.ref_name }}
+          # PR runs keep the existing base-branch behaviour; push runs now get a real branch
+          BRANCH_NAME: ${{ github.event.pull_request.base.ref || github.ref_name }}
           REPO_NAME: ${{ github.repository }}
           ORG_ID: ${{ github.event.organization.id }}
           REPO_ID: ${{ github.repository_id }}
+          # Production callers (nodejs-ci.yml) run this only for merged PRs: use the commit that landed on the base branch
+          COMMIT_SHA: ${{ (github.event.pull_request.merged == true && github.event.pull_request.merge_commit_sha) || github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          MERGED_AT: ${{ github.event.pull_request.merged_at }}
+          DEV_TEST_BRANCH: ${{ inputs.dev_test_branch }}
+          IS_DEFAULT_BRANCH: ${{ (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) || (github.event.pull_request.merged == true && github.event.pull_request.base.ref == github.event.repository.default_branch) }}
         run: |
-          jq -n '[inputs | .results[] | {ruleId: .check_id, message: .extra.message, location: .path, lineNo: .start.line, snippet: .extra.lines}]' semgrep.json > temp_errors.json
-          date=$(date +%Y-%m-%d)
-          branch=${BRANCH_NAME}
-          repo=${REPO_NAME}
-          orgId=${ORG_ID}
-          repoId=${REPO_ID}
-          data=$(jq -n --arg date "$date" --arg branch "$branch" --arg orgId "$orgId" --arg repoId "$repoId" --arg repo "$repo" '{date: $date, branch: $branch, repo: $repo, orgId: $orgId, repoId: $repoId, errors: input}' temp_errors.json)
-          # Write the data to a JSON file
-          echo "No. of error findings: $data"
-          echo "$data" > pulse-security-errors-report.json
-          # url="${{ inputs.PULSE_URL }}/github/repo-sast-errors"
-          # content_type="application/json"  # Set your content type
-
-          # # Send the request
-          # curl -X POST \
-          #         -H "Content-Type: $content_type" \
-          #         --data-binary "@sast_errors.json" \
-          #         "$url"
+          set -euo pipefail
+          # Legacy v1 fields, unchanged shape so the existing consumer keeps working
+          jq '[.results[] | {ruleId: .check_id, message: .extra.message, location: .path, lineNo: .start.line, snippet: .extra.lines}]' semgrep.json > temp_errors.json
+          created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          # null when dev_test_branch is not configured, so Pulse treats the scan's branch as unknown
+          is_dev_test_branch=null
+          if [ -n "$DEV_TEST_BRANCH" ]; then
+            is_dev_test_branch=false
+            for configured in $(printf %s "$DEV_TEST_BRANCH" | tr ',[]"' ' '); do
+              if [ "$configured" = "$BRANCH_NAME" ]; then is_dev_test_branch=true; fi
+            done
+          fi
+          # Superset: raw Semgrep JSON (results, version, ...) + legacy fields + v2 metadata
+          jq \
+            --arg date "$(date +%Y-%m-%d)" \
+            --arg createdAt "$created_at" \
+            --arg branch "$BRANCH_NAME" \
+            --arg repo "$REPO_NAME" \
+            --arg orgId "$ORG_ID" \
+            --arg repoId "$REPO_ID" \
+            --arg commitSha "$COMMIT_SHA" \
+            --arg prNumber "$PR_NUMBER" \
+            --arg mergedAt "$MERGED_AT" \
+            --arg isDefault "$IS_DEFAULT_BRANCH" \
+            --arg devTestBranch "$DEV_TEST_BRANCH" \
+            --argjson isDevTestBranch "$is_dev_test_branch" \
+            --slurpfile errors temp_errors.json \
+            '. + {
+               date: $date, createdAt: $createdAt, branch: $branch, repo: $repo,
+               orgId: $orgId, repoId: $repoId, commitSha: $commitSha,
+               prNumber: (if $prNumber == "" then null else ($prNumber | tonumber) end),
+               mergedAt: (if $mergedAt == "" then null else $mergedAt end),
+               isDefaultBranch: ($isDefault == "true"),
+               devTestBranch: (if $devTestBranch == "" then null else $devTestBranch end),
+               isDevTestBranch: $isDevTestBranch,
+               errors: $errors[0]
+             }' semgrep.json > pulse-security-errors-report.json
+          echo "No. of error findings: $(jq '.results | length' semgrep.json)"
 
       - name: Upload SAST Errors Artifact
         uses: actions/upload-artifact@v4
