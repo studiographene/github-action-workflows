@@ -345,12 +345,8 @@ jobs:
     name: gitleaks
     runs-on: ${{ inputs.job_runner }}
     permissions:
-      packages: read
       contents: read
-      issues: write
-      discussions: write
-      pull-requests: write
-      security-events: write
+      packages: read
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'gitleaks') }}
     container:
       image: ghcr.io/studiographene/ci:node-22-alpine
@@ -361,17 +357,120 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          # Full history. The old shallow checkout left gitleaks with 0 commits to scan.
+          fetch-depth: 0
+          # The PR head, not the merge ref, which doesn't exist when a PR has conflicts.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      # - name: SAST before step
-      #   if: ${{ inputs.security_scan_before_step_command != '' }}
-      #   run: |
-      #     ${{ inputs.security_scan_before_step_command}}
-
-      - name: Gitleaks scan
-        uses: gitleaks/gitleaks-action@v1.6.0
+      - name: Install gitleaks
+        id: install
+        shell: sh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_VERSION: "8.30.1"
+          # From gitleaks_8.30.1_checksums.txt in the GitHub release.
+          GITLEAKS_SHA256_LINUX_X64: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+          GITLEAKS_SHA256_LINUX_ARM64: "e4a487ee7ccd7d3a7f7ec08657610aa3606637dab924210b3aee62570fb4b080"
+        run: |
+          set -eu
+          case "$(uname -m)" in
+            x86_64) arch=x64; sum="$GITLEAKS_SHA256_LINUX_X64" ;;
+            aarch64 | arm64) arch=arm64; sum="$GITLEAKS_SHA256_LINUX_ARM64" ;;
+            *) echo "::error title=Gitleaks::Unsupported architecture $(uname -m)"; exit 1 ;;
+          esac
+          dir="$RUNNER_TEMP/gitleaks"
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${arch}.tar.gz"
+          mkdir -p "$dir"
+          if command -v curl >/dev/null 2>&1; then
+            curl -fsSL -o "$dir/gitleaks.tar.gz" "$url"
+          else
+            wget -q -O "$dir/gitleaks.tar.gz" "$url"
+          fi
+          echo "$sum  $dir/gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf "$dir/gitleaks.tar.gz" -C "$dir" gitleaks
+          echo "$dir" >> "$GITHUB_PATH"
+          # The job container's user doesn't own the checkout, so git would refuse it.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Gitleaks scan of new commits
+        shell: sh
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -eu
+          if [ -n "$BASE_SHA" ]; then
+            # Pull request: only the commits it adds.
+            git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null || git fetch --no-tags --quiet origin "$BASE_SHA"
+            range="${BASE_SHA}..${HEAD_SHA}"
+          elif [ -n "$BEFORE_SHA" ] && git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+            # Push: the commits since the previous tip.
+            range="${BEFORE_SHA}..${HEAD_SHA}"
+          else
+            # New branch, force-push or other event: the commits that aren't on any other branch.
+            echo "::notice title=Gitleaks::No previous commit to compare with, so scanning the commits that aren't on any other branch."
+            range="${HEAD_SHA} --not --exclude=origin/${REF_NAME} --remotes=origin"
+          fi
+          # gitleaks exits 0 when git itself fails, so check the range with git first.
+          # shellcheck disable=SC2086 # range holds several git arguments
+          count=$(git rev-list --count $range) || { echo "::error title=Gitleaks::Couldn't list the commits to scan (see the log)."; exit 1; }
+          echo "Scanning ${count} commit(s): git log ${range}"
+          # remerge skips octopus merges (3+ parents), so their own changes can't be scanned: fail closed.
+          # shellcheck disable=SC2086
+          octopus=$(git rev-list --count --min-parents=3 $range)
+          if [ "$octopus" -gt 0 ]; then
+            echo "::error title=Gitleaks::The new commits include ${octopus} octopus merge(s) (3+ parents), which gitleaks can't scan. Use ordinary two-parent merges instead."
+            exit 1
+          fi
+          # remerge also scans what a merge commit adds itself (conflict resolutions), not what it merges in.
+          if ! gitleaks git --no-banner --redact --verbose --log-opts="${range} --diff-merges=remerge" .; then
+            echo "::error title=Gitleaks::Possible secret in the new commits (or gitleaks failed: see the log). Real secret: rotate it and remove it from the branch history. False positive: add a gitleaks:allow comment on that line, or add file:rule:line to .gitleaksignore."
+            exit 1
+          fi
+
+      - name: Gitleaks scan of full history (warning only)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 15
+        shell: sh
+        run: |
+          set -eu
+          # gitleaks exits 0 when git itself fails, so check the repo with git first.
+          # remerge also scans what merge commits add themselves (conflict resolutions).
+          if ! git rev-parse --verify --quiet HEAD >/dev/null \
+            || ! gitleaks git --no-banner --redact --exit-code 0 --report-format json --report-path "$RUNNER_TEMP/gitleaks-history.json" \
+              --log-opts="--full-history --all --diff-merges=remerge" .; then
+            echo "::warning title=Gitleaks history::The history scan failed (see the log), so this run has no history report."
+            exit 0
+          fi
+          octopus=$(git rev-list --all --min-parents=3 --count)
+          OCTOPUS="$octopus" node <<'JS'
+          const fs = require('fs');
+          const findings = JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/gitleaks-history.json`, 'utf8')) || [];
+          const out = [];
+          if (findings.length === 0) {
+            out.push('### Gitleaks: no secrets found in git history');
+          } else {
+            console.log(`::warning title=Gitleaks history::${findings.length} possible secret(s) in git history (all branches). This doesn't block the PR. See the job summary.`);
+            const cell = (v) => String(v ?? '').replace(/\|/g, '\\|');
+            out.push(
+              `### Gitleaks: ${findings.length} possible secret(s) in git history`,
+              '',
+              "This doesn't block the PR. For each real secret: rotate the credential, then add its fingerprint to `.gitleaksignore` in the repo root. Values are redacted.",
+              '',
+              '| Rule | File | Line | Commit | Date | Fingerprint |',
+              '|---|---|---|---|---|---|',
+            );
+            for (const f of findings.slice(0, 200)) {
+              out.push(`| ${cell(f.RuleID)} | ${cell(f.File)} | ${cell(f.StartLine)} | ${cell(f.Commit).slice(0, 8)} | ${cell(f.Date).slice(0, 10)} | \`${cell(f.Fingerprint)}\` |`);
+            }
+            if (findings.length > 200) out.push('', `Showing the first 200 of ${findings.length}.`);
+          }
+          const octopus = Number(process.env.OCTOPUS || 0);
+          if (octopus > 0) out.push('', `Note: ${octopus} octopus merge(s) (3+ parents) weren't scanned for changes made in the merge itself.`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${out.join('\n')}\n`);
+          JS
 
   dependency_scan:
     needs: generate_sbom
