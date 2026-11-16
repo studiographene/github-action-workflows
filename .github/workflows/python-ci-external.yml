@@ -333,6 +333,13 @@ jobs:
           # shellcheck disable=SC2086 # range holds several git arguments
           count=$(git rev-list --count $range) || { echo "::error title=Gitleaks::Couldn't list the commits to scan (see the log)."; exit 1; }
           echo "Scanning ${count} commit(s): git log ${range}"
+          # remerge skips octopus merges (3+ parents), so their own changes can't be scanned: fail closed.
+          # shellcheck disable=SC2086
+          octopus=$(git rev-list --count --min-parents=3 $range)
+          if [ "$octopus" -gt 0 ]; then
+            echo "::error title=Gitleaks::The new commits include ${octopus} octopus merge(s) (3+ parents), which gitleaks can't scan. Use ordinary two-parent merges instead."
+            exit 1
+          fi
           # remerge also scans what a merge commit adds itself (conflict resolutions), not what it merges in.
           if ! gitleaks git --no-banner --redact --verbose --log-opts="${range} --diff-merges=remerge" .; then
             echo "::error title=Gitleaks::Possible secret in the new commits (or gitleaks failed: see the log). Real secret: rotate it and remove it from the branch history. False positive: add a gitleaks:allow comment on that line, or add file:rule:line to .gitleaksignore."
@@ -354,7 +361,8 @@ jobs:
             echo "::warning title=Gitleaks history::The history scan failed (see the log), so this run has no history report."
             exit 0
           fi
-          node <<'JS'
+          octopus=$(git rev-list --all --min-parents=3 --count)
+          OCTOPUS="$octopus" node <<'JS'
           const fs = require('fs');
           const findings = JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/gitleaks-history.json`, 'utf8')) || [];
           const out = [];
@@ -376,6 +384,8 @@ jobs:
             }
             if (findings.length > 200) out.push('', `Showing the first 200 of ${findings.length}.`);
           }
+          const octopus = Number(process.env.OCTOPUS || 0);
+          if (octopus > 0) out.push('', `Note: ${octopus} octopus merge(s) (3+ parents) weren't scanned for changes made in the merge itself.`);
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${out.join('\n')}\n`);
           JS
 
