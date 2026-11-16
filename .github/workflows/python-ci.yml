@@ -426,12 +426,8 @@ jobs:
     name: gitleaks
     runs-on: ${{ inputs.security_scans_job_runner }}
     permissions:
-      packages: read
       contents: read
-      issues: write
-      discussions: write
-      pull-requests: write
-      security-events: write
+      packages: read
     container:
       image: ghcr.io/studiographene/ci:node-22-alpine
       credentials:
@@ -441,12 +437,96 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.ref }}
+          # Full history. The old shallow checkout left gitleaks with 0 commits to scan.
+          fetch-depth: 0
+          # The PR head, not the merge ref, which doesn't exist when a PR has conflicts.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Gitleaks scan
-        uses: gitleaks/gitleaks-action@v1.6.0
+      - name: Install gitleaks
+        shell: sh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_VERSION: "8.30.1"
+          # From gitleaks_8.30.1_checksums.txt in the GitHub release.
+          GITLEAKS_SHA256_LINUX_X64: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+          GITLEAKS_SHA256_LINUX_ARM64: "e4a487ee7ccd7d3a7f7ec08657610aa3606637dab924210b3aee62570fb4b080"
+        run: |
+          set -eu
+          case "$(uname -m)" in
+            x86_64) arch=x64; sum="$GITLEAKS_SHA256_LINUX_X64" ;;
+            aarch64 | arm64) arch=arm64; sum="$GITLEAKS_SHA256_LINUX_ARM64" ;;
+            *) echo "::error title=Gitleaks::Unsupported architecture $(uname -m)"; exit 1 ;;
+          esac
+          dir="$RUNNER_TEMP/gitleaks"
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${arch}.tar.gz"
+          mkdir -p "$dir"
+          if command -v curl >/dev/null 2>&1; then
+            curl -fsSL -o "$dir/gitleaks.tar.gz" "$url"
+          else
+            wget -q -O "$dir/gitleaks.tar.gz" "$url"
+          fi
+          echo "$sum  $dir/gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf "$dir/gitleaks.tar.gz" -C "$dir" gitleaks
+          echo "$dir" >> "$GITHUB_PATH"
+          # The job container's user doesn't own the checkout, so git would refuse it.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Gitleaks scan of new commits
+        shell: sh
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -eu
+          if [ -n "$BASE_SHA" ]; then
+            # Pull request: only the commits it adds.
+            git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null || git fetch --no-tags --quiet origin "$BASE_SHA"
+            range="${BASE_SHA}..${HEAD_SHA}"
+          elif [ -n "$BEFORE_SHA" ] && git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+            # Push: the commits since the previous tip.
+            range="${BEFORE_SHA}..${HEAD_SHA}"
+          else
+            # New branch or any other event: the tip commit.
+            range="-1 ${HEAD_SHA}"
+          fi
+          echo "Scanning: git log ${range}"
+          if ! gitleaks git --no-banner --redact --verbose --log-opts="$range" .; then
+            echo "::error title=Gitleaks::Possible secret in the new commits (or gitleaks failed: see the log). Real secret: rotate it, then remove it from the branch history. False positive or already rotated: add its fingerprint to .gitleaksignore."
+            exit 1
+          fi
+
+      - name: Gitleaks scan of full history (warning only)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        timeout-minutes: 15
+        shell: sh
+        run: |
+          set -eu
+          gitleaks git --no-banner --redact --exit-code 0 --report-format json --report-path "$RUNNER_TEMP/gitleaks-history.json" .
+          node <<'JS'
+          const fs = require('fs');
+          const findings = JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/gitleaks-history.json`, 'utf8')) || [];
+          const out = [];
+          if (findings.length === 0) {
+            out.push('### Gitleaks: no secrets found in git history');
+          } else {
+            console.log(`::warning title=Gitleaks history::${findings.length} possible secret(s) in git history (all branches). This doesn't block the PR. See the job summary.`);
+            const cell = (v) => String(v ?? '').replace(/\|/g, '\\|');
+            out.push(
+              `### Gitleaks: ${findings.length} possible secret(s) in git history`,
+              '',
+              "This doesn't block the PR. For each real secret: rotate the credential, then add its fingerprint to `.gitleaksignore` in the repo root. Values are redacted.",
+              '',
+              '| Rule | File | Line | Commit | Date | Fingerprint |',
+              '|---|---|---|---|---|---|',
+            );
+            for (const f of findings.slice(0, 200)) {
+              out.push(`| ${cell(f.RuleID)} | ${cell(f.File)} | ${cell(f.StartLine)} | ${cell(f.Commit).slice(0, 8)} | ${cell(f.Date).slice(0, 10)} | \`${cell(f.Fingerprint)}\` |`);
+            }
+            if (findings.length > 200) out.push('', `Showing the first 200 of ${findings.length}.`);
+          }
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${out.join('\n')}\n`);
+          JS
 
   license_scan:
     name: License Scanner
