@@ -1,0 +1,21 @@
+# Temporary: tests the Gitleaks job from fix/DEVOPS-0-gitleaks-full-scan. Never merge.
+name: gitleaks sandbox (temporary)
+
+on:
+  pull_request:
+  push:
+    branches: [test/gitleaks-ci-sandbox]
+
+permissions:
+  contents: read
+  packages: read
+  issues: write
+  discussions: write
+  pull-requests: write
+  security-events: write
+
+jobs:
+  security_scans:
+    uses: ./.github/workflows/security-scans.yml
+    with:
+      excluded_jobs: "sast,dependency_scan,license_scan"
