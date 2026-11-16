@@ -363,6 +363,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Install gitleaks
+        id: install
         shell: sh
         env:
           GITLEAKS_VERSION: "8.30.1"
@@ -396,6 +397,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           BEFORE_SHA: ${{ github.event.before }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           set -eu
           if [ -n "$BASE_SHA" ]; then
@@ -406,23 +408,35 @@ jobs:
             # Push: the commits since the previous tip.
             range="${BEFORE_SHA}..${HEAD_SHA}"
           else
-            # New branch or any other event: the tip commit.
-            range="-1 ${HEAD_SHA}"
+            # New branch, force-push or other event: the commits that aren't on any other branch.
+            echo "::notice title=Gitleaks::No previous commit to compare with, so scanning the commits that aren't on any other branch."
+            range="${HEAD_SHA} --not --exclude=origin/${REF_NAME} --remotes=origin"
           fi
-          echo "Scanning: git log ${range}"
-          if ! gitleaks git --no-banner --redact --verbose --log-opts="$range" .; then
-            echo "::error title=Gitleaks::Possible secret in the new commits (or gitleaks failed: see the log). Real secret: rotate it, then remove it from the branch history. False positive or already rotated: add its fingerprint to .gitleaksignore."
+          # gitleaks exits 0 when git itself fails, so check the range with git first.
+          # shellcheck disable=SC2086 # range holds several git arguments
+          count=$(git rev-list --count $range) || { echo "::error title=Gitleaks::Couldn't list the commits to scan (see the log)."; exit 1; }
+          echo "Scanning ${count} commit(s): git log ${range}"
+          # remerge also scans what a merge commit adds itself (conflict resolutions), not what it merges in.
+          if ! gitleaks git --no-banner --redact --verbose --log-opts="${range} --diff-merges=remerge" .; then
+            echo "::error title=Gitleaks::Possible secret in the new commits (or gitleaks failed: see the log). Real secret: rotate it and remove it from the branch history. False positive: add a gitleaks:allow comment on that line, or add file:rule:line to .gitleaksignore."
             exit 1
           fi
 
       - name: Gitleaks scan of full history (warning only)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         continue-on-error: true
         timeout-minutes: 15
         shell: sh
         run: |
           set -eu
-          gitleaks git --no-banner --redact --exit-code 0 --report-format json --report-path "$RUNNER_TEMP/gitleaks-history.json" .
+          # gitleaks exits 0 when git itself fails, so check the repo with git first.
+          # remerge also scans what merge commits add themselves (conflict resolutions).
+          if ! git rev-parse --verify --quiet HEAD >/dev/null \
+            || ! gitleaks git --no-banner --redact --exit-code 0 --report-format json --report-path "$RUNNER_TEMP/gitleaks-history.json" \
+              --log-opts="--full-history --all --diff-merges=remerge" .; then
+            echo "::warning title=Gitleaks history::The history scan failed (see the log), so this run has no history report."
+            exit 0
+          fi
           node <<'JS'
           const fs = require('fs');
           const findings = JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/gitleaks-history.json`, 'utf8')) || [];
