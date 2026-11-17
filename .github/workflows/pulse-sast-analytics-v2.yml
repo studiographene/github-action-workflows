@@ -43,6 +43,62 @@ jobs:
           cp /root/configs/semgrep/rules/eslint.v1.3.32.yml eslint.v1.3.32.yml
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           semgrep scan --config "p/default" --config eslint.v1.3.32.yml --json ${{ inputs.semgrep_options }} | tee semgrep.json
+      - name: Fingerprint findings
+        # Pulse matches a finding across scans by this hash: rule + file + the flagged lines with all
+        # whitespace removed (so reformatting keeps it) + a counter for identical code in the same
+        # file. Only the hash leaves CI, never the code. Secret-type rules get null (no hash of a
+        # secret value is published) and Pulse falls back to its own id for them.
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const crypto = require('crypto');
+          // Bump only with a migration plan: every finding gets a new id in Pulse.
+          const VERSION = 1;
+          const SECRET_RULE = /secret|hardcode|credential|password|private-key|api-key/i;
+          const report = JSON.parse(fs.readFileSync('semgrep.json', 'utf8'));
+          const results = Array.isArray(report.results) ? report.results : [];
+          const files = new Map();
+          const readLines = (path) => {
+            if (!files.has(path)) {
+              let lines = null;
+              try {
+                lines = fs.readFileSync(path, 'utf8').replace(/^﻿/, '').split(/\r\n|\r|\n/);
+              } catch (error) {
+                console.log(`Fingerprint skipped, cannot read ${path}`);
+              }
+              files.set(path, lines);
+            }
+            return files.get(path);
+          };
+          const seen = new Map();
+          let fingerprinted = 0;
+          // Line order, so the duplicate counter is assigned the same way on every run.
+          [...results]
+            .sort((a, b) => a.start.line - b.start.line || a.start.col - b.start.col)
+            .forEach((result) => {
+              result.extra = result.extra || {};
+              const lines = SECRET_RULE.test(result.check_id) ? null : readLines(result.path);
+              if (!lines) {
+                result.extra.fingerprint = null;
+                return;
+              }
+              const code = lines
+                .slice(result.start.line - 1, result.end.line)
+                .join('')
+                .replace(/\s+/g, '');
+              const key = `${VERSION}|${result.check_id}|${result.path}|${code}`;
+              const occurrence = (seen.get(key) || 0) + 1;
+              seen.set(key, occurrence);
+              result.extra.fingerprint = crypto
+                .createHash('sha256')
+                .update(`${key}|${occurrence}`)
+                .digest('hex');
+              fingerprinted += 1;
+            });
+          report.fingerprintVersion = VERSION;
+          fs.writeFileSync('semgrep.json', JSON.stringify(report));
+          console.log(`Fingerprinted ${fingerprinted} of ${results.length} findings`);
+          EOF
       - name: Display Errors
         id: display_errors
         env:
