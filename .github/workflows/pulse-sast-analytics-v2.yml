@@ -46,8 +46,11 @@ jobs:
       - name: Fingerprint findings
         # Pulse matches a finding across scans by this hash: rule + file + the flagged lines with all
         # whitespace removed (so reformatting keeps it) + a counter for identical code in the same
-        # file. Only the hash leaves CI, never the code. Secret-type rules get null (no hash of a
-        # secret value is published) and Pulse falls back to its own id for them.
+        # file. Only the hash leaves CI, never the code. Secret-type rules hash a secret value, which
+        # a plain hash would let anyone guess back, so they use an HMAC keyed with the org secret
+        # PULSE_SAST_FINGERPRINT_KEY instead. Changing that key gives every secret finding a new id.
+        env:
+          PULSE_SAST_FINGERPRINT_KEY: ${{ secrets.PULSE_SAST_FINGERPRINT_KEY }}
         run: |
           node <<'EOF'
           const fs = require('fs');
@@ -55,6 +58,13 @@ jobs:
           // Bump only with a migration plan: every finding gets a new id in Pulse.
           const VERSION = 1;
           const SECRET_RULE = /secret|hardcode|credential|password|private-key|api-key/i;
+          // TEMPORARY, for testing until the org secret is added. This repo is public, so with the
+          // default the secret-rule hashes are no harder to guess than plain ones.
+          const DEFAULT_KEY = 'pulse-sast-fingerprint-default-key';
+          const secretKey = process.env.PULSE_SAST_FINGERPRINT_KEY || DEFAULT_KEY;
+          if (secretKey === DEFAULT_KEY) {
+            console.log('::warning::PULSE_SAST_FINGERPRINT_KEY is not set, secret-rule fingerprints use the default key');
+          }
           const report = JSON.parse(fs.readFileSync('semgrep.json', 'utf8'));
           const results = Array.isArray(report.results) ? report.results : [];
           const files = new Map();
@@ -77,7 +87,7 @@ jobs:
             .sort((a, b) => a.start.line - b.start.line || a.start.col - b.start.col)
             .forEach((result) => {
               result.extra = result.extra || {};
-              const lines = SECRET_RULE.test(result.check_id) ? null : readLines(result.path);
+              const lines = readLines(result.path);
               if (!lines) {
                 result.extra.fingerprint = null;
                 return;
@@ -89,10 +99,10 @@ jobs:
               const key = `${VERSION}|${result.check_id}|${result.path}|${code}`;
               const occurrence = (seen.get(key) || 0) + 1;
               seen.set(key, occurrence);
-              result.extra.fingerprint = crypto
-                .createHash('sha256')
-                .update(`${key}|${occurrence}`)
-                .digest('hex');
+              const hash = SECRET_RULE.test(result.check_id)
+                ? crypto.createHmac('sha256', secretKey)
+                : crypto.createHash('sha256');
+              result.extra.fingerprint = hash.update(`${key}|${occurrence}`).digest('hex');
               fingerprinted += 1;
             });
           report.fingerprintVersion = VERSION;
