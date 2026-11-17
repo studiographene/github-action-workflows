@@ -513,10 +513,11 @@ jobs:
   pulse_security_scans:
     name: pulse_security_scans
     if: ${{ github.event.pull_request.merged == true }}
-    uses: studiographene/github-action-workflows/.github/workflows/pulse-sast-analytics-v2.yml@master
+    uses: studiographene/github-action-workflows/.github/workflows/pulse-sast-analytics-v2.yml@feature/PX-3961-sast-v2-artifact-metadata
     secrets: inherit
     with:
       semgrep_options: ${{ inputs.semgrep_options }}
+      dev_test_branch: ${{ inputs.dev_test_branch }}
       before_step_command: ${{ inputs.security_scan_before_step_command }}
       after_step_command: ${{ inputs.security_scan_after_step_command }}
   pulse_version_upgrades:
