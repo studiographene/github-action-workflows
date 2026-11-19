@@ -464,14 +464,31 @@ jobs:
 
           current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          coverage=$(jq -c '.total' "$coverage_file_path")
+          # App rows: top-level keys other than `total` that are directories (a
+          # monorepo that merged one summary row per app). A standard istanbul
+          # summary has one key per source FILE, so nothing matches and the
+          # payload stays exactly as before. Keep the `if` form inside the loop:
+          # `[ -d ] && printf` makes the loop exit 1 when the last key is a file,
+          # which fails the step under `pipefail`.
+          app_keys=$(jq -r 'keys[] | select(. != "total")' "$coverage_file_path" \
+            | while IFS= read -r k; do if [ -d "$k" ]; then printf '%s\n' "$k"; fi; done \
+            | jq -R . | jq -sc .)
+
+          # `total` as before, plus `apps` (keyed relative to the workspace) only
+          # when app rows were found.
+          coverage=$(jq -c --argjson apps "$app_keys" --arg ws "$GITHUB_WORKSPACE/" '
+            { total: .total }
+            + ( . as $s
+                | [ $apps[] | { key: ltrimstr($ws), value: $s[.] } ]
+                | if length > 0 then { apps: from_entries } else {} end )
+          ' "$coverage_file_path")
 
           json_payload=$(jq -n \
           --arg organisationId ${{ github.repository_owner_id }} \
           --arg repoId ${{ github.repository_id }} \
           --arg createdAt $current_date \
-          --argjson coverage $coverage \
-          '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt,  coverage: { "total": $coverage } }')
+          --argjson coverage "$coverage" \
+          '{ organisationId: $organisationId, repoId: $repoId, createdAt: $createdAt, coverage: $coverage }')
 
           echo "$json_payload" > pulse-test-coverage-report.json
 
