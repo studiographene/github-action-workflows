@@ -107,6 +107,14 @@ on:
       semgrep_options:
         type: string
         default: ""
+      sbom_container_image:
+        description: "Container image for the SBOM, licence and dependency scan jobs. Passed to security-scans.yml."
+        type: string
+        default: "ghcr.io/studiographene/ci:node-22-alpine"
+      cdxgen_print:
+        description: "Pass -p to cdxgen. Set to false with node-22-alpine-sbom. Passed to security-scans.yml."
+        type: boolean
+        default: true
       security_scan_before_step_command:
         description: "NOT IN USE. Depreciated."
         type: string
@@ -284,6 +292,8 @@ jobs:
       excluded_jobs: ${{ inputs.excluded_jobs }}
       semgrep_options: ${{ inputs.semgrep_options }}
       job_runner: ${{ inputs.security_scans_job_runner }}
+      sbom_container_image: ${{ inputs.sbom_container_image }}
+      cdxgen_print: ${{ inputs.cdxgen_print }}
 
   eslint:
     needs: caching
