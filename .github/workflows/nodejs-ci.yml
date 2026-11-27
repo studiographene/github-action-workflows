@@ -65,6 +65,21 @@ on:
         type: boolean
         required: false
         default: false
+      security_scans_container_image:
+        description: "Container image for the security scan jobs (SAST, gitleaks, SBOM, licence and dependency scans). Passed to security-scans.yml. Use ghcr.io/studiographene/ci:node-26-alpine with sbom_file: bom.json."
+        type: string
+        required: false
+        default: "ghcr.io/studiographene/ci:node-22-alpine"
+      sbom_file:
+        description: "SBOM file name, bom.xml or bom.json. Use bom.json with the node-26 images. Passed to security-scans.yml."
+        type: string
+        required: false
+        default: "bom.xml"
+      node_container_image:
+        description: "Container image for the caching, eslint and build_test jobs. Use the image that matches your production Node version, for example ghcr.io/studiographene/ci:node-26-alpine. Set developer_tests_container_image separately."
+        type: string
+        required: false
+        default: "ghcr.io/studiographene/ci:node-22-alpine"
       developer_tests_container_image:
         description: "Container image to use for the developer_tests job"
         type: string
@@ -189,7 +204,7 @@ jobs:
       contents: read
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
-      image: ghcr.io/studiographene/ci:node-22-alpine
+      image: ${{ inputs.node_container_image }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -212,7 +227,7 @@ jobs:
           inputs.package_manager == 'yarn' || 
           inputs.package_manager == 'pnpm'
         run: |
-          echo "cache-key=${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> "$GITHUB_OUTPUT"
+          echo "cache-key=${{ runner.os }}-${{ inputs.package_manager }}${{ inputs.node_container_image != 'ghcr.io/studiographene/ci:node-22-alpine' && format('-{0}', inputs.node_container_image) || '' }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> "$GITHUB_OUTPUT"
       - name: Set cache restore key
         id: set-cache-restore-key
         if: |
@@ -220,7 +235,7 @@ jobs:
           inputs.package_manager == 'yarn' || 
           inputs.package_manager == 'pnpm'
         run: |
-          echo "cache-restore-key=${{ runner.os }}-${{ inputs.package_manager }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> "$GITHUB_OUTPUT"
+          echo "cache-restore-key=${{ runner.os }}-${{ inputs.package_manager }}${{ inputs.node_container_image != 'ghcr.io/studiographene/ci:node-22-alpine' && format('-{0}', inputs.node_container_image) || '' }}-${{ hashFiles('**/package-lock.json', '**/package.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}" >> "$GITHUB_OUTPUT"
       - name: Cache node modules
         id: cache-node-modules
         if: |
@@ -284,6 +299,8 @@ jobs:
       excluded_jobs: ${{ inputs.excluded_jobs }}
       semgrep_options: ${{ inputs.semgrep_options }}
       job_runner: ${{ inputs.security_scans_job_runner }}
+      security_scans_container_image: ${{ inputs.security_scans_container_image }}
+      sbom_file: ${{ inputs.sbom_file }}
 
   eslint:
     needs: caching
@@ -298,7 +315,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
-      image: ghcr.io/studiographene/ci:node-22-alpine
+      image: ${{ inputs.node_container_image }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -353,7 +370,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains( inputs.excluded_jobs, 'build_test' )  }}
     container:
-      image: ghcr.io/studiographene/ci:node-22-alpine
+      image: ${{ inputs.node_container_image }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}

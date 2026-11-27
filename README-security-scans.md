@@ -10,6 +10,8 @@ Security scans workflow for CI checks for codes such as NodeJS, NodeJs Mobile, P
 | semgrep_options                   | SEMGREP command options                                            | string | no       |         |
 | security_scan_before_step_command | Optional commands to pass before security scan job steps execution | string | no       |         |
 | security_scan_after_step_command  | Optional commands to pass after security scan job steps execution  | string | no       |         |
+| security_scans_container_image    | Container image for the SAST, gitleaks, generate_sbom, license_scan and dependency_scan jobs. `ghcr.io/studiographene/ci:node-26-alpine` has cdxgen 12, which lists every package of a pnpm lockfile v9; use it with `sbom_file: bom.json`. | string | no | `ghcr.io/studiographene/ci:node-22-alpine` |
+| sbom_file                         | SBOM file name: `bom.xml` or `bom.json`. cdxgen 12 (node-26 images) writes JSON, and osv-scanner 2.x picks its parser from the file name, so use `bom.json` with those images. Keep `bom.xml` with `node-22-alpine`. | string | no | `bom.xml` |
 
 # Action variables
 

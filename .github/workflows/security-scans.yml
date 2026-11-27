@@ -20,6 +20,14 @@ on:
       security_scan_after_step_command:
         type: string
         default: ""
+      security_scans_container_image:
+        description: "Container image for the SAST, gitleaks, generate_sbom, license_scan and dependency_scan jobs. Use ghcr.io/studiographene/ci:node-26-alpine (cdxgen 12, full pnpm lockfile v9 support) together with sbom_file: bom.json."
+        type: string
+        default: "ghcr.io/studiographene/ci:node-22-alpine"
+      sbom_file:
+        description: "SBOM file name: bom.xml or bom.json. cdxgen 12 (node-26 images) writes JSON and osv-scanner 2.x picks its parser from the file name, so use bom.json with those images. Keep bom.xml with node-22-alpine."
+        type: string
+        default: "bom.xml"
 
 jobs:
   SAST:
@@ -34,7 +42,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'sast') }}
     container:
-      image: ghcr.io/studiographene/ci:node-22-alpine
+      image: ${{ inputs.security_scans_container_image }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -101,7 +109,7 @@ jobs:
       packages: read
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'gitleaks') }}
     container:
-      image: ghcr.io/studiographene/ci:node-22-alpine
+      image: ${{ inputs.security_scans_container_image }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -236,7 +244,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'dependency_scan') }}
     container:
-      image: ghcr.io/studiographene/ci:node-22-alpine
+      image: ${{ inputs.security_scans_container_image }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -264,11 +272,16 @@ jobs:
       - name: Generate SBOM using CycloneDX
         if: always ()
         run: |
+          case "$SBOM_FILE" in
+            bom.xml|bom.json) ;;
+            *) echo "::error title=SBOM::sbom_file must be bom.xml or bom.json, got '$SBOM_FILE'"; exit 1 ;;
+          esac
           cdxgen --version
           npm install -g @cyclonedx/cdxgen-plugins-bin
-          cdxgen --no-recurse -o bom.xml -p --debug
+          cdxgen --no-recurse -o "$SBOM_FILE" -p --debug
           ls -al
         env:
+          SBOM_FILE: ${{ inputs.sbom_file }}
           FETCH_LICENSE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CDXGEN_DEBUG_MODE: debug
@@ -277,7 +290,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sbom
-          path: bom.xml
+          path: ${{ inputs.sbom_file }}
 
   license_scan:
     name: license_scan
@@ -292,7 +305,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains(inputs.excluded_jobs, 'license_scan') }}
     container:
-      image: ghcr.io/studiographene/ci:node-22-alpine
+      image: ${{ inputs.security_scans_container_image }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -309,6 +322,7 @@ jobs:
 
       - name: License Scan
         env:
+          SBOM_FILE: ${{ inputs.sbom_file }}
           ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.number }}
           PROJECT_NAME: ${{ github.event.repository.name }}
@@ -342,7 +356,7 @@ jobs:
           cat >> allowedLicenses.txt <<EOF
               ${{ vars.ALLOWED_LICENSES }}
           EOF
-          /root/executables/ci-utility check --sbom bom.xml --allowedLicences allowedLicenses.txt
+          /root/executables/ci-utility check --sbom "$SBOM_FILE" --allowedLicences allowedLicenses.txt
 
   dependency_scan:
     needs: generate_sbom
@@ -357,7 +371,7 @@ jobs:
       security-events: write
     if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
     container:
-      image: ghcr.io/studiographene/ci:node-22-alpine
+      image: ${{ inputs.security_scans_container_image }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -373,14 +387,16 @@ jobs:
           path: .
       - name: Dependency Scan using Google OSV
         id: dependency_scan
+        env:
+          SBOM_FILE: ${{ inputs.sbom_file }}
         run: |
           cat >> dep_scan_suppression_config.toml <<EOF
               ${{ vars.OSV_SUPPRESSIONS }}
           EOF
           set +e
-          osv-scanner --format markdown --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.md
+          osv-scanner --format markdown --config=./dep_scan_suppression_config.toml --sbom="$SBOM_FILE" > osv_raw_report.md
           # JSON report is generated to segregate the vulnerabilities based on the CVSS score
-          osv-scanner --format json --config=./dep_scan_suppression_config.toml --sbom=bom.xml > osv_raw_report.json
+          osv-scanner --format json --config=./dep_scan_suppression_config.toml --sbom="$SBOM_FILE" > osv_raw_report.json
           echo "OSV_EXIT_CODE=$?" >> $GITHUB_OUTPUT
           set -e
       - name: Generate Dependency Scan Report
